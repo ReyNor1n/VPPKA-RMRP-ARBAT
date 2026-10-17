@@ -33,17 +33,20 @@
    {
     "name": "Укажите имя",
     "role": "Председатель Партии (Первый секретарь ЦК)",
-    "photo": ""
+    "photo": "",
+    "memberId": "m1"
    },
    {
     "name": "Вакансия",
     "role": "Член Центрального Комитета",
-    "photo": ""
+    "photo": "",
+    "memberId": "m2"
    },
    {
     "name": "Вакансия",
     "role": "Председатель Контрольно-ревизионной комиссии",
-    "photo": ""
+    "photo": "",
+    "memberId": "m3"
    }
   ],
   "trioLeft": "За справедливость, что сильнее страха.",
@@ -334,7 +337,15 @@
     "group": "Руководство",
     "photo": "img/uploads/1792201424096-Gv9Di.jpg",
     "bio": "",
-    "contact": ""
+    "contact": "",
+    "id": "m1",
+    "joined": "",
+    "birth": "",
+    "city": "",
+    "achievements": "",
+    "discord": "",
+    "forum": "",
+    "quote": ""
    },
    {
     "name": "Вакансия",
@@ -342,7 +353,15 @@
     "group": "Центральный Комитет",
     "photo": "",
     "bio": "Место будет заполнено после Съезда.",
-    "contact": ""
+    "contact": "",
+    "id": "m2",
+    "joined": "",
+    "birth": "",
+    "city": "",
+    "achievements": "",
+    "discord": "",
+    "forum": "",
+    "quote": ""
    },
    {
     "name": "Вакансия",
@@ -350,7 +369,15 @@
     "group": "Контрольно-ревизионная комиссия",
     "photo": "",
     "bio": "",
-    "contact": ""
+    "contact": "",
+    "id": "m3",
+    "joined": "",
+    "birth": "",
+    "city": "",
+    "achievements": "",
+    "discord": "",
+    "forum": "",
+    "quote": ""
    }
   ]
  },

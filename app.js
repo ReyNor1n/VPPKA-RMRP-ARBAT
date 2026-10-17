@@ -16,12 +16,20 @@ foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p
 addEventListener('hashchange',route);route();});
 const news=()=>[...C.news].map((n,i)=>({...n,i})).sort((a,b)=>b.date.localeCompare(a.date));
 const nl=ns=>`<div class="nl">${ns.map(n=>`<div class="it"><div class="d">${fd(n.date)}</div><div><h3><a href="#news/${n.i}">${esc(n.title)}</a></h3><p>${esc(n.text.slice(0,200))}…</p></div></div>`).join('')}</div>`;
-const card=(m,q)=>`<div class="card"><div class="ph" ${m.photo?`style="background-image:url('${esc(m.photo)}')"`:''}>${m.photo?'':'Фото'}</div><h3>${esc(m.name)}</h3><div class="role">${esc(m.role)}</div>${q?`<p class="quote">${esc(q)}</p>`:''}${m.bio?`<p>${esc(m.bio)}</p>`:''}${m.contact?`<small>${esc(m.contact)}</small>`:''}</div>`;
+const card=(m,q)=>`<a class="card mcard" href="#member/${esc(m.id||'')}"><div class="ph" ${m.photo?`style="background-image:url('${esc(m.photo)}')"`:''}>${m.photo?'':'Фото'}</div><h3>${esc(m.name)}</h3><div class="role">${esc(m.role)}</div>${q?`<p class="quote">${esc(q)}</p>`:''}${m.bio?`<p>${esc(m.bio)}</p>`:''}${m.contact?`<small>${esc(m.contact)}</small>`:''}</a>`;
 const pg=(k,h)=>`<div class="crumbs"><a href="#home">Главная</a> / ${esc(NAMES[k]||'')}</div><div class="pg">${h}</div>`;
 const side=()=>`<div class="side"><div class="blk"><h2>Вступление в партию</h2><p>Членом партии может стать гражданин, достигший 18 лет, признающий Устав и Программу.</p><a class="btn" ${J()}>Подать заявку</a></div>
 <div class="blk"><h2>Документы</h2><ul><li><a href="#program">Программа партии</a></li><li><a href="#charter">Устав партии</a></li><li><a href="#legal">Правовая база</a></li></ul></div></div>`;
+const MF=[['group','Партийный орган'],['joined','Дата вступления'],['birth','Возраст / дата рождения'],['city','Город / район']];
 const P={
-home(){const H=C.home,t=(H.trio||C.leadership.members).slice(0,3),qs=[H.trioLeft,'',H.trioRight];return `<div class="pg" style="padding-top:28px">
+member(id){const m=C.leadership.members.find(x=>x.id===id);if(!m)return `<div class="crumbs"><a href="#home">Главная</a> / <a href="#leadership">Руководство</a></div><div class="pg"><h1>Профиль не найден</h1><a class="btn o" href="#leadership">← К составу</a></div>`;
+const links=[m.discord&&['Discord',m.discord],m.forum&&['Форум',m.forum],m.contact&&['Контакт',m.contact]].filter(Boolean);
+const lk=([l,v])=>/^https?:/.test(v)?`<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>`:esc(v);
+return `<div class="crumbs"><a href="#home">Главная</a> / <a href="#leadership">Руководство</a> / ${esc(m.name)}</div><div class="pg"><a class="btn o sm" href="#leadership">← Назад к составу</a>
+<div class="prof blk" style="margin-top:18px"><div class="prof-ph" ${m.photo?`style="background-image:url('${esc(m.photo)}')"`:''}>${m.photo?'':'ФОТО'}</div><div><span class="role">// ${esc(m.group||'Состав')}</span><h1 class="prof-n">${esc(m.name)}</h1><div class="prof-r">${esc(m.role)}</div>
+${m.quote?`<p class="quote">«${esc(m.quote)}»</p>`:''}<table class="tbl" style="margin-top:16px">${MF.filter(([k])=>m[k]).map(([k,l])=>`<tr><td>${l}</td><td>${esc(m[k])}</td></tr>`).join('')}${links.map(x=>`<tr><td>${x[0]}</td><td>${lk(x)}</td></tr>`).join('')}</table></div></div>
+${m.bio?`<div class="blk"><h2>Биография</h2><p class="lead">${esc(m.bio)}</p></div>`:''}${m.achievements?`<div class="blk"><h2>Достижения и должности</h2><p class="lead">${esc(m.achievements)}</p></div>`:''}</div>`},
+home(){const H=C.home,t=(H.trio||C.leadership.members).slice(0,3).map(x=>{const m=x.memberId&&C.leadership.members.find(y=>y.id===x.memberId);return m?{...m}:x}),qs=[H.trioLeft,'',H.trioRight];return `<div class="pg" style="padding-top:28px">
 <div class="blk intro"><img src="${esc(S.logo)}" alt=""><div><h1>${esc(H.trioBottom||S.slogan)}</h1><p>${esc(H.heroText)}</p><a class="btn" ${J()}>Вступить в партию</a> <a class="btn o" href="#program">Программа партии</a></div></div>
 <div class="grid"><div><div class="blk"><h2>Новости</h2>${nl(news().slice(0,5))}<p><a href="#news">Все новости →</a></p></div>
 <div class="blk"><h2>Руководство партии</h2><div class="ldr">${t.map((m,i)=>card(m,qs[i])).join('')}</div><p><a href="#leadership">Полный состав →</a></p></div>
@@ -35,5 +43,5 @@ legal(){const l=C.legal;return pg('legal',`<h1>Правовая база</h1><p>
 news(id){if(id!==undefined&&C.news[id]){const n=C.news[id];return `<div class="crumbs"><a href="#home">Главная</a> / <a href="#news">Новости</a> / ${esc(n.title)}</div><div class="pg"><div class="blk"><div class="d" style="color:var(--mut)">${fd(n.date)}</div><h1 style="font-size:28px">${esc(n.title)}</h1>${n.image?`<img class="banner" src="${esc(n.image)}" alt="">`:''}<p class="lead">${esc(n.text)}</p></div></div>`}
  return pg('news',`<h1>Новости</h1><div class="blk">${nl(news())}</div>`)},
 contacts(){const c=C.contacts;return pg('contacts',`<h1>Контакты</h1><div class="grid"><div class="blk"><p>${esc(c.text)}</p><table class="tbl">${c.items.map(i=>`<tr><td>${esc(i.label)}</td><td>${i.url?`<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.value)}</a>`:esc(i.value)}</td></tr>`).join('')}</table></div>${side()}</div>`)}};
-function route(){const [k,id]=(location.hash.slice(1)||'home').split('/');const key=P[k]?k:'home';app.innerHTML=P[key](id);menu.classList.remove('open');
-document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+key));scrollTo(0,0);}
+function route(){const [k,id]=(location.hash.slice(1)||'home').split('/');const key=P[k]?k:'home';const navKey=key==='member'?'leadership':key;app.innerHTML=P[key](id);menu.classList.remove('open');
+document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+navKey));scrollTo(0,0);}
