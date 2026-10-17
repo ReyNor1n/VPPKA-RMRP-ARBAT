@@ -55,8 +55,9 @@ async function init(){
  A=A_;F=F_;const app=initializeApp(firebaseConfig);auth=A.getAuth(app);db=F.getFirestore(app);
  if(location.hostname==='localhost'&&/[?&]emu\b/.test(location.search)){A.connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true});F.connectFirestoreEmulator(db,'127.0.0.1',8080);}
  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest&&e.target.closest('.auth')){const b=document.querySelector('.auth .btn');b&&b.click();}});
+ const fixU=u=>typeof u==='string'?u.replace(/^(?:https?:\/\/[^\/]+)?\/(?:vppka|VPPKA-RMRP-ARBAT)\/(?=img\/)/i,''):u;const fixD=o=>{if(o.image)o.image=fixU(o.image);if(o.photo)o.photo=fixU(o.photo);if(Array.isArray(o.photos))o.photos=o.photos.map(fixU);return o};
  async function loadData(){try{const [n,m]=await Promise.all([F.getDocs(F.collection(db,'news')),F.getDocs(F.collection(db,'members'))]);const D={};
-  if(!n.empty)D.news=n.docs.map(d=>({...d.data(),id:d.id}));if(!m.empty)D.members=m.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
+  if(!n.empty)D.news=n.docs.map(d=>fixD({...d.data(),id:d.id}));if(!m.empty)D.members=m.docs.map(d=>fixD({...d.data(),id:d.id})).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
   window.VPPKA_DATA=(D.news||D.members)?D:null;}catch(e){console.warn('Firestore данные недоступны, используется content.json',e)}}
  window.VPPKA_RELOAD=async()=>{await loadData();route();};
  window.VPPKA_AUTH={get user(){return user},get profile(){return profile},get power(){return power},async submitApplication(answers){const d={answers,status:'new',createdAt:F.serverTimestamp()};if(user){d.uid=user.uid;if(profile&&profile.discordId)d.discordId=profile.discordId;}await F.addDoc(F.collection(db,'applications'),d);}};
