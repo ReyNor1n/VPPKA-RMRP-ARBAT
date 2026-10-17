@@ -1,11 +1,12 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>Админ-панель ВППКА</title><link rel="stylesheet" href="style.css"><style>.nav{display:flex;align-items:center;padding:10px 20px;background:var(--red);border-bottom:3px solid var(--gold)}.brand{color:#fff;display:flex;gap:10px;align-items:center;font-weight:700;font-size:20px}.brand img{height:44px}.wrap{background:#fff}</style>
-<style>body{background:#f3e2c6}.wrap{max-width:1000px;margin:auto;padding:20px}.box{background:#fff;padding:18px;border-radius:6px;border-top:5px solid var(--red);margin:12px 0}
-label{display:block;font-weight:700;font-size:13px;color:var(--dark);margin-top:8px}input,textarea,select{width:100%;padding:7px;border:1px solid #c9a; border-radius:4px;font:inherit}textarea{min-height:70px}
-fieldset{border:1px solid #e0c7a0;border-radius:5px;margin:8px 0;padding:8px 12px;background:#fffaf2}legend{font-weight:700;color:var(--red)}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.del{background:#7a0a0e;color:#fff;border:0;border-radius:4px;padding:4px 10px;cursor:pointer}
-.add{background:#2b6b2b;color:#fff;border:0;border-radius:4px;padding:6px 12px;cursor:pointer;margin:4px 0}.tabs button{margin:2px}.thumb{max-height:60px;margin-top:4px}
-#msg{position:fixed;bottom:16px;right:16px;background:#1a0405;color:var(--gold2);padding:10px 16px;border-radius:5px;display:none}</style></head><body>
+<title>Админ-панель ВППКА</title><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Unbounded:wght@700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=3">
+<style>body{background:var(--bg)}.wrap{max-width:1000px;margin:auto;padding:24px}.box{background:var(--bg2);border:1px solid var(--line);padding:22px;border-radius:20px;margin:14px 0}
+.nav{display:flex;align-items:center;height:68px;max-width:1000px;margin:auto;padding:0 24px}.brand{display:flex;gap:10px;align-items:center;color:var(--tx);font:700 17px Unbounded}.brand img{height:38px}
+label{display:block;font-weight:700;font-size:13px;color:var(--mut);margin-top:10px}input,textarea,select{width:100%;padding:10px 12px;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:12px;font:inherit}textarea{min-height:80px}
+fieldset{border:1px solid var(--line);border-radius:14px;margin:10px 0;padding:10px 14px}legend{font-weight:700;color:var(--gold);padding:0 6px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.del{background:#2a1215;color:#ff8a92;border:1px solid #4a1d22;border-radius:999px;padding:5px 12px;cursor:pointer}
+.add{background:#13261a;color:#7ee2a0;border:1px solid #1f4a2c;border-radius:999px;padding:7px 14px;cursor:pointer;margin:6px 0}.tabs button{margin:3px}.thumb{max-height:60px;margin-top:6px;border-radius:8px}
+#msg{position:fixed;bottom:16px;right:16px;background:var(--red);color:#fff;padding:12px 18px;border-radius:14px;display:none}</style></head><body>
 <header><div class="nav"><a class="brand" href="index.html"><img src="img/emblem.png?v=2"><span>ВППКА · Админ</span></a></div></header>
 <div class="wrap">
 <div id="login" class="box"><h2>Вход владельца</h2>
@@ -32,7 +33,7 @@ async function login(){G={repo:$('repo').value.trim(),branch:$('branch').value.t
 async function offline(){OFF=true;C=JSON.parse(localStorage.getItem('vppka_draft')||'null')||await (await fetch('content.json?'+Date.now())).json();start();}
 function logout(){localStorage.removeItem('vppka_gh');location.reload();}
 function start(){$('login').style.display='none';$('ed').style.display='block';render();}
-function render(){$('tabs').innerHTML=Object.keys(NAMES).map(k=>`<button class="btn sm" style="${k==tab?'':'opacity:.6'}" onclick="tab='${k}';render()">${NAMES[k]}</button>`).join('');
+function render(){$('tabs').innerHTML=Object.keys(NAMES).map(k=>`<button class="btn sm" style="${k==tab?'':'background:transparent;border:1px solid var(--line)'}" onclick="tab='${k}';render()">${NAMES[k]}</button>`).join('');
  $('form').innerHTML='';$('form').append(field(C,tab,NAMES[tab]));}
 function save(){localStorage.setItem('vppka_draft',JSON.stringify(C));}
 function field(obj,key,label){const v=obj[key];
