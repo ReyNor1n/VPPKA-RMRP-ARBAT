@@ -1,12 +1,12 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>Админ-панель ВППКА</title><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Unbounded:wght@700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=3">
-<style>body{background:var(--bg)}.wrap{max-width:1000px;margin:auto;padding:24px}.box{background:var(--bg2);border:1px solid var(--line);padding:22px;border-radius:20px;margin:14px 0}
-.nav{display:flex;align-items:center;height:68px;max-width:1000px;margin:auto;padding:0 24px}.brand{display:flex;gap:10px;align-items:center;color:var(--tx);font:700 17px Unbounded}.brand img{height:38px}
-label{display:block;font-weight:700;font-size:13px;color:var(--mut);margin-top:10px}input,textarea,select{width:100%;padding:10px 12px;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:12px;font:inherit}textarea{min-height:80px}
-fieldset{border:1px solid var(--line);border-radius:14px;margin:10px 0;padding:10px 14px}legend{font-weight:700;color:var(--gold);padding:0 6px}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.del{background:#2a1215;color:#ff8a92;border:1px solid #4a1d22;border-radius:999px;padding:5px 12px;cursor:pointer}
-.add{background:#13261a;color:#7ee2a0;border:1px solid #1f4a2c;border-radius:999px;padding:7px 14px;cursor:pointer;margin:6px 0}.tabs button{margin:3px}.thumb{max-height:60px;margin-top:6px;border-radius:8px}
-#msg{position:fixed;bottom:16px;right:16px;background:var(--red);color:#fff;padding:12px 18px;border-radius:14px;display:none}</style></head><body>
+<title>Админ-панель ВППКА</title><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Unbounded:wght@700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=8">
+<style>body{background:var(--p);padding:0}.wrap{max-width:1000px;margin:auto;padding:24px}.box{background:var(--p);border:3px solid var(--k);padding:22px;margin:18px 0;box-shadow:8px 8px 0 var(--r)}
+header{background:var(--k)}.nav{display:flex;align-items:center;height:68px;max-width:1000px;margin:auto;padding:0 24px}.brand{display:flex;gap:12px;align-items:center;color:var(--p);font:800 16px Unbounded;text-decoration:none}.brand img{height:42px}
+h2{font-size:28px}label{display:block;font:700 11px Unbounded;text-transform:uppercase;letter-spacing:.08em;color:var(--m);margin-top:12px}input,textarea,select{width:100%;padding:10px 12px;background:#fffaf1;color:var(--k);border:2px solid var(--k);font:inherit}input:focus,textarea:focus{outline:3px solid var(--r)}textarea{min-height:80px}
+fieldset{border:2px solid var(--k);margin:12px 0;padding:10px 14px}legend{font:800 12px Unbounded;text-transform:uppercase;background:var(--k);color:var(--p);padding:4px 10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.del{background:var(--p);color:var(--r);border:2px solid var(--r);padding:4px 12px;cursor:pointer;font-weight:700}.del:hover{background:var(--r);color:#fff}
+.add{background:var(--k);color:var(--p);border:0;padding:8px 14px;cursor:pointer;margin:6px 0;font-weight:700}.tabs button{margin:4px}.thumb{max-height:60px;margin-top:6px}
+#msg{position:fixed;bottom:16px;right:16px;background:var(--r);color:#fff;padding:12px 18px;display:none;font-weight:700}</style></head><body>
 <header><div class="nav"><a class="brand" href="index.html"><img src="img/emblem.png?v=2"><span>ВППКА · Админ</span></a></div></header>
 <div class="wrap">
 <div id="login" class="box"><h2>Вход владельца</h2>
@@ -33,7 +33,7 @@ async function login(){G={repo:$('repo').value.trim(),branch:$('branch').value.t
 async function offline(){OFF=true;C=JSON.parse(localStorage.getItem('vppka_draft')||'null')||await (await fetch('content.json?'+Date.now())).json();start();}
 function logout(){localStorage.removeItem('vppka_gh');location.reload();}
 function start(){$('login').style.display='none';$('ed').style.display='block';render();}
-function render(){$('tabs').innerHTML=Object.keys(NAMES).map(k=>`<button class="btn sm" style="${k==tab?'':'background:transparent;border:1px solid var(--line)'}" onclick="tab='${k}';render()">${NAMES[k]}</button>`).join('');
+function render(){$('tabs').innerHTML=Object.keys(NAMES).map(k=>`<button class="btn sm" style="${k==tab?'':'background:transparent;color:var(--k);border:3px solid var(--k);box-shadow:none'}" onclick="tab='${k}';render()">${NAMES[k]}</button>`).join('');
  $('form').innerHTML='';$('form').append(field(C,tab,NAMES[tab]));}
 function save(){localStorage.setItem('vppka_draft',JSON.stringify(C));}
 function field(obj,key,label){const v=obj[key];
