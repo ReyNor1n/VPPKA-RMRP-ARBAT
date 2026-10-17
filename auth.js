@@ -39,7 +39,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
    const c=await A.createUserWithEmailAndPassword(auth,mail(d),p);
    profile={discordLink:raw.slice(0,200),discordId:d,displayName:v('r-n').trim().slice(0,40),createdAt:F.serverTimestamp()};if(ph)profile.photo=ph;
    let kmsg='';const kk=v('r-k').trim();if(kk){const r=await checkKey(kk,d);if(r.ok)Object.assign(profile,{keyHash:r.h,rank:r.rank,roleName:r.roleName});else kmsg='Ключ не принят: '+r.msg;}
-   try{await F.setDoc(F.doc(db,'users',c.user.uid),profile);}catch(e){console.warn('Профиль не сохранён',e);if(profile.photo){const {photo,...rest}=profile;try{await F.setDoc(F.doc(db,'users',c.user.uid),rest);delete profile.photo;kmsg=(kmsg?kmsg+' ':'')+'Фото пока не сохранено — загрузите его позже в кабинете.';}catch(e2){}}}profile.createdAt={toDate:()=>new Date()};await refreshPower();
+   try{await F.setDoc(F.doc(db,'users',c.user.uid),profile);}catch(e){console.warn('Профиль не сохранён',e);if(profile.keyHash&&!profile.photo){const {keyHash,rank,roleName,...rest}=profile;try{await F.setDoc(F.doc(db,'users',c.user.uid),rest);delete profile.keyHash;delete profile.rank;delete profile.roleName;kmsg=(kmsg?kmsg+' ':'')+'Ключ не применился — введите его ещё раз в кабинете.';}catch(e2){}}if(profile.photo){const {photo,...rest}=profile;try{await F.setDoc(F.doc(db,'users',c.user.uid),rest);delete profile.photo;kmsg=(kmsg?kmsg+' ':'')+'Фото пока не сохранено — загрузите его позже в кабинете.';}catch(e2){}}}profile.createdAt={toDate:()=>new Date()};await refreshPower();
    location.hash='#account';if(kmsg)setTimeout(()=>err('Аккаунт создан. '+kmsg),50);}
   if(id==='k-go'){const kk=v('k-in').trim();if(!kk)return err('Введите ключ.');ev.target.disabled=true;const r=await checkKey(kk,profile.discordId);if(!r.ok){ev.target.disabled=false;return err(r.msg);}
    await F.updateDoc(F.doc(db,'users',user.uid),{keyHash:r.h,rank:r.rank,roleName:r.roleName});Object.assign(profile,{keyHash:r.h,rank:r.rank,roleName:r.roleName});await refreshPower();route();}
@@ -106,7 +106,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
 
  await loadData();route();liveStart();import('./panel.js?v=59').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=59').then(m=>m.install()).catch(e=>console.error('notif',e));import('./chat.js?v=59').then(m=>m.install()).catch(e=>console.error('chat',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
-  if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;}catch(e){console.warn(e)}}await refreshPower();
+  if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();
   if(['login','register','account','join','news','leadership','apps','members','party','member','home',''].includes(location.hash.slice(1).split('/')[0]))route();});
 }
