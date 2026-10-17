@@ -178,3 +178,12 @@ main{background:var(--p)}
 @media(max-width:900px){.hb{justify-content:flex-start;padding:12px 56px 12px 84px;min-height:80px}.hb-logo{left:14px}.hb-logo img{height:54px}.hb-t{text-align:left;padding:2px 8px}.hb-os{font-size:8px}.hb-n{font-size:6.6vw}
 .hb .burger{display:block;position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#fff;font-size:28px;background:none;border:0}.tmenu .tj{margin:0}.tri3{margin-top:28px}.tt{bottom:4%;left:4%;right:4%}}
 @media(max-width:900px){.tri3{width:100vw}.tt{font-size:2.7vw;line-height:1.25}.tp.none span{font-size:5vw}}
+/* v13 two-column hero */
+.hx{display:grid;grid-template-columns:1.1fr 1fr;gap:5vw;align-items:center;max-width:1280px;margin:0 auto;padding:60px 5vw 70px}
+.hx .tri3{width:100%;margin:0}
+.hx .tt{font-size:clamp(9px,1vw,14px)}.hx .tp.none span{font-size:clamp(18px,2.6vw,36px)}
+.hx-h{font:700 clamp(28px,3.2vw,46px)/1.15 "PT Serif",Georgia,serif;text-transform:none;letter-spacing:0;color:#922a26;margin:6px 0 18px}
+.hx-p{font-size:17px;max-width:520px;margin:0 0 6px}
+.hx-lg{list-style:none;padding:18px 0 0;margin:26px 0 0;border-top:2px solid var(--k);font-size:14px}
+.hx-lg li{margin:6px 0}.hx-lg span{display:inline-block;min-width:80px;font:12px "PT Mono",monospace;color:var(--m)}
+@media(max-width:900px){.hx{grid-template-columns:1fr;padding:24px 0 40px;gap:24px}.hx .tri3{width:100vw}.hx .tt{font-size:2.7vw}.hx-r{padding:0 6vw}.hx-h{font-size:7vw}}
