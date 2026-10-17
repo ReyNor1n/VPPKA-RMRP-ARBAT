@@ -90,7 +90,7 @@ async function init(){
   link.innerHTML=`<span class="av">${av}</span><span class="avname">${esc(name)}</span>`;
  }
 
- await loadData();route();import('./panel.js?v=26').then(m=>m.install()).catch(e=>console.error('panel',e));
+ await loadData();route();import('./panel.js?v=37').then(m=>m.install()).catch(e=>console.error('panel',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();

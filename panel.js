@@ -24,8 +24,9 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  <label class="fl">Фото (до 4 шт., уменьшаются автоматически)<input id="pn-f" type="file" accept="image/*" multiple></label>
  ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
+ <label class="fl kp-chk"><input id="pn-pin" type="checkbox"${n.pinned===true?' checked':''}> 📌 закрепить новость (показывается первой)</label>
  <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
- ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
+ ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${x.pinned===true?'📌 ':''}${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
 
 function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m=>(T>=4&&mt(m)<T&&(m.rank??0)<R)||isCh(m)),m=editMem||{rank:10};
  return head(editMem&&editMem.id?'Редактировать участника':'Добавить участника',`<p class="amut">Ступень вашего ключа: ${T}. ${T>=4?`Вы можете добавлять, повышать и понижать тех, чья ступень ниже ${T} (без ключа — 0).`:'Вам доступна только правка записи председателя.'} <a href="#apps">Заявки в партию →</a></p>`)+
@@ -70,7 +71,7 @@ export function install(){const P=window.P,on=P.news,ol=P.leadership;
   if(id==='pn-cancel'){editNews=null;window.route();}
   if(d.ne){editNews=(D().news||[]).find(x=>x.id===d.ne);window.route();}
   if(d.nd&&confirm('Удалить новость?')){await f.deleteDoc(f.doc(db(),'news',d.nd));await done('Новость удалена.');}
-  if(id==='pn-save'){const o=editNews||{};const n={title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
+  if(id==='pn-save'){const o=editNews||{};const n={title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};if(document.getElementById('pn-pin').checked)n.pinned=true;
    if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');b.disabled=true;const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
    if(ph.length+fl.length>4){b.disabled=false;return msg('Не больше 4 фото в новости.');}for(const f of fl)ph.push(await smallJpeg(f));
    const legacy=ph.filter(u=>!String(u).startsWith('data:'));ph=ph.filter(u=>String(u).startsWith('data:'));if(legacy[0])n.image=legacy[0];if(ph.length)n.photos=ph;
