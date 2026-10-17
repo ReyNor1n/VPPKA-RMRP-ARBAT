@@ -128,3 +128,29 @@ summary:hover{padding-left:4px}
 .btn{transition:background .2s,color .2s}.btn:hover{box-shadow:6px 6px 0 var(--r);background:var(--r)}.btn.red:hover{background:var(--k);box-shadow:6px 6px 0 var(--k)}
 .group,.hero h1 .l3{transform:none}
 .joinb{clip-path:none}
+/* v10 top layout */
+body.top{padding:0}
+.orn{height:34px;background:var(--k);background-image:linear-gradient(135deg,var(--r) 25%,transparent 25%),linear-gradient(225deg,var(--r) 25%,transparent 25%),linear-gradient(45deg,var(--g) 25%,transparent 25%),linear-gradient(315deg,var(--g) 25%,transparent 25%);background-size:34px 34px;background-position:0 0,0 0,0 0,0 0;border-bottom:4px solid var(--k)}
+.plate{display:flex;align-items:center;gap:22px;padding:22px 5vw;background:var(--p);border-bottom:4px solid var(--k);position:relative;z-index:2}
+.plate img{height:104px;display:block}
+.os{font:700 12px Unbounded;letter-spacing:.2em;text-transform:uppercase;color:var(--r)}
+.pf{font:700 15px Manrope;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.pn{font:900 clamp(26px,4.4vw,58px)/1 Unbounded;text-transform:uppercase;letter-spacing:-.02em}
+.plate .pj{margin-left:auto}
+.tmenu{display:flex;flex-wrap:wrap;background:var(--k);position:sticky;top:0;z-index:50}
+.tmenu a{color:var(--p);text-decoration:none;font:700 13px Unbounded;text-transform:uppercase;letter-spacing:.05em;padding:16px 22px;border-right:1px solid #ffffff22;transition:background .2s}
+.tmenu a:hover{background:#2a2622}.tmenu a.on{background:var(--r)}
+.trio{padding:60px 5vw 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:4vw;max-width:1200px;margin:auto;text-align:center}
+.tri{position:relative;aspect-ratio:1/0.88;background:var(--k);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.tri:after{content:"";position:absolute;inset:7px;clip-path:polygon(50% 0,100% 100%,0 100%);background:var(--p)}
+.tri .ph{position:absolute;inset:14px;clip-path:polygon(50% 0,100% 100%,0 100%);z-index:1;background:var(--r) center/cover no-repeat}
+.tri .ph.none{background:var(--r) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='52' r='14' fill='%23141210'/%3E%3Cpath d='M22 100c0-20 12-30 28-30s28 10 28 30z' fill='%23141210'/%3E%3C/svg%3E") center 70%/70% no-repeat}
+.tri-cap h3{font-size:clamp(14px,1.5vw,20px);margin:16px 0 4px}.tri-cap .role{display:block}
+.trio-sl{text-align:center;font:900 clamp(26px,4.6vw,64px)/1.05 Unbounded;text-transform:uppercase;padding:30px 5vw 60px;letter-spacing:-.02em}
+.trio-sl span{color:var(--r)}
+.hero .no{display:none}
+@media(max-width:900px){body.top{padding-top:0}.plate{flex-wrap:wrap;gap:14px;padding:16px 5vw}.plate img{height:64px}.plate .pj{display:none}
+.burger{display:block;margin-left:auto;color:var(--k);font-size:30px;background:none;border:0}
+.tmenu{display:none;flex-direction:column}.tmenu.open{display:flex}.tmenu a{border-right:0;border-bottom:1px solid #ffffff22}
+.trio{grid-template-columns:repeat(3,1fr);gap:10px;padding:30px 4vw 10px}.tri-cap h3{font-size:11px}.tri-cap .role{font-size:9px}.trio-sl{font-size:7vw;padding:20px 5vw 40px}}
+.btn{white-space:nowrap}

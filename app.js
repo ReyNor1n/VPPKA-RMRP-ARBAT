@@ -21,8 +21,9 @@ const rows=()=>`<div class="rows">${C.about.goals.map(g=>`<div class="row fade">
 const mos=full=>`<div class="mos">${C.program.sections.map(s=>`<div class="tile fade"><span class="rn">${esc(s.title.split('.')[0])}</span><h3>${esc(strip(s.title))}</h3>${full?`<ul>${s.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:`<p>${esc(s.items[0]||'')}</p>`}</div>`).join('')}</div>`;
 const joinB=()=>`<div class="joinb fade"><div><h2>Вступай<br>в ряды</h2></div><div><p>${esc(S.slogan)} Заполни анкету — и стань частью новой политической силы Арбата.</p><a class="btn" ${J()}>Подать заявку ↗</a></div></div>`;
 const head=(n,k,t)=>`<div class="page"><span class="kick">${n} / ${k}</span><h1>${t}</h1>`;
+const trio=()=>{const t=C.home.trio||C.leadership.members.slice(0,3);const sl=esc(C.home.trioSlogan||S.slogan).replace(/!/g,'<span>!</span>');return `<div class="trio">${t.slice(0,3).map(m=>`<div><div class="tri"><div class="ph${m.photo?'':' none'}" ${m.photo?`style="background-image:url('${esc(m.photo)}')"`:''}></div></div><div class="tri-cap"><h3>${esc(m.name)}</h3><span class="role">${esc(m.role)}</span></div></div>`).join('')}</div><div class="trio-sl">${sl}</div>`};
 const P={
-home(){const w=C.home.heroTitle.split(' ');return `<div class="hero"><div class="wedge"></div><div class="bar"></div><div class="disk"></div><img class="emb" src="${esc(S.logo)}" alt="Герб">
+home(){const w=C.home.heroTitle.split(' ');return trio()+`<div class="hero"><div class="wedge"></div><div class="bar"></div><div class="disk"></div><img class="emb" src="${esc(S.logo)}" alt="Герб">
 <div class="txt"><span class="no">№ 00 — ${esc(S.server)}</span><h1>${esc(w[0])}<span class="l2">${esc(w.slice(1).join(' '))}</span><span class="l3">${esc(S.short)} · 2026</span></h1><p>${esc(C.home.heroText)}</p>
 <div class="cta"><a class="btn red" ${J()}>Вступить в партию ↗</a><a class="btn line" href="#program">Программа →</a></div>
 <div class="figs">${C.home.stats.map(s=>`<div><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join('')}</div></div></div>${marq()}
