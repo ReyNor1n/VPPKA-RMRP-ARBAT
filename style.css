@@ -107,7 +107,7 @@ html,body{overflow-x:hidden}body{font-size:16px;background-size:28px 28px}body:a
 .hd{position:sticky;top:0;z-index:40;background:#07080bf2;border-bottom:1px solid var(--ln);box-shadow:0 1px 0 #ff2a3a55}
 .hd .w{height:60px;padding-top:0;padding-bottom:0;gap:10px}.hd img{height:38px;filter:none}
 .hd .os{display:none}.hd .nm{font-size:15px;line-height:1.15;text-shadow:none;max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hd .rt{display:flex;align-items:center;margin-left:auto}.authlink{display:none!important}
+.hd .rt{display:flex;align-items:center;margin-left:auto}.authlink{display:inline-flex!important;align-items:center;white-space:nowrap;min-height:40px;padding:0 10px;margin-right:6px;font-size:11px;border:1px solid currentColor;border-radius:4px;max-width:28vw;overflow:hidden;text-overflow:ellipsis}
 .hd .rt .btn{padding:0 12px;min-height:40px;line-height:40px;font-size:11px}
 .burger{display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;margin-left:6px;font-size:22px;color:#fff;border-color:var(--red)}
 .nav{display:none;position:fixed;top:60px;left:0;right:0;max-height:calc(100vh - 60px);overflow-y:auto;z-index:39;background:#07080b;backdrop-filter:none;border-top:0}
@@ -149,3 +149,5 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 @media(max-width:380px){.hd .nm{max-width:none;font-size:13px}}
 #installBtn{position:fixed;right:14px;bottom:14px;z-index:90;background:#0e1117e6;color:var(--cy);border:1px solid var(--cy);padding:9px 14px;font:12px "Russo One";letter-spacing:.05em;text-transform:uppercase;cursor:pointer;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);box-shadow:0 0 12px #38e1ff33}#installBtn:hover{background:#38e1ff22}#installBtn[hidden]{display:none}
 #apkBtn{position:fixed;right:14px;bottom:60px;z-index:90;background:#0e1117e6;color:var(--cy);border:1px solid var(--cy);padding:9px 14px;font:12px "Russo One";letter-spacing:.05em;text-transform:uppercase;text-decoration:none;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+
+@media(max-width:768px){.hd .rt .join-link{display:none!important}}
