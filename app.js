@@ -85,7 +85,7 @@ contacts(){const c=C.contacts;return pg('contacts',`<h1>Контакты</h1><di
 window.P=P;window.route=route;
 function route(){const [k,id,from]=(location.hash.slice(1)||'home').split('/');const key=P[k]?k:'home';const navKey=key==='member'&&from==='home'?'home':key==='member'?((MEM().find(x=>x.id===id)||{}).group===PG?'party':'leadership'):key;const _q=document.getElementById('pm-q'),_qv=_q&&_q.value;app.innerHTML=P[key](id,from);if(_qv&&key==='party'){const q2=document.getElementById('pm-q');q2.value=_qv;VPPKA_PQ(_qv)}menu.classList.remove('open');
 document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+navKey));scrollTo(0,0);}
-;(function(){if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{}));
+;(function(){if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{scope:'./',updateViaCache:'none'}).then(r=>{window.VPPKA_SWREG=r;r.update().catch(()=>{})}).catch(()=>{}));
 if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;if(/VPPKA-App/.test(navigator.userAgent))return;
 if(/android/i.test(navigator.userAgent)){const a=document.createElement('a');a.id='apkBtn';a.href='https://github.com/ReyNor1n/VPPKA-RMRP-ARBAT/releases/download/apk-v1/vppka.apk';a.textContent='📱 Скачать APK';document.body.appendChild(a)}
 if(/windows/i.test(navigator.userAgent)&&!/VPPKA-Desktop|Electron/.test(navigator.userAgent)){const w=document.createElement('a');w.id='winBtn';w.href='https://github.com/ReyNor1n/VPPKA-RMRP-ARBAT/releases/download/win-v1/VPPKA-Arbat-Setup-1.0.0.exe';w.textContent='💻 Скачать для Windows';document.body.appendChild(w)}
@@ -103,3 +103,14 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
  const d=document.createElement('div');d.className='ntoast';d.innerHTML=`<b>📰 Новая новость</b><a href="#news/${n.id}">${esc(n.title)}</a><button aria-label="Закрыть">×</button>`;
  const done=()=>{localStorage.setItem(K,String(n.id));d.remove()};d.querySelector('a').onclick=done;d.querySelector('button').onclick=done;document.body.appendChild(d)}
  setInterval(chk,2000)})();
+
+// --- Автообновление после каждого деплоя (без Ctrl+F5) ---
+(function(){let ver=null,pending=false,had=!!(navigator.serviceWorker&&navigator.serviceWorker.controller);
+ const typing=()=>{const e=document.activeElement;return !!e&&(/^(TEXTAREA|SELECT)$/.test(e.tagName)||(e.tagName==='INPUT'&&!/^(button|submit|checkbox|radio)$/i.test(e.type))||e.isContentEditable)&&!!(e.value||e.textContent)};
+ const go=()=>{const k='vppka-reload-at',t=+sessionStorage.getItem(k)||0;if(Date.now()-t<15000)return;sessionStorage.setItem(k,Date.now());location.reload()};
+ function toast(){if(document.getElementById('upd-t'))return;const d=document.createElement('div');d.id='upd-t';d.className='ntoast';d.innerHTML='<b>Сайт обновлён</b><a href="#" id="upd-r">Обновить страницу</a><button aria-label="Закрыть">×</button>';d.querySelector('#upd-r').onclick=e=>{e.preventDefault();go()};d.querySelector('button').onclick=()=>d.remove();document.body.appendChild(d)}
+ function apply(){if(typing()){pending=true;toast();return}go()}
+ document.addEventListener('focusout',()=>setTimeout(()=>{if(pending&&!typing())go()},300));
+ if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had)apply();had=true});
+ async function chk(){try{const r=window.VPPKA_SWREG;r&&r.update().catch(()=>{});const j=await (await fetch('version.json?t='+Date.now(),{cache:'no-store'})).json();if(ver===null)ver=j.v;else if(j.v!==ver){ver=j.v;r&&r.update().catch(()=>{});setTimeout(apply,1500)}}catch(e){}}
+ chk();setInterval(chk,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});addEventListener('focus',chk)})();

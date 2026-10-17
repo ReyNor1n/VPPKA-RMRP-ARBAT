@@ -40,3 +40,6 @@
 - Новости (`news`) и состав (`members`, числовой `rank`) — публичное чтение; правка по правилам. Пока коллекции пусты, сайт показывает content.json.
 - Служебные скрипты (`tools/`, Node 20): `create-keymaster.mjs`, `add-key.mjs`, `revoke-key.mjs`, `restore-key.mjs`, `list-keys.mjs`, `migrate.mjs`. Пароль keymaster хранится только в `/workspace/.vppka-keymaster`, не в репозитории.
 - Правила: `firestore.rules` → консоль Firebase → Firestore → Rules → Publish.
+
+## Деплой
+Перед каждым коммитом: `node tools/bump.mjs` — унифицирует ?v=, повышает CACHE в sw.js и пишет version.json (сайт и PWA обновятся у всех сами в течение ~1 мин).
