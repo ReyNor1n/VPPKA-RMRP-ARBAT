@@ -140,12 +140,12 @@ service cloud.firestore {
     match /members/{id} {
       function validMember(d) {
         return d.keys().hasOnly(['name','role','group','photo','bio','quote','joined','birth','city','achievements',
-                                 'discord','forum','contact','rank','order','updatedBy','updatedAt'])
+                                 'discord','forum','contact','rank','order','updatedBy','updatedAt','discordId'])
           && reqStr(d, 'name', 100) && optStr(d, 'role', 120) && optStr(d, 'group', 80)
           && optStr(d, 'photo', 900000) && optStr(d, 'bio', 5000) && optStr(d, 'quote', 500)
           && optStr(d, 'joined', 60) && optStr(d, 'birth', 60) && optStr(d, 'city', 100)
           && optStr(d, 'achievements', 5000) && optStr(d, 'discord', 200) && optStr(d, 'forum', 300)
-          && optStr(d, 'contact', 200)
+          && optStr(d, 'contact', 200) && optStr(d, 'discordId', 64)
           && d.get('rank', -1) is int && d.rank >= 0
           && (!('order' in d) || d.order is int)
           && (!('updatedBy' in d) || d.updatedBy == request.auth.uid);
@@ -157,7 +157,12 @@ service cloud.firestore {
         && validMember(request.resource.data) && request.resource.data.rank < myRank()
         // председатель: только правка полей, ранг менять нельзя, удалять нельзя
         || (resource.data.rank == 100 && canChair()
-            && validMember(request.resource.data) && request.resource.data.rank == resource.data.rank);
+            && validMember(request.resource.data) && request.resource.data.rank == resource.data.rank)
+        // автофото: владелец привязанной записи (discordId совпадает, ключ действителен) меняет только своё фото
+        || (signedIn() && keyRank() >= 1 && resource.data.get('discordId', '') != ''
+            && request.auth.token.email == resource.data.discordId + '@vppka.local'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photo','updatedBy','updatedAt'])
+            && validMember(request.resource.data));
       allow delete: if resource.data.rank < myRank();
     }
 

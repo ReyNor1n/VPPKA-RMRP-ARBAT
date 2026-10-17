@@ -44,7 +44,7 @@ async function init(){
   if(id==='k-rm'){await F.updateDoc(F.doc(db,'users',user.uid),{keyHash:F.deleteField(),rank:F.deleteField(),roleName:F.deleteField()});delete profile.keyHash;delete profile.rank;delete profile.roleName;await refreshPower();route();}
   if(id==='p-go'||id==='p-rm'){const pe=t=>{const e=document.getElementById('p-e');if(e)e.textContent=t};let ph=null;
    if(id==='p-go'){try{ph=await photoData(document.getElementById('p-ph').files[0]);}catch(e){return pe(e.message)}if(!ph)return pe('Выберите файл.');}
-   ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{photo:ph?ph:F.deleteField()});if(ph)profile.photo=ph;else delete profile.photo;route();}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает фото (правила базы не обновлены).':em(e));}return;}
+   ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{photo:ph?ph:F.deleteField()});if(ph)profile.photo=ph;else delete profile.photo;route();if(ph&&power.rank>0)syncPhoto().catch(e=>console.warn('автофото',e.code||e));}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает фото (правила базы не обновлены).':em(e));}return;}
   if(id==='a-out'){await A.signOut(auth);location.hash='#home';}
   }catch(e){err(em(e));ev.target.disabled=false;}
  });
@@ -67,8 +67,12 @@ async function init(){
  // Живая проверка полномочий: владелец (config/owners) или действующий ключ, привязанный к этому Discord
  async function refreshPower(){power={rank:0,roleName:''};if(!user)return;
   try{const o=await F.getDoc(F.doc(db,'config','owners'));if(o.exists()&&(o.data().uids||[]).includes(user.uid)){power={rank:1000,roleName:'Владелец',members:true};return;}}catch(e){}
-  const h=profile&&profile.keyHash;if(!h)return;try{const s=await F.getDoc(F.doc(db,'accessKeys',h));const x=s.exists()&&s.data();if(x&&!x.revoked&&x.discordId===profile.discordId&&user.email===profile.discordId+'@vppka.local')power={rank:x.rank,roleName:x.roleName,chair:x.canEditChairman===true,members:x.canViewMembers===true};}catch(e){}}
- await loadData();route();import('./panel.js?v=23').then(m=>m.install()).catch(e=>console.error('panel',e));
+  const h=profile&&profile.keyHash;if(!h)return;try{const s=await F.getDoc(F.doc(db,'accessKeys',h));const x=s.exists()&&s.data();if(x&&!x.revoked&&x.discordId===profile.discordId&&user.email===profile.discordId+'@vppka.local')power={rank:x.rank,roleName:x.roleName,chair:x.canEditChairman===true,members:x.canViewMembers===true};}catch(e){}
+  if(power.rank>0)syncPhoto().catch(e=>console.warn('автофото',e.code||e));}
+ // Автофото: фото из профиля копируется в запись руководства с тем же discordId
+ async function syncPhoto(){const ph=profile&&profile.photo;if(!ph||!profile.discordId)return;const s=await F.getDocs(F.query(F.collection(db,'members'),F.where('discordId','==',profile.discordId)));let ch=false;
+  for(const d of s.docs){if(d.data().photo!==ph){await F.updateDoc(d.ref,{photo:ph,updatedBy:user.uid,updatedAt:F.serverTimestamp()});ch=true;}}if(ch&&window.VPPKA_RELOAD)window.VPPKA_RELOAD();}
+ await loadData();route();import('./panel.js?v=24').then(m=>m.install()).catch(e=>console.error('panel',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;}catch(e){console.warn(e)}}await refreshPower();
   if(link){link.style.display='';link.textContent=u?((profile&&profile.displayName)||'Кабинет'):'Войти';link.href=u?'#account':'#login';}
