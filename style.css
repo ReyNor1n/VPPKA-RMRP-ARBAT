@@ -318,3 +318,7 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .adm-bar{display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 16px}
 .aqcard{cursor:pointer}.aq-b{display:flex;flex-direction:column;gap:6px;margin-top:10px;width:100%}.aq-b .btn{width:100%;padding-left:6px;padding-right:6px;font-size:11px}
 .aq-hl{outline:2px solid var(--gold,#e0b04a);outline-offset:4px;transition:outline .3s}
+.phc{margin-top:18px;padding-top:14px;border-top:1px solid var(--ln,#222)}.phc-h{margin:0 0 8px;font-size:14px;letter-spacing:.3px}
+.phc-row{display:flex;gap:12px;align-items:center}.phc-pv{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--ln,#333);flex:none}
+.phc-ctl{display:flex;flex-direction:column;gap:6px;min-width:0}.phc-btns{display:flex;gap:6px;flex-wrap:wrap}.phc-btns .btn{padding:6px 10px;font-size:11px;margin:0}
+.phc-hint{color:var(--mut,#888);font-size:11px;line-height:1.35}.phc-hint span:empty{display:none}
