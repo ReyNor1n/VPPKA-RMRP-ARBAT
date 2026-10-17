@@ -286,3 +286,5 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .hnote .hn-del{top:50%;right:8px;transform:translateY(-50%)}
 .intro h1{font-size:clamp(17px,2.2vw,24px);line-height:1.3}
 .hnote .hn-it .hn-a{font:12px Oxanium,sans-serif;color:#b9a27a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hnote .hn-it{height:auto;min-height:128px}
+
+.ch-push{padding:8px 12px;border-bottom:1px solid var(--ln);font-size:12.5px;color:var(--mut);display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ch-pbtn{padding:6px 12px;font-size:13px}

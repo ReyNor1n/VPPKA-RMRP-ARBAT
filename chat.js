@@ -43,7 +43,7 @@ function els(){let b=document.getElementById('chBtn'),p=document.getElementById(
  if(!p){p=document.createElement('div');p.id='chPanel';p.className='ch-p';p.hidden=true;document.body.appendChild(p);
   p.addEventListener('click',e=>{const x=e.target.closest('[data-a]');if(!x)return;const a=x.dataset.a;
    if(a==='close'){open=false;paint()}else if(a==='new'){view='new';q='';paint();setTimeout(()=>{const i=document.getElementById('ch-q');i&&i.focus()},30)}
-   else if(a==='back'){if(msub)msub();msub=null;cur=null;view='list';paint()}else if(a==='open')openConv(x.dataset.u);else if(a==='send')send()});
+   else if(a==='back'){if(msub)msub();msub=null;cur=null;view='list';paint()}else if(a==='open')openConv(x.dataset.u);else if(a==='send')send();else if(a==='push')pushOn()});
   p.addEventListener('input',e=>{if(e.target.id==='ch-q'){q=e.target.value;paintPeople()}if(e.target.id==='ch-in'&&cur){draft[cur.id]=e.target.value;const c=document.getElementById('ch-cnt');if(c){const n=e.target.value.length;c.textContent=n>MAX-200?n+'/'+MAX:'';c.classList.toggle('over',n>MAX)}}});
   p.addEventListener('keydown',e=>{if(e.target.id==='ch-in'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}if(e.key==='Escape'){open=false;paint()}})}
  return {b,p}}
@@ -60,7 +60,7 @@ function paint(msgOnly){if(!me){const b=document.getElementById('chBtn'),p=docum
   const m=document.getElementById('ch-msgs');m.scrollTop=m.scrollHeight;return}
  if(view==='new'){if(p.dataset.v==='new'){paintPeople();return}p.dataset.v='new';p.innerHTML=`<div class="ch-hd"><button class="ch-ib" data-a="back" aria-label="Назад">‹</button><span class="ch-tt">Новый чат</span><button class="ch-ib" data-a="close" aria-label="Закрыть">×</button></div><div class="ch-s"><input id="ch-q" placeholder="Поиск по имени или Discord" value="${esc(q)}"></div><div class="ch-list" id="ch-pl"></div>`;paintPeople();return}
  p.dataset.v='list';const L=Object.values(chats).sort((a,b)=>ms(b.updatedAt)-ms(a.updatedAt));
- p.innerHTML=`<div class="ch-hd"><span class="ch-tt">Сообщения</span><button class="ch-ib ch-plus" data-a="new" aria-label="Новый чат" title="Новый чат">＋</button><button class="ch-ib" data-a="close" aria-label="Закрыть">×</button></div><div class="ch-list">${L.map(c=>{const u=other(c),o=person(u,c),k=(c.unread||{})[me]||0,lm=c.lastMessage||{};
+ p.innerHTML=`<div class="ch-hd"><span class="ch-tt">Сообщения</span><button class="ch-ib ch-plus" data-a="new" aria-label="Новый чат" title="Новый чат">＋</button><button class="ch-ib" data-a="close" aria-label="Закрыть">×</button></div>${pushBar()}<div class="ch-list">${L.map(c=>{const u=other(c),o=person(u,c),k=(c.unread||{})[me]||0,lm=c.lastMessage||{};
   return `<button class="ch-row${k?' unr':''}" data-a="open" data-u="${esc(u)}">${av(o)}<span class="ch-rt"><span class="ch-nm">${esc(o.n)}<span class="ch-tm">${esc(ft(c.updatedAt))}</span></span><span class="ch-lm">${lm.from===me?'Вы: ':''}${esc(lm.text||'')}${k?`<span class="ch-k">${k}</span>`:''}</span></span></button>`}).join('')||'<p class="ch-empty">Чатов пока нет.<br><button class="btn o" data-a="new">Начать чат</button></p>'}</div>`}
 function msgHtml(){if(!chats[cur.id])return '<p class="ch-empty">Напишите первое сообщение.</p>';let last='';
  return msgs.map(m=>{const d=m.at?.toDate?.(),day=d?d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'';const sep=day&&day!==last?`<div class="ch-day">${esc(day)}</div>`:'';last=day||last;
@@ -70,9 +70,29 @@ const uidByDid=did=>did&&Object.keys(pub).find(u=>pub[u].did===String(did));
 function hookPages(){const P=window.P;if(!P||P.__ch)return;P.__ch=1;const om=P.member,op=P.party;const MEM=()=>(window.VPPKA_DATA&&window.VPPKA_DATA.members)||(window.VPPKA_C&&window.VPPKA_C().leadership.members)||[];
  P.member=(id,from)=>{const h=om(id,from);const m=MEM().find(x=>x.id===id),u=me&&m&&uidByDid(m.discordId);return u&&u!==me?h.replace(/(<div class="prof-r">[\s\S]*?<\/div>)/,`$1<button class="btn ch-write" onclick="VPPKA_CHAT.open('${esc(u)}')">✉ Написать</button>`):h};
  P.party=(...a)=>{let h=op(...a);if(!me)return h;return h.replace(/<a class="pm-card" href="#member\/([^"]*)"([^>]*)>/g,(s,id)=>{const m=MEM().find(x=>x.id===id),u=m&&uidByDid(m.discordId);return u&&u!==me?s+`<button class="ch-w" title="Написать" aria-label="Написать" onclick="event.preventDefault();event.stopPropagation();VPPKA_CHAT.open('${esc(u)}')">✉</button>`:s})}}
+
+// ---------- Push-уведомления (Web Push, VAPID): pushSubs/{uid}, рассылает служба на сервере ----------
+const VAPID='BIfgn4PZruBuQrwMaZEpJS9DYi-9f8W3f9kkiqqtm9JHz7dkwnVaMeuxTOqD_-MmbGzdOyJOjB9hnCiJGrOEzLA';
+const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const isIOS=()=>/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+let pushState='';
+function pushBar(){if(!pushOk())return isIOS()&&!standalone()?'<div class="ch-push">🔔 Чтобы получать уведомления на iPhone, добавьте сайт на экран «Домой» (Поделиться → «На экран Домой») и откройте его оттуда.</div>':'';
+ if(Notification.permission==='denied')return '<div class="ch-push">🔕 Уведомления запрещены в настройках браузера для этого сайта.</div>';
+ if(Notification.permission==='granted'&&pushState==='on')return '';
+ return `<div class="ch-push"><button class="btn ch-pbtn" data-a="push">🔔 Включить уведомления</button>${pushState==='err'?'<span>Не получилось, попробуйте ещё раз.</span>':''}</div>`}
+const b64=s=>{const p='='.repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(r,c=>c.charCodeAt(0))};
+async function saveSub(sub){const j=sub.toJSON();await F().setDoc(F().doc(db(),'pushSubs',me),{subs:{[sha(j.endpoint)]:{endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,ua:navigator.userAgent.slice(0,120)}},t:F().serverTimestamp()},{merge:true})}
+const sha=s=>{let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return 'e'+(h>>>0).toString(36)};
+async function pushOn(){try{if(await Notification.requestPermission()!=='granted'){paintList();return}const r=await navigator.serviceWorker.ready;
+ let sub=await r.pushManager.getSubscription();if(!sub)sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(VAPID)});await saveSub(sub);pushState='on'}catch(e){console.warn('push',e);pushState='err'}paintList()}
+function paintList(){const p=document.getElementById('chPanel');if(p&&view==='list'){p.dataset.v='';paint()}}
+async function pushSync(){if(!pushOk()||Notification.permission!=='granted')return;try{const r=await navigator.serviceWorker.ready,sub=await r.pushManager.getSubscription();if(sub){await saveSub(sub);pushState='on';paintList()}}catch(e){console.warn('push sync',e.code||e)}}
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.t==='openChat'&&e.data.u)openConv(e.data.u)});
+function hashChat(){const m=location.hash.match(/^#chat\/(.+)$/);if(m&&me){history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>openConv(m[1]),800)}}
 window.VPPKA_CHAT={open:openConv};
 let pubKey='';
 export function install(){let key='';const tick=()=>{const fb=FB();if(!fb||!fb.F)return;hookPages();const u=fb.user,k=u?u.uid+':'+!!(fb.power||{}).owner:'';
- if(k!==key){key=k;stop();me=u?u.uid:null;isOwn=!!(fb.power||{}).owner;if(me)start();paint()}
+ if(k!==key){key=k;stop();me=u?u.uid:null;isOwn=!!(fb.power||{}).owner;if(me){start();pushSync();hashChat()}paint()}
  const pf=(window.VPPKA_AUTH||{}).profile,pk=pf?(pf.displayName||'')+(pf.photo||'').length:'';if(me&&pk!==pubKey&&Object.keys(pub).length){pubKey=pk;pubSelf()}};
  tick();setInterval(tick,1000)}

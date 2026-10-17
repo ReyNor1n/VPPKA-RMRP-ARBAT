@@ -285,7 +285,7 @@ service cloud.firestore {
       function okLast(d) { return d.lastMessage is map && d.lastMessage.keys().hasOnly(['text','from','at'])
         && d.lastMessage.text is string && d.lastMessage.text.size() <= 2000
         && d.lastMessage.from == request.auth.uid && d.lastMessage.at == request.time; }
-      allow read: if isPart();
+      allow read: if isPart() || (signedIn() && request.auth.uid == 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2');
       allow create: if signedIn() && request.resource.data.keys().hasOnly(['participants','createdBy','updatedAt','lastMessage','unread','names'])
         && request.resource.data.participants is list && request.resource.data.participants.size() == 2
         && request.auth.uid in request.resource.data.participants
@@ -313,6 +313,14 @@ service cloud.firestore {
           && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000;
         allow update, delete: if false;
       }
+    }
+
+    // pushSubs/{uid}: подписки на push-уведомления; пишет только владелец, читает только служебный аккаунт
+    match /pushSubs/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || request.auth.uid == 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2');
+      allow create, update: if signedIn() && (request.auth.uid == uid || (request.method == 'update' && request.auth.uid == 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2')) && request.resource.data.keys().hasOnly(['subs','t'])
+        && request.resource.data.subs is map && request.resource.data.subs.size() <= 10;
+      allow delete: if signedIn() && (request.auth.uid == uid || request.auth.uid == 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2');
     }
 
     match /{document=**} { allow read, write: if false; }
