@@ -36,7 +36,7 @@ function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m
  <div class="kp-w"><p class="aerr" id="pmsg"></p><button class="btn" id="pm-save">${m.id?'Сохранить':'Добавить в состав'}</button>${editMem?' <button class="btn o" id="pm-cancel">Отмена</button>':''}</div></div>
  ${D().members?`<h3>Руководство (доступные вам)</h3><table class="tbl">${low.map(x=>`<tr><td>${esc(x.name)}<br><small>${esc(x.role)}</small></td><td>ур. ${x.rank??0} · ступ. ${mt(x)}</td><td class="kp-a">${isCh(x)?`<button class="btn sm o" data-me="${esc(x.id)}">Изменить</button>`:`<button class="btn sm o" data-mu="${esc(x.id)}" title="Повысить">▲</button> <button class="btn sm o" data-md="${esc(x.id)}" title="Понизить">▼</button> <button class="btn sm o" data-me="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-mx="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')||'<tr><td>Нет участников ниже вашего уровня.</td></tr>'}</table>`:'<p class="amut">Состав пока берётся из content.json; после переноса в базу его можно будет править здесь.</p>'}</div>`;}
 
-window.VPPKA_APPS_RESET=()=>{apps=null};
+window.VPPKA_APPS_RESET=()=>{apps=null};window.VPPKA_ROSTER_SYNC=()=>rosterSync();
 function appsPage(){const c=`<div class="crumbs"><a href="#home">Главная</a> / Заявки в партию</div>`;
  if(rank()<1)return c+`<div class="pg"><h1>Нет доступа</h1><p>Раздел доступен только обладателям действующего ключа.</p></div>`;
  if(!apps){loadApps();return c+`<div class="pg"><h1>Заявки в партию</h1><p>Загрузка…</p></div>`;}

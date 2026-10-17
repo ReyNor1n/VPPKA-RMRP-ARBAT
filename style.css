@@ -227,3 +227,5 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .nb-p[hidden]{display:none}
 
 .nb-strike{text-decoration:line-through;color:#777}.nb-cancel{color:#777}.nb-cr{color:#e57373!important}.nb-cx{align-self:flex-start;margin-top:4px;padding:3px 8px!important;font-size:10px!important}
+
+.nb-acts{display:flex;gap:6px;margin-top:5px}.nb-acts .btn{padding:3px 9px!important;font-size:10px!important;min-height:0!important;line-height:1.4!important}
