@@ -322,3 +322,11 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .phc-row{display:flex;gap:12px;align-items:center}.phc-pv{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--ln,#333);flex:none}
 .phc-ctl{display:flex;flex-direction:column;gap:6px;min-width:0}.phc-btns{display:flex;gap:6px;flex-wrap:wrap}.phc-btns .btn{padding:6px 10px;font-size:11px;margin:0}
 .phc-hint{color:var(--mut,#888);font-size:11px;line-height:1.35}.phc-hint span:empty{display:none}
+/* шапка профиля в кабинете: баннер + аватар поверх левого нижнего угла */
+.phead{position:relative;margin:4px 0 96px}.phead.noav{margin-bottom:18px}
+.phead-bn{position:relative;width:100%;aspect-ratio:16/6;max-height:320px;min-height:150px;border-radius:10px;overflow:hidden;background:radial-gradient(120% 140% at 80% 0%,#5a0f0f 0%,#1a0c0c 55%,#0b0d12 100%);border:1px solid var(--line,#2a2f3a)}
+.phead-bn .vbanner{position:absolute;inset:0;margin:0;aspect-ratio:auto;max-height:none;min-height:0;border-radius:0;height:100%}
+.phead .phacc{position:absolute;left:20px;bottom:-80px;float:none;width:200px;height:200px;aspect-ratio:auto;max-width:none;margin:0;border-radius:12px;border:3px solid #0d0f14;box-shadow:0 8px 24px #000a;object-fit:cover;z-index:2}
+@media(max-width:700px){.phead{margin-bottom:76px}.phead-bn{max-height:200px}.phead .phacc{width:140px;height:140px;left:14px;bottom:-62px}}
+.vbanner{aspect-ratio:16/6;max-height:320px}@media(max-width:700px){.vbanner{aspect-ratio:16/6;max-height:200px}}
+.auth:has(.phead){max-width:900px}
