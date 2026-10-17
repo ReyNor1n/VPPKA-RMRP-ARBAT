@@ -73,6 +73,11 @@ service cloud.firestore {
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['keyHash','rank','roleName'])
             || validKey(request.resource.data));
       allow delete: if signedIn() && request.auth.uid == uid;
+      // удаление гостя: владелец или ступень 5; нельзя удалять держателей ключей, владельцев и служебный аккаунт
+      allow delete: if signedIn() && (isOwner() || myTier() >= 5)
+        && request.auth.uid != uid && uid != 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2'
+        && resource.data.get('keyHash', '') == ''
+        && !(uid in get(/databases/$(database)/documents/config/owners).data.uids);
     }
 
     // ---------- ключи доступа: id = sha256(ключ) hex; ключ привязан к одному discordId ----------
@@ -177,6 +182,9 @@ service cloud.firestore {
       function relayOk() { return isOwner() && aChanged().hasOnly(['discordPostedAt','discordMessageId','discordDecision']) && optStr(request.resource.data, 'discordMessageId', 32) && optStr(request.resource.data, 'discordDecision', 40); }
       allow update: if reviewOk() || rankOk() || relayOk();
       allow delete: if myRank() >= 100;
+      // заявки удаляемого гостя: только новые/отклонённые, у заявителя нет ключа
+      allow delete: if signedIn() && (isOwner() || myTier() >= 5)
+        && resource.data.status in ['new','rejected'] && targetTier() == 0;
     }
 
     // ---------- новости ----------

@@ -6,7 +6,7 @@ const STATUS={new:'Новая',accepted:'Принята',rejected:'Отклон�
 const AQ=[['fio','ФИО'],['passport','Паспорт'],['discord','Discord'],['source','Откуда узнали'],['reason','Почему наша партия'],['bio','Биография']];
 const MFIELDS=[['name','Имя *'],['role','Должность'],['group','Партийный орган'],['joined','Дата вступления'],['birth','Возраст / дата рождения'],['city','Город / район'],['discord','Discord'],['forum','Форум'],['quote','Цитата'],['bio','Биография','ta'],['achievements','Достижения','ta']];
 let apps=null,editNews=null,editMem=null;
-const msg=t=>{const e=document.getElementById('pmsg');if(e)e.textContent=t};
+const msg=t=>{const e=document.getElementById('pmsg');if(e)e.textContent=t;else alert(t)};
 const PR=['Кандидат','Член партии','Активист','Старший член партии','Ветеран партии','Почётный член партии'];const prn=r=>PR[r]||('Звание '+r);
 // фото для новостей: до 1000px, JPEG q≈0.88 ≤ ~190 КБ (в документе до 4 фото, лимит Firestore 1 МБ)
 function smallJpeg(f){return new Promise((res,rej)=>{if(!/^image\//.test(f.type))return rej(new Error('Не изображение: '+f.name));const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{let s=1000,q=.88,u='';for(let i=0;i<10;i++){const k=Math.min(1,s/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);u=c.toDataURL('image/jpeg',q);if(u.length<=190000)return res(u);if(q>.55)q=Math.max(.55,+(q-.08).toFixed(2));else s=Math.round(s*.8);}rej(new Error('Фото слишком большое: '+f.name))};im.onerror=()=>rej(new Error('Не удалось открыть '+f.name));im.src=r.result};r.readAsDataURL(f)});}
@@ -77,10 +77,16 @@ function guests(){const mem=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||(win
    &&!apps.some(a=>acc(a)&&((a.uid&&a.uid===u.uid)||(a.discordId&&a.discordId===u.discordId))))
   .map(u=>{const my=apps.filter(a=>(a.uid&&a.uid===u.uid)||(a.discordId&&a.discordId===u.discordId)).sort((a,b)=>ts(b.createdAt)-ts(a.createdAt))[0];
    const st=!my?'заявка не подана':my.status==='new'?'заявка на рассмотрении':my.status==='rejected'?'заявка отклонена':'заявка: '+(STATUS[my.status]||my.status);
-   return {name:u.displayName||u.discordId||'Гость',discord:u.discordLink||u.discordId,photo:u.photo,date:fdt(u.createdAt),st,pend:my&&my.status==='new',t:ts(u.createdAt)}}).sort((a,b)=>b.t-a.t);}
+   return {name:u.displayName||u.discordId||'Гость',discord:u.discordLink||u.discordId,photo:u.photo,date:fdt(u.createdAt),st,pend:my&&my.status==='new',uid:u.uid,did:u.discordId,apps:apps.filter(a=>((a.uid&&a.uid===u.uid)||(a.discordId&&a.discordId===u.discordId))&&['new','rejected'].includes(a.status)).map(a=>a.id),t:ts(u.createdAt)}}).sort((a,b)=>b.t-a.t);}
+const gCanDel=()=>(FB().power?.rank||0)>=1000||tier()>=5;let gList=[];
+window.VPPKA_GDEL=async uid=>{const x=gList.find(g=>g.uid===uid);if(!x||!gCanDel())return;
+ if(uid===KEYMASTER||window.VPPKA_HIDDEN({uid,discordId:x.did})||(gU||[]).find(u=>u.uid===uid)?.keyHash)return msg('Этого пользователя удалять нельзя.');
+ if(!confirm(`Удалить гостя «${x.name}»?\n\nБудет удалена его запись на сайте`+(x.apps.length?` и заявки (${x.apps.length})`:'')+`. Если он снова войдёт через Discord, появится заново как новый гость.`))return;
+ const f=F(),d=db();try{for(const id of x.apps)await f.deleteDoc(f.doc(d,'applications',id));await f.deleteDoc(f.doc(d,'users',uid));msg('Гость удалён.')}
+ catch(e){msg('Не удалось удалить: '+(e.code==='permission-denied'?'нет прав (опубликуйте новые правила базы).':(e.code||e.message)))}};
 function guestBlock(){if(!canM())return '';gStart();
- if(!gU)return `<div class="blk gst"><h2>Гости</h2><p class="amut">Загрузка…</p></div>`;const g=guests();
- const card=x=>`<div class="pm-card gcard" data-q="${esc((x.name+' гость '+x.st).toLowerCase())}"><span class="pm-av${x.photo?'':' noph'}">${x.photo?`<img src="${esc(x.photo)}" alt="" loading="lazy">`:`<b>${esc(gIni(x.name))}</b>`}</span><span class="pm-n">${esc(x.name)}</span><span class="pm-r g-st${x.pend?' pend':''}">${esc(x.st)}</span>${x.discord?`<span class="pm-j g-d">${dlink(x.discord)}</span>`:''}<span class="pm-j">рег. ${esc(x.date)}</span></div>`;
+ if(!gU)return `<div class="blk gst"><h2>Гости</h2><p class="amut">Загрузка…</p></div>`;const g=guests();gList=g;
+ const card=x=>`<div class="pm-card gcard" data-q="${esc((x.name+' гость '+x.st).toLowerCase())}"><span class="pm-av${x.photo?'':' noph'}">${x.photo?`<img src="${esc(x.photo)}" alt="" loading="lazy">`:`<b>${esc(gIni(x.name))}</b>`}</span><span class="pm-n">${esc(x.name)}</span><span class="pm-r g-st${x.pend?' pend':''}">${esc(x.st)}</span>${x.discord?`<span class="pm-j g-d">${dlink(x.discord)}</span>`:''}<span class="pm-j">рег. ${esc(x.date)}</span>${gCanDel()?`<button class="g-del" onclick="VPPKA_GDEL('${esc(x.uid)}')">Удалить</button>`:''}</div>`;
  return `<div class="blk gst"><h2>Гости <span class="g-cnt">${g.length}</span></h2><p class="amut">Зарегистрировались на сайте, но пока не приняты в партию. Раздел виден только по разрешению ключа.</p><div class="pm-grid">${g.map(card).join('')||'<p class="amut">Гостей нет.</p>'}</div></div>`;}
 
 export function install(){const P=window.P,op=P.party;P.party=()=>{const h=op();const g=guestBlock();return g?h.replace(/<\/div>(\s*)$/,g+'</div>$1'):h};const on=P.news,ol=P.leadership;installAssign();
