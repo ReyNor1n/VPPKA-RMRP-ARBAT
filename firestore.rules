@@ -65,7 +65,7 @@ service cloud.firestore {
           && (!('photo' in d) || (d.photo is string && d.photo.size() <= 200000 && d.photo.matches('^data:image/jpeg;base64,.*')))
           && request.auth.token.email == d.discordId + '@vppka.local';
       }
-      allow read: if signedIn() && (request.auth.uid == uid || isOwner() || canMembers());
+      allow read: if signedIn() && (request.auth.uid == uid || isOwner() || canMembers() || myTier() >= 5);
       allow create: if signedIn() && request.auth.uid == uid && validUser(request.resource.data) && validKey(request.resource.data);
       allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo'])
@@ -184,7 +184,9 @@ service cloud.firestore {
           && d.rank < (isOwner() ? 1000 : 100);
       }
       allow create: if tierEdit(request.resource.data);
-      allow update: if resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100)
+      // назначение человека на должность (смена discordId): только владелец и ступень 5
+      function assignOk() { return request.resource.data.get('discordId', '') == resource.data.get('discordId', '') || myTier() >= 5; }
+      allow update: if assignOk() && (resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100)
         && tierEdit(request.resource.data)
         // председатель: только правка полей, ранг менять нельзя, удалять нельзя
         || (resource.data.rank == 100 && canChair()
@@ -194,7 +196,7 @@ service cloud.firestore {
         || (signedIn() && keyRank() >= 1 && resource.data.get('discordId', '') != ''
             && request.auth.token.email == resource.data.discordId + '@vppka.local'
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photo','updatedBy','updatedAt'])
-            && validMember(request.resource.data));
+            && validMember(request.resource.data)));
       allow delete: if myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100);
     }
 

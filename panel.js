@@ -61,7 +61,7 @@ async function loadMembers(){const out=[],seen=new Set();let er='';
   const t=a.reviewedAt||a.createdAt;out.push({name:x.fio,discord:x.discord,status:STATUS[a.status]+' · '+prn(a.partyRank||0)+(dup?' · есть аккаунт':''),date:fdt(t),src:'заявка',t:t?.toMillis?.()||0});});}catch(e){er+=(er?' ':'')+'Заявки: '+(e.code||e.message);}
  mlist=out.sort((a,b)=>b.t-a.t);if(location.hash==='#members'){window.route();if(er)msg(er);}}
 
-export function install(){const P=window.P,on=P.news,ol=P.leadership;
+export function install(){const P=window.P,on=P.news,ol=P.leadership;installAssign();
  P.news=id=>{const h=on(id);return id===undefined&&tier()>=4?h.replace(/<\/div>$/,newsPanel()+'</div>'):h};
  P.leadership=()=>{const h=ol();return tier()>=4||chair()?h.replace(/<\/div>$/,memPanel()+'</div>'):h};
  P.apps=appsPage;P.members=membersPage;
@@ -98,3 +98,35 @@ export function install(){const P=window.P,on=P.news,ol=P.leadership;
   }catch(e){console.error(e);b.disabled=false;msg('Ошибка: '+(e.code==='permission-denied'?'нет прав (правила Firestore отклонили действие).':(e.code||e.message)));}
  });
  window.route();}
+
+// ---------- Назначение на должность (владелец и ступень 5) ----------
+const isOwnerP=()=>rank()>=1000;
+const canAssign=m=>!!m&&(isOwnerP()||(tier()>=5&&mt(m)<5&&(m.rank??0)<100));
+let asgUsers=null,asgPos=null;
+function asgClose(){const o=document.getElementById('asg-ov');if(o)o.remove();document.body.classList.remove('asg-lock')}
+function asgList(q){const ms=D().members||[];q=(q||'').toLowerCase();
+ return (asgUsers||[]).filter(u=>!q||(u.displayName||'').toLowerCase().includes(q)||String(u.discordId).toLowerCase().includes(q)).map(u=>{const cur=ms.find(m=>m.discordId&&m.discordId===u.discordId);
+  return `<button class="asg-it" data-asg="${esc(u.id)}"><span class="asg-av">${u.photo?`<img src="${esc(u.photo)}" alt="">`:esc((u.displayName||u.discordId||'?')[0])}</span><span class="asg-tx"><b>${esc(u.displayName||u.discordId)}</b><small>${cur?esc(cur.role)+(cur.id===asgPos.id?' (уже здесь)':''):(u.roleName?esc(u.roleName):'Без должности')}</small></span></button>`}).join('')||'<p class="amut">Никого не найдено.</p>'}
+async function asgOpen(pid){asgPos=(D().members||[]).find(m=>m.id===pid);if(!canAssign(asgPos))return;asgClose();
+ const o=document.createElement('div');o.id='asg-ov';o.className='asg-ov';o.innerHTML=`<div class="asg-box" role="dialog" aria-modal="true"><div class="asg-h"><div><span>// НАЗНАЧЕНИЕ</span><h3>${esc(asgPos.role)}</h3></div><button class="asg-x" id="asg-x" aria-label="Закрыть">✕</button></div><input id="asg-q" class="asg-q" placeholder="Поиск по имени или Discord"><div id="asg-l" class="asg-l"><p class="amut">Загрузка членов партии…</p></div><p class="aerr" id="asg-e"></p></div>`;
+ document.body.appendChild(o);document.body.classList.add('asg-lock');
+ o.addEventListener('click',e=>{if(e.target===o)asgClose()});document.getElementById('asg-q').oninput=e=>{document.getElementById('asg-l').innerHTML=asgList(e.target.value)};
+ try{if(!asgUsers){const s=await F().getDocs(F().collection(db(),'users'));asgUsers=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.displayName||a.discordId).localeCompare(String(b.displayName||b.discordId),'ru'))}
+  document.getElementById('asg-l').innerHTML=asgList('')}catch(e){document.getElementById('asg-l').innerHTML='';document.getElementById('asg-e').textContent='Не удалось загрузить список: '+(e.code||e.message)}}
+const KEEP=['role','group','rank','tier','order'];
+const pick=(m,ks)=>Object.fromEntries(ks.filter(k=>m[k]!=null).map(k=>[k,m[k]]));
+async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if(!u||!p)return;const f=F(),ms=D().members||[];
+ const old=ms.find(m=>m.discordId&&m.discordId===u.discordId&&m.id!==p.id),nm=u.displayName||u.discordId;
+ if(!confirm(`Назначить «${nm}» на должность «${p.role}»?`+(old?`\nДолжность «${old.role}» станет вакантной.`:'')+(p.discordId&&p.discordId!==u.discordId?`\nТекущий обладатель (${p.name}) будет снят.`:'')))return;
+ const meta={updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};
+ try{if(old&&!canAssign(old))throw new Error(`нет прав освободить прежнюю должность «${old.role}»`);
+  if(old)await f.setDoc(f.doc(db(),'members',old.id),{...pick(old,KEEP),name:'Вакансия',bio:'Должность вакантна.',...meta});
+  const d={...pick(p,KEEP),name:String(nm).slice(0,100),discordId:u.discordId,discord:/^\d{15,21}$/.test(u.discordId)?'https://discord.com/users/'+u.discordId:'',joined:new Date().toLocaleDateString('ru-RU'),...meta};
+  if(u.photo)d.photo=u.photo;
+  await f.setDoc(f.doc(db(),'members',p.id),d);asgClose();await window.VPPKA_RELOAD();location.hash='#member/'+p.id;window.route();
+  alert(`«${nm}» назначен(а): ${p.role}.`+(mt(p)?` Ступень ключа по должности: ${mt(p)} — выдайте/обновите ключ, если нужно.`:''))}
+ catch(e){const el=document.getElementById('asg-e');if(el)el.textContent='Ошибка: '+(e.code==='permission-denied'?'недостаточно прав':(e.message||e.code))}}
+function installAssign(){const P=window.P,om=P.member;
+ P.member=id=>{const h=om(id),m=(D().members||[]).find(x=>x.id===id);return canAssign(m)?h.replace(/<\/div>$/,`<div class="asg-bar"><button class="btn" data-asgopen="${esc(id)}">Назначить</button><small class="amut">${m.discordId?'Сейчас: '+esc(m.name):'Должность вакантна'}</small></div></div>`):h};
+ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.asgopen)asgOpen(b.dataset.asgopen);else if(b.id==='asg-x')asgClose();else if(b.dataset.asg)asgDo(b.dataset.asg)});
+ addEventListener('keydown',e=>{if(e.key==='Escape')asgClose()});}
