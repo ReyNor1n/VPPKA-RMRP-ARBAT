@@ -113,6 +113,11 @@ service cloud.firestore {
         && optStr(request.resource.data, 'text', 2000) && optStr(request.resource.data, 'when', 100)
         && request.resource.data.author == request.auth.uid
         && request.resource.data.createdAt == request.time;
+      allow update: if myTier() >= 4 && resource.data.type == 'convocation'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cancelled','cancelledAt','reason'])
+        && request.resource.data.cancelled == true
+        && request.resource.data.cancelledAt == request.time
+        && optStr(request.resource.data, 'reason', 500);
       allow delete: if myTier() >= 4;
     }
 

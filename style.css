@@ -225,3 +225,5 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 @media(max-width:768px){.nbell{margin-right:2px}.nb-btn{width:36px;height:36px}.nb-p{width:auto}}
 
 .nb-p[hidden]{display:none}
+
+.nb-strike{text-decoration:line-through;color:#777}.nb-cancel{color:#777}.nb-cr{color:#e57373!important}.nb-cx{align-self:flex-start;margin-top:4px;padding:3px 8px!important;font-size:10px!important}
