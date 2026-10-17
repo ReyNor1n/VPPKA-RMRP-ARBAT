@@ -229,3 +229,13 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .nb-strike{text-decoration:line-through;color:#777}.nb-cancel{color:#777}.nb-cr{color:#e57373!important}.nb-cx{align-self:flex-start;margin-top:4px;padding:3px 8px!important;font-size:10px!important}
 
 .nb-acts{display:flex;gap:6px;margin-top:5px}.nb-acts .btn{padding:3px 9px!important;font-size:10px!important;min-height:0!important;line-height:1.4!important}
+
+/* v54 header bell/avatar alignment */
+.hd .rt{--hs:40px;display:flex!important;align-items:center;gap:10px}
+.nbell{margin:0;height:var(--hs);align-self:center}
+.nb-btn{width:var(--hs);height:var(--hs);padding:0;margin:0;box-sizing:border-box;border:1.5px solid rgba(255,255,255,.22);background:#12151c;line-height:0;flex:0 0 auto}
+.nb-btn svg{width:calc(var(--hs)*.5);height:calc(var(--hs)*.5);display:block}
+.hd .rt .authlink.in{height:var(--hs);align-self:center;align-items:center;gap:10px}
+.hd .rt .authlink .av{width:var(--hs);height:var(--hs);margin:0;vertical-align:middle}
+@media(max-width:768px){.hd .rt{--hs:36px;gap:8px}}
+@media(max-width:360px){.hd .rt{--hs:34px;gap:6px}}
