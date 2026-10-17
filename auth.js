@@ -59,13 +59,13 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest&&e.target.closest('.auth')){const b=document.querySelector('.auth .btn');b&&b.click();}});
  const fixU=u=>typeof u==='string'?u.replace(/^(?:https?:\/\/[^\/]+)?\/(?:vppka|VPPKA-RMRP-ARBAT)\/(?=img\/)/i,''):u;const fixD=o=>{if(o.image)o.image=fixU(o.image);if(o.photo)o.photo=fixU(o.photo);if(Array.isArray(o.photos))o.photos=o.photos.map(fixU);return o};
  async function loadData(){try{const [n,m]=await Promise.all([F.getDocs(F.collection(db,'news')),F.getDocs(F.collection(db,'members'))]);const D={};
-  if(!n.empty)D.news=n.docs.map(d=>fixD({...d.data(),id:d.id}));if(!m.empty)D.members=m.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
+  if(!n.empty)D.news=n.docs.map(d=>fixD({...d.data(),id:d.id}));if(!m.empty)D.members=m.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||x.id==='p_Xglv_ypsOH3s7mW2UTXD').sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
   window.VPPKA_DATA=(D.news||D.members)?D:null;}catch(e){console.warn('Firestore данные недоступны, используется content.json',e)}}
  window.VPPKA_RELOAD=async()=>{await loadData();route();};
  let liveN=null,liveM=null,livePend=false,liveNew=new Set();
  const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
  const liveApply=()=>{if(!liveN&&!liveM)return;if(busy()){livePend=true;return}livePend=false;const D={...(window.VPPKA_DATA||{})};
-  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
+  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||x.id==='p_Xglv_ypsOH3s7mW2UTXD').sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
   window.VPPKA_DATA=(D.news||D.members)?D:null;const y=scrollY;route();scrollTo(0,y);
   liveNew.forEach(id=>document.querySelectorAll('a[href="#news/'+id+'"]').forEach(a=>{const it=a.closest('.it,.card,div');it&&it.classList.add('fresh')}));liveNew.clear();};
  document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
