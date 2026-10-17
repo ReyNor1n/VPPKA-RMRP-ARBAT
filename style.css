@@ -314,3 +314,4 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .vbanner video{width:100%;height:100%;object-fit:cover;display:block}
 @media(max-width:700px){.vbanner{aspect-ratio:16/7;max-height:200px}}
 .vb-d{margin:12px 0}.vb-d summary{cursor:pointer;padding:10px 0;color:var(--gold,#e0b04a)}.vb-d input{width:100%;padding:8px;margin:6px 0;background:#111;border:1px solid #333;color:#fff;border-radius:6px}
+.vbanner img{width:100%;height:100%;object-fit:cover;display:block}

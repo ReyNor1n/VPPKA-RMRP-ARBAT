@@ -345,16 +345,29 @@ service cloud.firestore {
       allow get: if d == 'site';
       allow list, write: if false;
     }
-    // banners/{uid}: видео-баннер профиля (прямая ссылка https на .mp4/.webm). Видят все, меняет только владелец.
+    // banners/{uid}: баннер профиля. Либо url (https .mp4/.webm), либо файл частями в chunks/{ver_i}. Видят все, меняет только владелец.
     match /banners/{uid} {
       allow read: if true;
       allow create, update: if signedIn() && request.auth.uid == uid && request.auth.token.email is string
-        && request.resource.data.keys().hasOnly(['url','did','t'])
-        && request.resource.data.url is string && request.resource.data.url.size() <= 600
-        && request.resource.data.url.matches('^https://[^ ]+[.](mp4|webm)([?#].*)?$')
+        && request.resource.data.keys().hasOnly(['url','did','t','kind','mime','n','size','ver'])
         && request.resource.data.did == request.auth.token.email.split('@')[0]
-        && request.resource.data.t == request.time;
+        && request.resource.data.t == request.time
+        && (!('url' in request.resource.data) || (request.resource.data.url is string && request.resource.data.url.size() <= 600
+            && request.resource.data.url.matches('^https://[^ ]+[.](mp4|webm)([?#].*)?$')))
+        && (!('kind' in request.resource.data) || request.resource.data.kind in ['video','image'])
+        && (!('mime' in request.resource.data) || request.resource.data.mime in ['video/mp4','video/webm','image/gif','image/jpeg','image/png','image/webp'])
+        && (!('n' in request.resource.data) || (request.resource.data.n is int && request.resource.data.n >= 1 && request.resource.data.n <= 13))
+        && (!('size' in request.resource.data) || (request.resource.data.size is int && request.resource.data.size <= 8388608))
+        && (!('ver' in request.resource.data) || (request.resource.data.ver is string && request.resource.data.ver.size() <= 20));
       allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
+      match /chunks/{cid} {
+        allow read: if true;
+        allow create, update: if signedIn() && request.auth.uid == uid
+          && cid.matches('^[0-9]{1,20}_[0-9]{1,2}$')
+          && request.resource.data.keys().hasOnly(['d'])
+          && request.resource.data.d is string && request.resource.data.d.size() <= 900000;
+        allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
+      }
     }
     match /{document=**} { allow read, write: if false; }
   }

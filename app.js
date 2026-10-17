@@ -131,22 +131,41 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
  const kick=()=>{if(want&&!muted()&&!document.hidden&&(!au||au.paused))play()};['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,kick,{passive:true}));
  addEventListener('hashchange',()=>setTimeout(sync,0));document.addEventListener('visibilitychange',sync);new MutationObserver(()=>{if(want){const b=document.getElementById('amu'),h=document.querySelector('.pg h1');if(h&&(!b||b.parentNode!==h))btn()}}).observe(document.body,{childList:true,subtree:true});if(document.readyState==='loading')addEventListener('DOMContentLoaded',sync);else sync();window.VPPKA_ABOUT_AUDIO=()=>au})();
 
-// --- Видео-баннер профиля (banners/{uid}: прямая https-ссылка на mp4/webm) ---
-(function(){let B=null,started=false;const RX=/^https:\/\/[^\s]+\.(mp4|webm)([?#].*)?$/i;
+// --- Баннер профиля: файл (видео/картинка/GIF, частями в Firestore banners/{uid}/chunks) или прямая ссылка ---
+(function(){let B=null,started=false,lastMsg='';const RX=/^https:\/\/[^\s]+\.(mp4|webm)([?#].*)?$/i,MAXB=8*1048576,CH=900000,blobs={};
  const esc2=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
- const vid=u=>`<div class="vbanner"><video src="${esc2(u)}" autoplay muted loop playsinline preload="metadata" onerror="this.parentNode.remove()"></video></div>`;
- function start(){const fb=window.VPPKA_FB;if(started||!fb||!fb.F||!fb.db)return;started=true;fb.F.onSnapshot(fb.F.collection(fb.db,'banners'),s=>{B={};s.docs.forEach(d=>{const x=d.data();B[d.id]=x;if(x.did)B['did:'+x.did]=x});paint(true)},e=>{console.warn('banners',e.code);B={}})}
- const myUid=()=>((window.VPPKA_FB||{}).user||{}).uid,myDid=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');
- function paint(force){if(!B)return;const h=location.hash.slice(1),pg=document.querySelector('.pg');if(!pg)return;
-  if(h.startsWith('member/')){const id=h.slice(7),m=((window.VPPKA_DATA&&window.VPPKA_DATA.members)||[]).find(x=>String(x.id)===id);const b=m&&m.discordId&&B['did:'+m.discordId];const cur=pg.querySelector(':scope>.vbanner');
-   if(b&&(!cur||force&&cur.querySelector('video').getAttribute('src')!==b.url)){cur&&cur.remove();pg.insertAdjacentHTML('afterbegin',vid(b.url))}else if(!b&&cur)cur.remove()}
-  else if(h==='account'&&myUid()){const box=document.querySelector('.phacc')?.parentNode||pg.querySelector('h2')?.parentNode;if(!box)return;const b=B[myUid()];let s=document.getElementById('vb-set');
-   if(s&&!force)return;if(s)s.remove();box.querySelector('h2').insertAdjacentHTML('afterend',`<div id="vb-set">${b?vid(b.url):''}<details class="vb-d"><summary>Видео-баннер профиля ›</summary><p class="amut">Прямая ссылка https на короткое видео .mp4 или .webm (до ~15 МБ, без звука, по кругу). Например: вложение Discord (ПКМ по видео → «Копировать ссылку»), i.imgur.com/….mp4. Если видео не загрузится, профиль будет показан как обычно.</p><input id="vb-url" placeholder="https://…/video.mp4" value="${esc2(b?b.url:'')}"><p><button class="btn sm" id="vb-save">Сохранить</button>${b?' <button class="btn sm o" id="vb-del">Убрать баннер</button>':''} <span id="vb-msg" class="amut"></span></p></details></div>`)}}
+ const FBX=()=>window.VPPKA_FB,myUid=()=>((FBX()||{}).user||{}).uid,myDid=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');
+ const tag=(src,img)=>img?`<img src="${esc2(src)}" alt="">`:`<video src="${esc2(src)}" autoplay muted loop playsinline preload="metadata" onerror="this.parentNode.remove()"></video>`;
+ function start(){const fb=FBX();if(started||!fb||!fb.F||!fb.db)return;started=true;fb.F.onSnapshot(fb.F.collection(fb.db,'banners'),s=>{B={};s.docs.forEach(d=>{const x={...d.data(),uid:d.id};B[d.id]=x;if(x.did)B['did:'+x.did]=x});paint(true)},e=>{console.warn('banners',e.code);B={}})}
+ // собрать файл из частей; кэш: память → Cache API → Firestore
+ async function src(b){if(!b.n)return b.url||'';const k=b.uid+'/'+b.ver;if(blobs[k])return blobs[k];const key=location.origin+'/__vb/'+k;let blob=null;
+  try{const c=await caches.open('vppka-banners');const r=await c.match(key);if(r)blob=await r.blob()}catch(e){}
+  if(!blob){const fb=FBX(),parts=[];for(let i=0;i<b.n;i++){const d=await fb.F.getDoc(fb.F.doc(fb.db,'banners',b.uid,'chunks',b.ver+'_'+i));if(!d.exists())return '';parts.push(d.data().d)}
+   const bin=atob(parts.join(''));const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);blob=new Blob([u8],{type:b.mime||'video/mp4'});
+   try{const c=await caches.open('vppka-banners');const old=await c.keys();for(const r of old)if(r.url.includes('/__vb/'+b.uid+'/'))await c.delete(r);await c.put(key,new Response(blob,{headers:{'content-type':b.mime||''}}))}catch(e){}}
+  return blobs[k]=URL.createObjectURL(blob)}
+ async function put(host,b,where){const id=(b.uid+'/'+(b.ver||b.url));if(host.dataset.vb===id)return;host.dataset.vb=id;const s=await src(b);if(host.dataset.vb!==id)return;
+  host.querySelector('.vbanner')?.remove();if(!s)return;host.insertAdjacentHTML(where,`<div class="vbanner">${tag(s,b.kind==='image')}</div>`)}
+ function paint(){if(!B)return;const h=location.hash.slice(1),pg=document.querySelector('.pg');if(!pg)return;
+  if(h.startsWith('member/')){const id=h.slice(7),m=((window.VPPKA_DATA&&window.VPPKA_DATA.members)||[]).find(x=>String(x.id)===id);const b=m&&m.discordId&&B['did:'+m.discordId];
+   if(b)put(pg,b,'afterbegin');else{pg.querySelector(':scope>.vbanner')?.remove();delete pg.dataset.vb}}
+  else if(h==='account'&&myUid()){const h2=pg.querySelector('h2');if(!h2)return;const b=B[myUid()];let s=document.getElementById('vb-set');const sig=b?(b.ver||b.url):'none';
+   if(!s||s.dataset.sig!==sig){s&&s.remove();h2.insertAdjacentHTML('afterend',`<div id="vb-set" data-sig="${esc2(sig)}"><div id="vb-prev"></div><details class="vb-d"><summary>Баннер профиля ›</summary><p class="amut">Файл с устройства: видео MP4/WebM, GIF или картинка JPG/PNG/WebP — до 8 МБ (видео — короткое, без звука, по кругу). Или прямая https-ссылка на .mp4/.webm.</p><input type="file" id="vb-file" accept="video/mp4,video/webm,image/gif,image/jpeg,image/png,image/webp"><p><button class="btn sm" id="vb-up">Загрузить файл</button></p><input id="vb-url" placeholder="или ссылка: https://…/video.mp4" value="${esc2(b&&b.url||'')}"><p><button class="btn sm o" id="vb-save">Сохранить ссылку</button>${b?' <button class="btn sm o" id="vb-del">Убрать баннер</button>':''} <span id="vb-msg" class="amut">${esc2(lastMsg)}</span></p></details></div>`);
+    if(b)put(document.getElementById('vb-prev'),b,'afterbegin')}}}
+ const b64=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(f)});
+ async function delChunks(uid,keep){const fb=FBX(),q=await fb.F.getDocs(fb.F.collection(fb.db,'banners',uid,'chunks'));for(const d of q.docs)if(!keep||!d.id.startsWith(keep+'_'))await fb.F.deleteDoc(d.ref).catch(()=>{})}
  async function check(u){return new Promise(res=>{const v=document.createElement('video');v.muted=true;v.preload='metadata';const t=setTimeout(()=>res('timeout'),15000);v.onloadedmetadata=()=>{clearTimeout(t);res(v.duration>120?'long':'ok')};v.onerror=()=>{clearTimeout(t);res('err')};v.src=u})}
- document.addEventListener('click',async e=>{const fb=window.VPPKA_FB;if(!fb||!fb.F)return;const m=document.getElementById('vb-msg'),say=t=>m&&(m.textContent=t);
-  if(e.target.id==='vb-save'){const u=document.getElementById('vb-url').value.trim();if(!RX.test(u))return say('Нужна прямая ссылка https, оканчивающаяся на .mp4 или .webm.');
-   if(!myDid())return say('Нет Discord ID в профиле.');say('Проверяю видео…');const c=await check(u);if(c==='err')return say('Видео по ссылке не открывается.');if(c==='long')return say('Видео длиннее 2 минут — возьмите короткое.');
-   try{const sz=await fetch(u,{method:'HEAD'}).then(r=>+r.headers.get('content-length')||0).catch(()=>0);if(sz>15*1048576)return say('Файл больше 15 МБ.')}catch(x){}
-   try{await fb.F.setDoc(fb.F.doc(fb.db,'banners',myUid()),{url:u,did:myDid(),t:fb.F.serverTimestamp()});say('Сохранено.')}catch(x){say('Не удалось: '+(x.code==='permission-denied'?'нет прав (нужно опубликовать правила базы).':(x.code||x.message)))}}
-  if(e.target.id==='vb-del'){try{await fb.F.deleteDoc(fb.F.doc(fb.db,'banners',myUid()));say('Баннер убран.')}catch(x){say('Не удалось: '+(x.code||x.message))}}});
- setInterval(start,1000);new MutationObserver(()=>paint(false)).observe(document.body,{childList:true,subtree:true});addEventListener('hashchange',()=>setTimeout(()=>paint(false),0))})();
+ const perr=x=>x.code==='permission-denied'?'нет прав (нужно опубликовать правила базы).':(x.code||x.message);
+ document.addEventListener('click',async e=>{const fb=FBX();if(!fb||!fb.F||!e.target.id||!e.target.id.startsWith('vb-'))return;const m=document.getElementById('vb-msg'),say=t=>{lastMsg=t;const mm=document.getElementById('vb-msg');if(mm)mm.textContent=t},uid=myUid();if(!uid)return;
+  if(e.target.id==='vb-up'){const f=document.getElementById('vb-file').files[0];if(!f)return say('Выберите файл.');if(!/^(video\/(mp4|webm)|image\/(gif|jpeg|png|webp))$/.test(f.type))return say('Формат: MP4, WebM, GIF, JPG, PNG или WebP.');
+   if(f.size>MAXB)return say(`Файл ${(f.size/1048576).toFixed(1)} МБ — максимум 8 МБ.`);if(!myDid())return say('Нет Discord ID в профиле.');
+   const img=f.type.startsWith('image/');if(!img){const u=URL.createObjectURL(f),c=await check(u);URL.revokeObjectURL(u);if(c==='long')return say('Видео длиннее 2 минут.');if(c==='err')return say('Браузер не может воспроизвести это видео.')}
+   e.target.disabled=true;try{const s=await b64(f),n=Math.ceil(s.length/CH),ver=String(Date.now());
+    for(let i=0;i<n;i++){say(`Загрузка ${i+1}/${n}…`);await fb.F.setDoc(fb.F.doc(fb.db,'banners',uid,'chunks',ver+'_'+i),{d:s.slice(i*CH,(i+1)*CH)})}
+    await fb.F.setDoc(fb.F.doc(fb.db,'banners',uid),{did:myDid(),t:fb.F.serverTimestamp(),kind:img?'image':'video',mime:f.type,n,size:f.size,ver});await delChunks(uid,ver);say('Баннер загружен.')}
+   catch(x){say('Не удалось: '+perr(x))}e.target.disabled=false}
+  if(e.target.id==='vb-save'){const u=document.getElementById('vb-url').value.trim();if(!RX.test(u))return say('Нужна прямая ссылка https на .mp4 или .webm.');if(!myDid())return say('Нет Discord ID в профиле.');
+   say('Проверяю видео…');const c=await check(u);if(c==='err')return say('Видео по ссылке не открывается.');if(c==='long')return say('Видео длиннее 2 минут.');
+   try{await fb.F.setDoc(fb.F.doc(fb.db,'banners',uid),{url:u,did:myDid(),t:fb.F.serverTimestamp(),kind:'video'});await delChunks(uid);say('Сохранено.')}catch(x){say('Не удалось: '+perr(x))}}
+  if(e.target.id==='vb-del'){try{await fb.F.deleteDoc(fb.F.doc(fb.db,'banners',uid));await delChunks(uid);say('Баннер убран.')}catch(x){say('Не удалось: '+perr(x))}}});
+ setInterval(start,1000);new MutationObserver(()=>paint()).observe(document.body,{childList:true,subtree:true});addEventListener('hashchange',()=>setTimeout(paint,0))})();
