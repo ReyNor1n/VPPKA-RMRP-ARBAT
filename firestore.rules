@@ -114,7 +114,8 @@ service cloud.firestore {
       // созывы и объявления видны всем (баннер на главной), прочее — вошедшим
       allow read: if signedIn() || resource.data.type in ['convocation','other'];
       allow create: if myTier() >= 4
-        && request.resource.data.keys().hasOnly(['type','title','text','when','author','createdAt'])
+        && request.resource.data.keys().hasOnly(['type','title','text','when','author','authorName','createdAt'])
+        && optStr(request.resource.data, 'authorName', 120)
         && request.resource.data.type in ['news','convocation','other']
         && reqStr(request.resource.data, 'title', 200)
         && optStr(request.resource.data, 'text', 2000) && optStr(request.resource.data, 'when', 100)

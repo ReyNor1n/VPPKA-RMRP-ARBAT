@@ -285,3 +285,4 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .hnote .hn-it small{margin-top:auto}.hnote .hn-it.off p:not(.hn-r){display:none}.hnote .hn-it .hn-r{-webkit-line-clamp:1}
 .hnote .hn-del{top:50%;right:8px;transform:translateY(-50%)}
 .intro h1{font-size:clamp(17px,2.2vw,24px);line-height:1.3}
+.hnote .hn-it .hn-a{font:12px Oxanium,sans-serif;color:#b9a27a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hnote .hn-it{height:auto;min-height:128px}
