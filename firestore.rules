@@ -97,9 +97,10 @@ service cloud.firestore {
     match /config/{d} {
       allow get: if (signedIn() && d == 'owners') || (d == 'discord' && myTier() >= 4);
       allow write: if d == 'discord' && isOwner()
-        && request.resource.data.keys().hasOnly(['webhook'])
-        && request.resource.data.webhook is string
-        && request.resource.data.webhook.matches('^https://(discord|discordapp)[.]com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+$');
+        && request.resource.data.keys().hasOnly(['webhook','appsWebhook','roleIds'])
+        && (!('webhook' in request.resource.data) || request.resource.data.webhook.matches('^https://(discord|discordapp)[.]com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+$'))
+        && (!('appsWebhook' in request.resource.data) || request.resource.data.appsWebhook.matches('^https://(discord|discordapp)[.]com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+$'))
+        && (!('roleIds' in request.resource.data) || (request.resource.data.roleIds is list && request.resource.data.roleIds.size() <= 10));
       allow list: if false;
     }
 
@@ -161,7 +162,9 @@ service cloud.firestore {
           && request.resource.data.rankedBy == request.auth.uid
           && request.resource.data.rankedAt == request.time;
       }
-      allow update: if reviewOk() || rankOk();
+      // отметка о публикации заявки в Discord (ретранслятор владельца)
+      function relayOk() { return isOwner() && aChanged().hasOnly(['discordPostedAt']) && request.resource.data.discordPostedAt == request.time; }
+      allow update: if reviewOk() || rankOk() || relayOk();
       allow delete: if myRank() >= 100;
     }
 
