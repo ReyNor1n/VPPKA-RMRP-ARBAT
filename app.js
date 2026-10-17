@@ -7,7 +7,7 @@ const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',news:'Новости',legal:'Правовая база',contacts:'Контакты'};
 load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src=S.logo;
 pname.innerHTML=`<span>Всероссийская политическая партия</span>«${esc(S.name.split('«')[1]||S.name)}`;srv.textContent=S.name+' · '+S.server;
-document.querySelectorAll('.join-link').forEach(a=>a.href=S.joinUrl);
+document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
 <div><h4>О партии</h4><a href="#about">Общие сведения</a><a href="#program">Программа</a><a href="#charter">Устав</a><a href="#leadership">Руководство</a></div>
 <div><h4>Информация</h4><a href="#news">Новости</a><a href="#legal">Правовая база</a><a href="#contacts">Контакты</a></div>
@@ -21,7 +21,22 @@ const pg=(k,h)=>`<div class="crumbs"><a href="#home">Главная</a> / ${esc(
 const side=()=>`<div class="side"><div class="blk"><h2>Вступление в партию</h2><p>Членом партии может стать гражданин, достигший 18 лет, признающий Устав и Программу. Заявка подаётся через кнопку «Вступить в партию» в шапке сайта.</p></div>
 <div class="blk"><h2>Документы</h2><ul><li><a href="#program">Программа партии</a></li><li><a href="#charter">Устав партии</a></li><li><a href="#legal">Правовая база</a></li></ul></div></div>`;
 const MF=[['group','Партийный орган'],['joined','Дата вступления'],['birth','Возраст / дата рождения'],['city','Город / район']];
+const JOIN={"action": "https://docs.google.com/forms/d/e/1FAIpQLSehvaRhoszbKd67uAjQ0pOlGM7irbSLFbaKcLJL61PMnhBHOg/formResponse", "title": "«Коммунисты Арбата» - принятие в партию", "desc": "Всероссийская политическая партия «Коммунисты Арбата» (далее — Партия) является региональной политической партией, созданной в целях участия граждан Российской Федерации в политической жизни общества посредством формирования и выражения их политической воли, участия в общественных и политических акциях, в выборах и референдумах, а также в целях представления интересов граждан в органах государственной власти, органах публичной власти федеральных территорий и органах местного самоуправления.", "q": [{"t": "Фамилия Имя Отчество:", "e": 1480484961, "r": true}, {"t": "Ваш номер паспорта:", "e": 2111907379, "r": true}, {"t": "Ваша @discord почта:", "e": 1821107176, "r": true}, {"t": "Откуда узнали о нас?", "e": 1075514156, "r": true}, {"t": "Почему решили вступить именно в нашу партию?", "e": 1344435355, "r": true}, {"t": "Ссылка на Вашу биографию:", "e": 1359802054, "r": true}]};
+const joinPage=()=>{const a=window.VPPKA_AUTH||{},pf=a.profile||{};return `<div class="crumbs"><a href="#home">Главная</a> / Вступление в партию</div><div class="pg"><div class="blk jf" id="jf"><h2>${esc(JOIN.title)}</h2><p class="lead" style="color:var(--mut)">${esc(JOIN.desc)}</p>
+<p class="amut"><span style="color:var(--red)">*</span> Обязательный вопрос</p>
+${JOIN.q.map((q,i)=>`<label class="fl">${esc(q.t)}${q.r?' <span style="color:var(--red)">*</span>':''}<textarea id="jq${i}" rows="2">${i===2&&pf.discordLink?esc(pf.discordLink):''}</textarea><span class="aerr" id="je${i}"></span></label>`).join('')}
+<p class="aerr" id="jerr"></p><button class="btn" id="jsend">Отправить заявку</button></div></div>`};
+document.addEventListener('click',async ev=>{if(ev.target.id!=='jsend')return;let ok=true;const vals=JOIN.q.map((q,i)=>{const v=document.getElementById('jq'+i).value.trim();const e=document.getElementById('je'+i);e.textContent=q.r&&!v?'Это обязательный вопрос.':'';if(q.r&&!v)ok=false;return v});
+ if(!ok){document.getElementById('jerr').textContent='Заполните все обязательные поля.';return;}
+ ev.target.disabled=true;ev.target.textContent='Отправка…';
+ let ifr=document.getElementById('jifr');if(!ifr){ifr=document.createElement('iframe');ifr.name='jifr';ifr.id='jifr';ifr.style.display='none';document.body.appendChild(ifr);}
+ const f=document.createElement('form');f.action=JOIN.action;f.method='POST';f.target='jifr';f.style.display='none';
+ JOIN.q.forEach((q,i)=>{const x=document.createElement('input');x.type='hidden';x.name='entry.'+q.e;x.value=vals[i];f.appendChild(x)});
+ document.body.appendChild(f);f.submit();setTimeout(()=>f.remove(),3000);
+ try{const a=window.VPPKA_AUTH;if(a&&a.saveApplication)await a.saveApplication(Object.fromEntries(JOIN.q.map((q,i)=>[q.t,vals[i]])));}catch(e){console.warn('Копия заявки не сохранена',e)}
+ document.getElementById('jf').innerHTML=`<h2>Заявка отправлена</h2><p class="lead">Спасибо! Ваша заявка на вступление в партию «Коммунисты Арбата» принята и будет рассмотрена. С вами свяжутся через Discord.</p><p><a class="btn o" href="#home">На главную</a></p>`;});
 const P={
+join(){return joinPage()},
 member(id){const m=C.leadership.members.find(x=>x.id===id);if(!m)return `<div class="crumbs"><a href="#home">Главная</a> / <a href="#leadership">Руководство</a></div><div class="pg"><h1>Профиль не найден</h1><a class="btn o" href="#leadership">← К составу</a></div>`;
 const links=[m.discord&&['Discord',m.discord],m.forum&&['Форум',m.forum],m.contact&&['Контакт',m.contact]].filter(Boolean);
 const lk=([l,v])=>/^https?:/.test(v)?`<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>`:esc(v);

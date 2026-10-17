@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=19';
+import { firebaseConfig } from './firebase-config.js?v=20';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -38,8 +38,9 @@ async function init(){
  const [{initializeApp},A_,F_]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
  A=A_;F=F_;const app=initializeApp(firebaseConfig);auth=A.getAuth(app);db=F.getFirestore(app);
  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest&&e.target.closest('.auth')){const b=document.querySelector('.auth .btn');b&&b.click();}});
+ window.VPPKA_AUTH={get user(){return user},get profile(){return profile},async saveApplication(answers){if(!user)return;await F.setDoc(F.doc(db,'applications',user.uid),{answers,discordId:(profile&&profile.discordId)||'',createdAt:F.serverTimestamp()});}};
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;}catch(e){console.warn(e)}}
   if(link){link.style.display='';link.textContent=u?((profile&&profile.displayName)||'Кабинет'):'Войти';link.href=u?'#account':'#login';}
-  if(['login','register','account'].includes(location.hash.slice(1)))route();});
+  if(['login','register','account','join'].includes(location.hash.slice(1)))route();});
 }

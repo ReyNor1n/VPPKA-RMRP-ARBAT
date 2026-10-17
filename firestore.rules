@@ -7,6 +7,12 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['discordLink','discordId','displayName','createdAt'])
         && request.resource.data.discordId is string && request.resource.data.discordId.size() <= 64;
     }
+    match /applications/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['answers','discordId','createdAt'])
+        && request.resource.data.answers is map && request.resource.data.answers.size() <= 20;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
