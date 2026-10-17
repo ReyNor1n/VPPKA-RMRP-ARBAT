@@ -60,7 +60,9 @@ service cloud.firestore {
               && d.get('roleName', null) == get(keyPath(d.keyHash)).data.roleName);
       }
       function validUser(d) {
-        return d.keys().hasOnly(['discordLink','discordId','displayName','createdAt','keyHash','rank','roleName','photo'])
+        return d.keys().hasOnly(['discordLink','discordId','displayName','createdAt','keyHash','rank','roleName','photo','fio','birth','passport'])
+          && optStr(d, 'fio', 100) && (!('birth' in d) || (d.birth is string && d.birth.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')))
+          && (!('passport' in d) || (d.passport is string && d.passport.matches('^[0-9]{1,12}$')))
           && reqStr(d, 'discordId', 64) && optStr(d, 'discordLink', 200) && optStr(d, 'displayName', 40)
           && (!('photo' in d) || (d.photo is string && d.photo.size() <= 200000 && d.photo.matches('^data:image/jpeg;base64,.*')))
           && request.auth.token.email == d.discordId + '@vppka.local';
@@ -68,7 +70,7 @@ service cloud.firestore {
       allow read: if signedIn() && (request.auth.uid == uid || isOwner() || canMembers() || myTier() >= 5);
       allow create: if signedIn() && request.auth.uid == uid && validUser(request.resource.data) && validKey(request.resource.data);
       allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo','fio','birth','passport'])
         && validUser(request.resource.data)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['keyHash','rank','roleName'])
             || validKey(request.resource.data));
