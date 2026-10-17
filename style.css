@@ -164,3 +164,5 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 /* v34 header avatar */
 @media(max-width:768px){.hd .w{gap:8px}.hd .nm{font-size:13px;line-height:1.15}.burger{width:40px;height:40px;margin-left:4px}.authlink .av{width:36px;height:36px}}
 @media(max-width:360px){.hd .w{gap:6px;padding-left:10px;padding-right:10px}.hd img{height:34px}.hd .nm{font-size:12px}.authlink .av{width:34px;height:34px}.burger{width:38px;height:38px;margin-left:2px}}
+.joinbig{display:block;margin-top:16px;text-align:center;padding:14px 18px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid #00e5ff;color:#00e5ff;background:linear-gradient(90deg,rgba(0,229,255,.08),rgba(255,40,60,.12));box-shadow:0 0 14px rgba(0,229,255,.35),inset 0 0 10px rgba(255,40,60,.2)}
+.joinbig:hover{border-color:#ff2a3c;color:#fff;box-shadow:0 0 18px rgba(255,40,60,.6)}
