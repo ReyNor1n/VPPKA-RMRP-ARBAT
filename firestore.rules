@@ -345,6 +345,17 @@ service cloud.firestore {
       allow get: if d == 'site';
       allow list, write: if false;
     }
+    // banners/{uid}: видео-баннер профиля (прямая ссылка https на .mp4/.webm). Видят все, меняет только владелец.
+    match /banners/{uid} {
+      allow read: if true;
+      allow create, update: if signedIn() && request.auth.uid == uid && request.auth.token.email is string
+        && request.resource.data.keys().hasOnly(['url','did','t'])
+        && request.resource.data.url is string && request.resource.data.url.size() <= 600
+        && request.resource.data.url.matches('^https://[^ ]+[.](mp4|webm)([?#].*)?$')
+        && request.resource.data.did == request.auth.token.email.split('@')[0]
+        && request.resource.data.t == request.time;
+      allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
