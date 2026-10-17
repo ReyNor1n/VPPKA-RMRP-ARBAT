@@ -25,7 +25,7 @@ const LBL={trio:'Три лидера в треугольниках: 1 — лев
 const TPL={trio:{name:'',role:'',photo:''},stats:{value:'',label:''},goals:'',sections:{title:'',items:['']},items:'',chapters:{title:'',articles:[{title:'Статья',text:''}]},articles:{title:'Статья',text:''},members:{name:'',role:'',group:'Центральный Комитет',photo:'',bio:'',contact:''},news:{date:new Date().toISOString().slice(0,10),title:'',image:'',text:''},docs:{title:'',url:'',text:''},links:{title:'',url:''}};
 const IMG=['logo','banner','seal','photo','image'];let C,tab='leadership',G={},OFF=false;
 const $=id=>document.getElementById(id),msg=t=>{$('msg').textContent=t;$('msg').style.display='block';setTimeout(()=>$('msg').style.display='none',4000)};
-const api=(p,o={})=>fetch(`https://api.github.com/repos/${G.repo}/contents/${p}`,{...o,headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'}});
+const api=(p,o={})=>fetch(`https://api.github.com/repos/${G.repo}/contents/${p}`,{...o,cache:'no-store',headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'}});
 const b64=s=>btoa(unescape(encodeURIComponent(s)));
 async function login(){G={repo:$('repo').value.trim(),branch:$('branch').value.trim()||'main',token:$('token').value.trim()};
  const r=await api('content.json?ref='+G.branch);if(!r.ok)return msg('Ошибка доступа: проверьте репозиторий и токен');
@@ -52,7 +52,7 @@ function field(obj,key,label){const v=obj[key];
  return w;}
 async function publish(){if(OFF)return msg('Локальный режим: скачайте content.json и загрузите его в репозиторий вручную');
  const cur=await (await api('content.json?ref='+G.branch)).json();const r=await api('content.json',{method:'PUT',body:JSON.stringify({message:'Обновление контента через админку',content:b64(JSON.stringify(C,null,1)),sha:cur.sha,branch:G.branch})});
- msg(r.ok?'Опубликовано! Сайт обновится через 1–2 минуты':'Ошибка публикации');}
+ if(r.ok)return msg('Опубликовано! Сайт обновится через 1–2 минуты');let t='';try{t=(await r.json()).message||''}catch(e){};msg('Ошибка публикации ('+r.status+'): '+({401:'токен неверный или истёк',403:'у токена нет права Contents: Read and write',404:'токен не имеет доступа к репозиторию ReyNor1n/vppka',409:'конфликт версий, нажмите ещё раз',422:'GitHub отклонил данные'}[r.status]||t));}
 function preview(){localStorage.setItem('vppka_preview',JSON.stringify(C));window.open('index.html?preview=1','_blank');}
 function exportJson(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(C,null,1)],{type:'application/json'}));a.download='content.json';a.click();}
 function importJson(i){const fr=new FileReader();fr.onload=()=>{C=JSON.parse(fr.result);save();render();msg('Загружено')};fr.readAsText(i.files[0]);}
