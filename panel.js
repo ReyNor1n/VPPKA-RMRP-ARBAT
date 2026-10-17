@@ -90,14 +90,14 @@ export function install(){const P=window.P,on=P.news,ol=P.leadership;installAssi
    if(o.id)await f.setDoc(f.doc(db(),'members',o.id),m);else await f.addDoc(f.collection(db(),'members'),m);editMem=null;await done('Сохранено.');}
   if(d.aa||d.ar||d.am){const aid=d.aa||d.ar||d.am,a=apps.find(x=>x.id===aid),st=d.aa?'accepted':d.ar?'rejected':'member';
    if(d.am){const r=parseInt(v('ak-'+aid),10);if(!(r>=0&&r<=maxR()))return msg(`Уровень должен быть от 0 до ${maxR()}.`);
-    await f.addDoc(f.collection(db(),'members'),{name:String(a.answers.fio).slice(0,100),role:v('ar-'+aid).trim().slice(0,120)||'Член партии',group:'Члены партии',discord:String(a.answers.discord).slice(0,200),joined:new Date().toLocaleDateString('ru-RU'),rank:r,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});await window.VPPKA_RELOAD();}
+    await f.setDoc(f.doc(db(),'members','p_'+aid),{name:String(a.answers.fio).slice(0,100),role:v('ar-'+aid).trim().slice(0,120)||'Член партии',group:'Члены партии',discord:String(a.answers.discord).slice(0,200),joined:new Date().toLocaleDateString('ru-RU'),rank:r,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});await window.VPPKA_RELOAD();}
    await f.updateDoc(f.doc(db(),'applications',aid),{status:st,reviewedBy:FB().user.uid,reviewedAt:f.serverTimestamp(),reviewerRole:String(FB().power.roleName||'').slice(0,60)});
-   a.status=st;window.route();msg('Статус заявки: '+STATUS[st]);}
+   a.status=st;window.route();msg('Статус заявки: '+STATUS[st]);rosterSync().catch(e=>console.warn('roster',e.code||e));}
   if(d.pu||d.pd){const aid=d.pu||d.pd,a=apps.find(x=>x.id===aid),nr=Math.max(0,Math.min(PR.length-1,(a.partyRank||0)+(d.pu?1:-1)));
-   await f.updateDoc(f.doc(db(),'applications',aid),{partyRank:nr,partyRole:prn(nr),rankedBy:FB().user.uid,rankedAt:f.serverTimestamp()});a.partyRank=nr;window.route();msg(`${(a.answers||{}).fio}: ${prn(nr)}.`);}
+   await f.updateDoc(f.doc(db(),'applications',aid),{partyRank:nr,partyRole:prn(nr),rankedBy:FB().user.uid,rankedAt:f.serverTimestamp()});a.partyRank=nr;a.partyRole=prn(nr);window.route();msg(`${(a.answers||{}).fio}: ${prn(nr)}.`);rosterSync().catch(e=>console.warn('roster',e.code||e));}
   }catch(e){console.error(e);b.disabled=false;msg('Ошибка: '+(e.code==='permission-denied'?'нет прав (правила Firestore отклонили действие).':(e.code||e.message)));}
  });
- window.route();}
+ window.route();if(tier()>=4)rosterSync().catch(e=>console.warn('roster',e.code||e));}
 
 // ---------- Назначение на должность (владелец и ступень 5) ----------
 const isOwnerP=()=>rank()>=1000;
@@ -130,3 +130,17 @@ function installAssign(){const P=window.P,om=P.member;
  P.member=id=>{const h=om(id),m=(D().members||[]).find(x=>x.id===id);return canAssign(m)?h.replace(/<\/div>$/,`<div class="asg-bar"><button class="btn" data-asgopen="${esc(id)}">Назначить</button><small class="amut">${m.discordId?'Сейчас: '+esc(m.name):'Должность вакантна'}</small></div></div>`):h};
  document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.asgopen)asgOpen(b.dataset.asgopen);else if(b.id==='asg-x')asgClose();else if(b.dataset.asg)asgDo(b.dataset.asg)});
  addEventListener('keydown',e=>{if(e.key==='Escape')asgClose()});}
+
+// ---------- Публичный список членов партии: принятые заявки → members/p_<id> (group «Члены партии»), ступень 4+ ----------
+let rsBusy=false;
+async function rosterSync(){if(rsBusy||tier()<4)return;rsBusy=true;try{const f=F();const qs=await f.getDocs(f.collection(db(),'applications'));const cur=Object.fromEntries((D().members||[]).map(m=>[m.id,m]));
+ for(const d of qs.docs){const a=d.data();if(!['accepted','member'].includes(a.status))continue;const id='p_'+d.id,o=cur[id]||{};
+  const ts=a.reviewedAt||a.createdAt;const dt=ts&&ts.toDate?ts.toDate():null;
+  const m={name:String((a.answers||{}).fio||'Товарищ').slice(0,100),role:String(a.partyRole||PR[a.partyRank||0]||'Кандидат').slice(0,120),group:'Члены партии',rank:0,
+   joined:o.joined||(dt?dt.toLocaleDateString('ru-RU'):new Date().toLocaleDateString('ru-RU'))};
+  if(a.discordId)m.discordId=String(a.discordId).slice(0,64);if(o.discordId&&!m.discordId)m.discordId=o.discordId;
+  let ph=o.photo;if(a.uid){try{const u=await f.getDoc(f.doc(db(),'users',a.uid));if(u.exists()){const x=u.data();if(x.photo)ph=x.photo;if(!m.discordId&&x.discordId)m.discordId=x.discordId}}catch(e){}}
+  if(ph)m.photo=ph;['bio','quote','city','birth','achievements','discord','forum','contact'].forEach(k=>{if(o[k])m[k]=o[k]});
+  if(o.id&&['name','role','joined','photo','discordId'].every(k=>(o[k]||'')===(m[k]||''))&&o.group===m.group)continue;
+  m.updatedBy=FB().user.uid;m.updatedAt=f.serverTimestamp();await f.setDoc(f.doc(db(),'members',id),m);}
+ }finally{rsBusy=false}}
