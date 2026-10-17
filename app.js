@@ -16,7 +16,7 @@ foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p
 <div class="req">${esc(S.name)} · Местонахождение руководящего органа: г. Москва (в рамках игрового проекта) · Устав от ${esc((C.charter.date||'').replace('г. Москва, ',''))} · Программа от ${esc((C.program.date||'').replace('г. Москва, ',''))}<br>© ${new Date().getFullYear()} ${esc(S.short)}. ${esc(S.footer)}</div></div>`;
 addEventListener('hashchange',route);route();});
 const MEM=()=>window.VPPKA_DATA&&window.VPPKA_DATA.members||C.leadership.members,NEWS=()=>(window.VPPKA_DATA&&window.VPPKA_DATA.news||C.news).map((n,i)=>({...n,i:n.id??i}));window.VPPKA_C=()=>C;window.VPPKA_FD=fd;
-const PG='Члены партии',LEAD=()=>MEM().filter(m=>m.group!==PG);
+const PG=window.VPPKA_PG='Члены партии',LEAD=()=>MEM().filter(m=>m.group!==PG);
 const PARTY=()=>{const ms=MEM(),out=[],seen=new Set();const k=m=>m.discordId?'d'+m.discordId:'n'+String(m.name||'').toLowerCase();
  ms.filter(m=>m.group!==PG&&m.name&&m.name!=='Вакансия').forEach(m=>{seen.add(k(m));out.push({...m,title:m.role})});
  ms.filter(m=>m.group===PG).forEach(m=>{if(seen.has(k(m)))return;seen.add(k(m));out.push({...m,title:m.role||'Член партии'})});return out;};

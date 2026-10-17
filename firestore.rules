@@ -73,8 +73,8 @@ service cloud.firestore {
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['keyHash','rank','roleName'])
             || validKey(request.resource.data));
       allow delete: if signedIn() && request.auth.uid == uid;
-      // удаление гостя: владелец или ступень 5; нельзя удалять держателей ключей, владельцев и служебный аккаунт
-      allow delete: if signedIn() && (isOwner() || myTier() >= 5)
+      // удаление гостя: владелец или ступень 4+; нельзя удалять держателей ключей, владельцев и служебный аккаунт
+      allow delete: if signedIn() && (isOwner() || myTier() >= 4)
         && request.auth.uid != uid && uid != 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2'
         && resource.data.get('keyHash', '') == ''
         && !(uid in get(/databases/$(database)/documents/config/owners).data.uids);
@@ -111,7 +111,8 @@ service cloud.firestore {
 
     // ---------- уведомления (созывы, объявления) ----------
     match /notifications/{id} {
-      allow read: if signedIn();
+      // созывы и объявления видны всем (баннер на главной), прочее — вошедшим
+      allow read: if signedIn() || resource.data.type in ['convocation','other'];
       allow create: if myTier() >= 4
         && request.resource.data.keys().hasOnly(['type','title','text','when','author','createdAt'])
         && request.resource.data.type in ['news','convocation','other']
@@ -178,13 +179,20 @@ service cloud.firestore {
           && request.resource.data.rankedBy == request.auth.uid
           && request.resource.data.rankedAt == request.time;
       }
+      // увольнение из партии: ступень 5+, ступень цели ниже своей
+      function expelOk() {
+        return aChanged().hasOnly(['status','expelledBy','expelledAt'])
+          && myTier() >= 5 && targetTier() < myTier()
+          && resource.data.status in ['accepted','member'] && request.resource.data.status == 'expelled'
+          && request.resource.data.expelledBy == request.auth.uid && request.resource.data.expelledAt == request.time;
+      }
       // отметка о публикации заявки в Discord (ретранслятор владельца)
       function relayOk() { return isOwner() && aChanged().hasOnly(['discordPostedAt','discordMessageId','discordDecision']) && optStr(request.resource.data, 'discordMessageId', 32) && optStr(request.resource.data, 'discordDecision', 40); }
-      allow update: if reviewOk() || rankOk() || relayOk();
+      allow update: if reviewOk() || rankOk() || relayOk() || expelOk();
       allow delete: if myRank() >= 100;
       // заявки удаляемого гостя: только новые/отклонённые, у заявителя нет ключа
-      allow delete: if signedIn() && (isOwner() || myTier() >= 5)
-        && resource.data.status in ['new','rejected'] && targetTier() == 0;
+      allow delete: if signedIn() && (isOwner() || myTier() >= 4)
+        && resource.data.status in ['new','rejected','expelled'] && targetTier() == 0;
     }
 
     // ---------- новости ----------
@@ -242,6 +250,68 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photo','updatedBy','updatedAt'])
             && validMember(request.resource.data)));
       allow delete: if myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100);
+    }
+
+    // ---------- увольнения: id = discordId; отметку и причину видят только ступень 4+ и владелец ----------
+    match /expulsions/{did} {
+      allow read: if myTier() >= 4;
+      allow create, update: if myTier() >= 5
+        && request.resource.data.keys().hasOnly(['name','reason','by','at'])
+        && reqStr(request.resource.data, 'name', 100) && optStr(request.resource.data, 'reason', 500)
+        && request.resource.data.by == request.auth.uid && request.resource.data.at == request.time;
+      allow delete: if myTier() >= 5;
+    }
+
+    // ---------- личные сообщения ----------
+    // Публичный справочник для поиска собеседников: имя, миниатюра, Discord. Владелец и служебный аккаунт сюда не пишутся.
+    match /pub/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && (request.auth.uid == uid || isOwner() || myTier() >= 5)
+        && uid != 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2'
+        && !(uid in get(/databases/$(database)/documents/config/owners).data.uids)
+        && request.resource.data.keys().hasOnly(['n','ph','did','t'])
+        && reqStr(request.resource.data, 'n', 40) && optStr(request.resource.data, 'did', 64)
+        && (!('ph' in request.resource.data) || (request.resource.data.ph is string && request.resource.data.ph.size() <= 30000
+            && request.resource.data.ph.matches('^data:image/jpeg;base64,.*')));
+      allow delete: if signedIn() && (request.auth.uid == uid || isOwner() || myTier() >= 5);
+    }
+    // chats/{a_b}: participants = [a,b] (по возрастанию), id = a_b
+    match /chats/{chatId} {
+      function owners() { return get(/databases/$(database)/documents/config/owners).data.uids; }
+      function isPart() { return signedIn() && request.auth.uid in resource.data.participants; }
+      function okUnread(d) { return d.unread is map && d.unread.keys().hasOnly(d.participants)
+        && d.unread[d.participants[0]] is int && d.unread[d.participants[1]] is int; }
+      function okLast(d) { return d.lastMessage is map && d.lastMessage.keys().hasOnly(['text','from','at'])
+        && d.lastMessage.text is string && d.lastMessage.text.size() <= 2000
+        && d.lastMessage.from == request.auth.uid && d.lastMessage.at == request.time; }
+      allow read: if isPart();
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['participants','createdBy','updatedAt','lastMessage','unread','names'])
+        && request.resource.data.participants is list && request.resource.data.participants.size() == 2
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants[0] < request.resource.data.participants[1]
+        && chatId == request.resource.data.participants[0] + '_' + request.resource.data.participants[1]
+        && request.resource.data.createdBy == request.auth.uid && request.resource.data.updatedAt == request.time
+        && !('ZpVGAXbbg1a9I8kRsNEm0OU8QAt2' in request.resource.data.participants)
+        // со скрытым владельцем может начать переписку только он сам
+        && (isOwner() || !(request.resource.data.participants[0] in owners() || request.resource.data.participants[1] in owners()))
+        && okUnread(request.resource.data) && okLast(request.resource.data)
+        && (!('names' in request.resource.data) || (isOwner() && request.resource.data.names is map
+            && request.resource.data.names.keys().hasOnly([request.auth.uid]) && request.resource.data.names[request.auth.uid] is string
+            && request.resource.data.names[request.auth.uid].size() <= 40));
+      allow update: if isPart()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt','lastMessage','unread'])
+        && okUnread(request.resource.data)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage','updatedAt'])
+            || (okLast(request.resource.data) && request.resource.data.updatedAt == request.time));
+      allow delete: if false;
+      match /messages/{mid} {
+        allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if signedIn() && request.auth.uid in getAfter(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && request.resource.data.keys().hasOnly(['from','text','at'])
+          && request.resource.data.from == request.auth.uid && request.resource.data.at == request.time
+          && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000;
+        allow update, delete: if false;
+      }
     }
 
     match /{document=**} { allow read, write: if false; }
