@@ -63,3 +63,8 @@ footer a{display:block;color:var(--mut);margin:4px 0}footer a:hover{color:#fff}f
 .prof-ph{clip-path:none;background-position:center top}
 @media(max-width:860px){.hd .rt{display:block;margin-left:auto}.hd .rt .btn{padding:7px 10px;font-size:11px}.hd .burger{margin-left:8px}}
 @media(max-width:860px){.hd .w{gap:10px}.hd img{height:44px}.hd .nm{font-size:16px}.hd .os{font-size:9px;letter-spacing:.1em}.hd .nm span{display:none}}
+.authlink{color:var(--cy);font:13px Oxanium,monospace;text-transform:uppercase;letter-spacing:.08em;margin-right:18px}
+.auth{max-width:520px;margin:0 auto}.fl{display:block;font:12px Oxanium,monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--cy);margin:14px 0}
+.fl input{display:block;width:100%;margin-top:6px;padding:11px 12px;background:#07090d;color:var(--tx);border:1px solid var(--ln);font:15px "Exo 2"}.fl input:focus{outline:1px solid var(--red);box-shadow:0 0 10px #ff2a3a55}
+.aerr{color:var(--red);min-height:1.2em;margin:6px 0}.amut{color:var(--mut);font-size:14px;margin-top:16px}
+@media(max-width:860px){.authlink{margin-right:8px;font-size:11px}}

@@ -43,5 +43,6 @@ legal(){const l=C.legal;return pg('legal',`<h1>Правовая база</h1><p>
 news(id){if(id!==undefined&&C.news[id]){const n=C.news[id];return `<div class="crumbs"><a href="#home">Главная</a> / <a href="#news">Новости</a> / ${esc(n.title)}</div><div class="pg"><div class="blk"><div class="d" style="color:var(--mut)">${fd(n.date)}</div><h1 style="font-size:28px">${esc(n.title)}</h1>${n.image?`<img class="banner" src="${esc(n.image)}" alt="">`:''}<p class="lead">${esc(n.text)}</p></div></div>`}
  return pg('news',`<h1>Новости</h1><div class="blk">${nl(news())}</div>`)},
 contacts(){const c=C.contacts;return pg('contacts',`<h1>Контакты</h1><div class="grid"><div class="blk"><p>${esc(c.text)}</p><table class="tbl">${c.items.map(i=>`<tr><td>${esc(i.label)}</td><td>${i.url?`<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.value)}</a>`:esc(i.value)}</td></tr>`).join('')}</table></div>${side()}</div>`)}};
+window.P=P;window.route=route;
 function route(){const [k,id]=(location.hash.slice(1)||'home').split('/');const key=P[k]?k:'home';const navKey=key==='member'?'leadership':key;app.innerHTML=P[key](id);menu.classList.remove('open');
 document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+navKey));scrollTo(0,0);}
