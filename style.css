@@ -277,3 +277,10 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .hn-ty{font:11px Oxanium,monospace;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:var(--red);padding:1px 7px}.hn-x{font:11px Oxanium,monospace;text-transform:uppercase;color:#ff6b74;border:1px solid #a3222c;padding:0 6px}.hn-it.off b{text-decoration:line-through;color:var(--mut)}.hn-w{color:var(--gold);font-size:13px}.hn-r{color:#ff6b74!important}
 .hn-more{display:inline-block;margin-top:8px;color:var(--red);font:13px 'Russo One',sans-serif;text-decoration:none}.hn-more:hover{text-decoration:underline}
 .hn-it{position:relative;padding-right:36px}.hn-del{position:absolute;top:8px;right:0;width:28px;height:28px;border-radius:50%;border:1px solid #a3222c;background:transparent;color:#ff6b74;font:18px/1 sans-serif;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}.hn-del:hover{background:#a3222c;color:#fff}.hn-del:disabled{opacity:.4}
+#hnote{display:block;width:100%}#hnote .hnote{width:100%;box-sizing:border-box}
+.hnote .hn-it{box-sizing:border-box;width:100%;height:128px;overflow:hidden;display:flex;flex-direction:column;flex-wrap:nowrap;justify-content:flex-start;align-items:stretch;gap:3px;padding:10px 44px 10px 12px;margin:0 0 10px;border:1px solid var(--ln);background:rgba(255,255,255,.03)}
+.hnote .hn-it>*{flex:0 0 auto;min-width:0;margin:0}.hnote .hn-it b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.hnote .hn-it p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.35;overflow-wrap:anywhere}
+.hnote .hn-it .hn-w{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hnote .hn-it .hn-x{align-self:flex-start}
+.hnote .hn-it small{margin-top:auto}.hnote .hn-it.off p:not(.hn-r){display:none}.hnote .hn-it .hn-r{-webkit-line-clamp:1}
+.hnote .hn-del{top:50%;right:8px;transform:translateY(-50%)}
