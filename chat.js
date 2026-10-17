@@ -89,6 +89,7 @@ async function pushOn(){try{if(await Notification.requestPermission()!=='granted
 function paintList(){const p=document.getElementById('chPanel');if(p&&view==='list'){p.dataset.v='';paint()}}
 async function pushSync(){if(!pushOk()||Notification.permission!=='granted')return;try{const r=await navigator.serviceWorker.ready,sub=await r.pushManager.getSubscription();if(sub){await saveSub(sub);pushState='on';paintList()}}catch(e){console.warn('push sync',e.code||e)}}
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.t==='openChat'&&e.data.u)openConv(e.data.u)});
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.t==='openHash'&&e.data.h)location.hash=e.data.h});
 function hashChat(){const m=location.hash.match(/^#chat\/(.+)$/);if(m&&me){history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>openConv(m[1]),800)}}
 window.VPPKA_CHAT={open:openConv};
 let pubKey='';

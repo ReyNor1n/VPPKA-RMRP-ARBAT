@@ -96,3 +96,10 @@ addEventListener('appinstalled',()=>{b.hidden=true});
 const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 if(ios){b.hidden=false}
 b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true}else if(ios){alert('Чтобы установить: нажмите «Поделиться» → «На экран Домой»')}}})();
+// --- Уведомление о новой новости (один раз на пользователя/гостя) ---
+(function(){const K='vppka-seen-news';let shown=false;function chk(){if(shown||!window.VPPKA_DATA||!window.VPPKA_DATA.news)return;const ns=NEWS().filter(n=>n.id);if(!ns.length)return;
+ ns.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||((b.createdAt&&b.createdAt.seconds||0)-(a.createdAt&&a.createdAt.seconds||0)));const n=ns[0];
+ if(localStorage.getItem(K)===String(n.id))return;if(location.hash==='#news/'+n.id){localStorage.setItem(K,String(n.id));return}shown=true;
+ const d=document.createElement('div');d.className='ntoast';d.innerHTML=`<b>📰 Новая новость</b><a href="#news/${n.id}">${esc(n.title)}</a><button aria-label="Закрыть">×</button>`;
+ const done=()=>{localStorage.setItem(K,String(n.id));d.remove()};d.querySelector('a').onclick=done;d.querySelector('button').onclick=done;document.body.appendChild(d)}
+ setInterval(chk,2000)})();

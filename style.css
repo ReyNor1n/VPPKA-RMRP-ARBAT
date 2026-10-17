@@ -297,3 +297,5 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 
 .phbtn{cursor:pointer;display:inline-block;margin:4px 0}.phname{font-size:12px;opacity:.7;word-break:break-all}
 .nh{margin:22px 0 8px;color:var(--red);font-size:19px}.ninl{margin:10px 0 16px}
+.ntoast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;background:#7f0000;color:#fff;padding:12px 40px 12px 16px;border-radius:10px;box-shadow:0 6px 24px #0008;max-width:min(92vw,560px);display:flex;flex-direction:column;gap:4px;font-size:14px}
+.ntoast a{color:#ffd54f;font-weight:600;text-decoration:underline}.ntoast button{position:absolute;top:6px;right:8px;background:none;border:0;color:#fff;font-size:22px;cursor:pointer}
