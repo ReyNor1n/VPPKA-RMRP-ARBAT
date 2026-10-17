@@ -69,7 +69,8 @@ window.P=P;window.route=route;
 function route(){const [k,id]=(location.hash.slice(1)||'home').split('/');const key=P[k]?k:'home';const navKey=key==='member'?'leadership':key;app.innerHTML=P[key](id);menu.classList.remove('open');
 document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+navKey));scrollTo(0,0);}
 ;(function(){if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{}));
-if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;
+if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;if(/VPPKA-App/.test(navigator.userAgent))return;
+if(/android/i.test(navigator.userAgent)){const a=document.createElement('a');a.id='apkBtn';a.href='https://github.com/ReyNor1n/VPPKA-RMRP-ARBAT/releases/download/apk-v1/vppka.apk';a.textContent='📱 Скачать APK';document.body.appendChild(a)}
 const b=document.createElement('button');b.id='installBtn';b.textContent='⬇ Установить приложение';b.hidden=true;document.body.appendChild(b);let ev=null;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();ev=e;b.hidden=false});
 addEventListener('appinstalled',()=>{b.hidden=true});
