@@ -1,0 +1,4 @@
+{
+  "android": { "version": "1.2", "versionCode": 3, "url": "https://github.com/ReyNor1n/VPPKA-RMRP-ARBAT/releases/download/apk-v1/vppka.apk" },
+  "windows": { "version": "1.1.0", "url": "https://github.com/ReyNor1n/VPPKA-RMRP-ARBAT/releases/download/win-v1/VPPKA-Arbat-Setup-1.0.0.exe" }
+}
