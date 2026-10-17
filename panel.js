@@ -111,17 +111,23 @@ async function asgOpen(pid){asgPos=(D().members||[]).find(m=>m.id===pid);if(!can
  const o=document.createElement('div');o.id='asg-ov';o.className='asg-ov';o.innerHTML=`<div class="asg-box" role="dialog" aria-modal="true"><div class="asg-h"><div><span>// НАЗНАЧЕНИЕ</span><h3>${esc(asgPos.role)}</h3></div><button class="asg-x" id="asg-x" aria-label="Закрыть">✕</button></div><input id="asg-q" class="asg-q" placeholder="Поиск по имени или Discord"><div id="asg-l" class="asg-l"><p class="amut">Загрузка членов партии…</p></div><p class="aerr" id="asg-e"></p></div>`;
  document.body.appendChild(o);document.body.classList.add('asg-lock');
  o.addEventListener('click',e=>{if(e.target===o)asgClose()});document.getElementById('asg-q').oninput=e=>{document.getElementById('asg-l').innerHTML=asgList(e.target.value)};
- try{if(!asgUsers){const s=await F().getDocs(F().collection(db(),'users'));asgUsers=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.displayName||a.discordId).localeCompare(String(b.displayName||b.discordId),'ru'))}
+ try{if(!asgUsers){let us=[];try{const s=await F().getDocs(F().collection(db(),'users'));us=s.docs.map(d=>({id:d.id,...d.data()}))}catch(e){if(e.code!=='permission-denied')throw e}
+  // Только члены партии: принятые заявки (p_*) и действующие обладатели должностей. Просто зарегистрированные не попадают.
+  const seen=new Set(),out=[];for(const m of (D().members||[])){const isP=String(m.id||'').startsWith('p_');if(!isP&&(!m.name||/^Вакансия/i.test(m.name)))continue;
+   const key=m.discordId?'d:'+m.discordId:'n:'+String(m.name).toLowerCase().trim();if(seen.has(key))continue;seen.add(key);
+   const u=m.discordId&&us.find(x=>x.discordId===m.discordId);
+   out.push({id:u?u.id:'m:'+m.id,displayName:m.name||(u&&u.displayName)||m.discordId,discordId:m.discordId||'',photo:(u&&u.photo)||m.photo||'',roleName:m.role})}
+  asgUsers=out.sort((a,b)=>String(a.displayName).localeCompare(String(b.displayName),'ru'))}
   document.getElementById('asg-l').innerHTML=asgList('')}catch(e){document.getElementById('asg-l').innerHTML='';document.getElementById('asg-e').textContent=e.code==='permission-denied'?'Нет доступа к списку членов партии: правила Firestore не разрешают чтение. Владельцу нужно опубликовать актуальный firestore.rules в консоли Firebase.':'Не удалось загрузить список: '+(e.code||e.message)}}
 const KEEP=['role','group','rank','tier','order'];
 const pick=(m,ks)=>Object.fromEntries(ks.filter(k=>m[k]!=null).map(k=>[k,m[k]]));
 async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if(!u||!p)return;const f=F(),ms=D().members||[];
- const old=ms.find(m=>m.discordId&&m.discordId===u.discordId&&m.id!==p.id),nm=u.displayName||u.discordId;
- if(!confirm(`Назначить «${nm}» на должность «${p.role}»?`+(old?`\nДолжность «${old.role}» станет вакантной.`:'')+(p.discordId&&p.discordId!==u.discordId?`\nТекущий обладатель (${p.name}) будет снят.`:'')))return;
+ const old=ms.find(m=>m.id!==p.id&&!String(m.id).startsWith('p_')&&(u.discordId?m.discordId===u.discordId:(!m.discordId&&m.name===u.displayName))),nm=u.displayName||u.discordId;
+ if(!confirm(`Назначить «${nm}» на должность «${p.role}»?`+(old?`\nДолжность «${old.role}» станет вакантной.`:'')+(p.discordId&&p.discordId!==u.discordId||(!p.discordId&&p.name&&!/^Вакансия/i.test(p.name)&&p.name!==u.displayName)?`\nТекущий обладатель (${p.name}) будет снят.`:'')))return;
  const meta={updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};
  try{if(old&&!canAssign(old))throw new Error(`нет прав освободить прежнюю должность «${old.role}»`);
   if(old)await f.setDoc(f.doc(db(),'members',old.id),{...pick(old,KEEP),name:'Вакансия',bio:'Должность вакантна.',...meta});
-  const d={...pick(p,KEEP),name:String(nm).slice(0,100),discordId:u.discordId,discord:/^\d{15,21}$/.test(u.discordId)?'https://discord.com/users/'+u.discordId:'',joined:new Date().toLocaleDateString('ru-RU'),...meta};
+  const d={...pick(p,KEEP),name:String(nm).slice(0,100),discordId:u.discordId||'',discord:/^\d{15,21}$/.test(u.discordId)?'https://discord.com/users/'+u.discordId:'',joined:new Date().toLocaleDateString('ru-RU'),...meta};
   if(u.photo)d.photo=u.photo;
   await f.setDoc(f.doc(db(),'members',p.id),d);asgClose();await window.VPPKA_RELOAD();location.hash='#member/'+p.id;window.route();
   alert(`«${nm}» назначен(а): ${p.role}.`+(mt(p)?` Ступень ключа по должности: ${mt(p)} — выдайте/обновите ключ, если нужно.`:''))}

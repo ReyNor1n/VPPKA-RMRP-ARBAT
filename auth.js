@@ -77,7 +77,7 @@ async function init(){
   if(!s.exists())return{ok:false,msg:'ключ не найден.'};const x=s.data();if(x.revoked)return{ok:false,msg:'ключ аннулирован.'};if(x.discordId!==discordId)return{ok:false,msg:'ключ выдан другому пользователю Discord.'};return{ok:true,h,rank:x.rank,roleName:x.roleName};}
  // Живая проверка полномочий: владелец (config/owners) или действующий ключ, привязанный к этому Discord
  async function refreshPower(){power={rank:0,roleName:''};if(!user)return;
-  try{const o=await F.getDoc(F.doc(db,'config','owners'));if(o.exists()&&(o.data().uids||[]).includes(user.uid)){power={rank:1000,tier:9,roleName:'Владелец',members:true};return;}}catch(e){}
+  try{const o=await F.getDoc(F.doc(db,'config','owners'));if(o.exists()&&(o.data().uids||[]).includes(user.uid)){power={rank:1000,tier:9,roleName:(profile&&profile.roleName)||'Владелец',members:true,owner:true};return;}}catch(e){}
   const h=profile&&profile.keyHash;if(!h)return;try{const s=await F.getDoc(F.doc(db,'accessKeys',h));const x=s.exists()&&s.data();if(x&&!x.revoked&&x.discordId===profile.discordId&&user.email===profile.discordId+'@vppka.local')power={rank:x.rank,tier:x.tier||0,roleName:x.roleName,chair:x.canEditChairman===true,members:x.canViewMembers===true};}catch(e){}
   if(power.rank>0)syncPhoto().catch(e=>console.warn('автофото',e.code||e));}
  // Автофото: фото из профиля копируется в запись руководства с тем же discordId
@@ -102,7 +102,7 @@ async function init(){
   link.innerHTML=`<span class="av">${av}</span><span class="avtx"><span class="avname">${esc(name)}</span>${pos?`<span class="avpos">${esc(pos)}</span>`:''}</span>`;
  }
 
- await loadData();route();liveStart();import('./panel.js?v=46').then(m=>m.install()).catch(e=>console.error('panel',e));
+ await loadData();route();liveStart();import('./panel.js?v=47').then(m=>m.install()).catch(e=>console.error('panel',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();
