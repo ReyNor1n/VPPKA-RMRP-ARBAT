@@ -1,8 +1,8 @@
-const CACHE='vppka-v53';
+const CACHE='vppka-v54';
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','index.html','style.css','app.js','content.json','img/emblem.png']).catch(()=>{})))});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE).map(n=>caches.delete(n)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);
- if(r.method!=='GET'||u.origin!==location.origin||/admin\.html$/.test(u.pathname))return;
+ if(r.method!=='GET'||u.origin!==location.origin||/\.(mp3|ogg|m4a|wav)$/i.test(u.pathname)||r.headers.has('range')||/admin\.html$/.test(u.pathname))return;
  const img=/\.(png|jpe?g|webp|gif|svg)$/i.test(u.pathname);if(/version\.json$/.test(u.pathname))return;const net=fetch(img?r:new Request(r,{cache:'no-cache'})).then(res=>{if(res.ok){const c=res.clone();caches.open(CACHE).then(x=>x.put(r,c))}return res});
  if(img){e.respondWith(caches.match(r).then(m=>m?(net.catch(()=>{}),m):net));return}
  e.respondWith(net.catch(()=>caches.match(r,{ignoreSearch:true}).then(m=>m||(r.mode==='navigate'?caches.match('index.html'):Response.error()))))});
