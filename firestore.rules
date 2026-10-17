@@ -26,6 +26,13 @@ service cloud.firestore {
           && request.auth.token.email == get(up).data.discordId + '@vppka.local'
         ? get(keyPath(h)).data.rank : 0;
     }
+    // Доп. право: ключ с canEditChairman==true может править запись председателя (ранг 100)
+    function canChair() {
+      let up = /databases/$(database)/documents/users/$(request.auth.uid);
+      let h = exists(up) ? get(up).data.get('keyHash', '') : '';
+      return signedIn() && keyRank() >= 1 && isHash(h)
+          && get(keyPath(h)).data.get('canEditChairman', false) == true;
+    }
     function myRank() { return !signedIn() ? 0 : (isOwner() ? 1000 : keyRank()); }
 
     // необязательное строковое поле не длиннее max
@@ -63,7 +70,8 @@ service cloud.firestore {
       allow get: if signedIn();                 // нужно знать хэш, т.е. сам ключ
       allow list: if myRank() >= 100;           // перечислять может только управляющий ключами
       allow create, update: if myRank() >= 100 && isHash(h)
-        && request.resource.data.keys().hasOnly(['rank','roleName','discordId','label','createdBy','createdAt','revoked','revokedAt'])
+        && request.resource.data.keys().hasOnly(['rank','roleName','discordId','label','createdBy','createdAt','revoked','revokedAt','canEditChairman'])
+        && (!('canEditChairman' in request.resource.data) || request.resource.data.canEditChairman is bool)
         && (!('revoked' in request.resource.data) || request.resource.data.revoked is bool)
         && reqStr(request.resource.data, 'discordId', 64)
         && request.resource.data.rank is int && request.resource.data.rank >= 1
@@ -137,7 +145,10 @@ service cloud.firestore {
       // нельзя назначить ранг >= своего и нельзя трогать равных/старших
       allow create: if validMember(request.resource.data) && request.resource.data.rank < myRank();
       allow update: if resource.data.rank < myRank()
-        && validMember(request.resource.data) && request.resource.data.rank < myRank();
+        && validMember(request.resource.data) && request.resource.data.rank < myRank()
+        // председатель: только правка полей, ранг менять нельзя, удалять нельзя
+        || (resource.data.rank == 100 && canChair()
+            && validMember(request.resource.data) && request.resource.data.rank == resource.data.rank);
       allow delete: if resource.data.rank < myRank();
     }
 

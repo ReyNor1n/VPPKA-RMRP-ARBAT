@@ -58,8 +58,8 @@ async function init(){
  // Живая проверка полномочий: владелец (config/owners) или действующий ключ, привязанный к этому Discord
  async function refreshPower(){power={rank:0,roleName:''};if(!user)return;
   try{const o=await F.getDoc(F.doc(db,'config','owners'));if(o.exists()&&(o.data().uids||[]).includes(user.uid)){power={rank:1000,roleName:'Владелец'};return;}}catch(e){}
-  const h=profile&&profile.keyHash;if(!h)return;try{const s=await F.getDoc(F.doc(db,'accessKeys',h));const x=s.exists()&&s.data();if(x&&!x.revoked&&x.discordId===profile.discordId&&user.email===profile.discordId+'@vppka.local')power={rank:x.rank,roleName:x.roleName};}catch(e){}}
- await loadData();route();import('./panel.js?v=21').then(m=>m.install()).catch(e=>console.error('panel',e));
+  const h=profile&&profile.keyHash;if(!h)return;try{const s=await F.getDoc(F.doc(db,'accessKeys',h));const x=s.exists()&&s.data();if(x&&!x.revoked&&x.discordId===profile.discordId&&user.email===profile.discordId+'@vppka.local')power={rank:x.rank,roleName:x.roleName,chair:x.canEditChairman===true};}catch(e){}}
+ await loadData();route();import('./panel.js?v=22').then(m=>m.install()).catch(e=>console.error('panel',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;}catch(e){console.warn(e)}}await refreshPower();
   if(link){link.style.display='';link.textContent=u?((profile&&profile.displayName)||'Кабинет'):'Войти';link.href=u?'#account':'#login';}

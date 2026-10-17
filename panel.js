@@ -1,6 +1,6 @@
 // Панели для обладателей ключей. Все права дополнительно проверяются правилами Firestore.
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const FB=()=>window.VPPKA_FB, F=()=>FB().F, db=()=>FB().db, rank=()=>(FB().power||{}).rank||0;
+const FB=()=>window.VPPKA_FB, F=()=>FB().F, db=()=>FB().db, rank=()=>(FB().power||{}).rank||0, chair=()=>!!(FB().power||{}).chair, isCh=m=>(m.rank??0)===100&&chair()&&rank()<100;
 const D=()=>window.VPPKA_DATA||{};
 const STATUS={new:'Новая',accepted:'Принята',rejected:'Отклонена',member:'Принята, в составе'};
 const AQ=[['fio','ФИО'],['passport','Паспорт'],['discord','Discord'],['source','Откуда узнали'],['reason','Почему наша партия'],['bio','Биография']];
@@ -22,13 +22,13 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
  ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
 
-function memPanel(){const R=rank(),ms=D().members||[],low=ms.filter(m=>(m.rank??0)<R),m=editMem||{rank:Math.max(0,Math.min(10,R-1))};
+function memPanel(){const R=rank(),ms=D().members||[],low=ms.filter(m=>(m.rank??0)<R||isCh(m)),m=editMem||{rank:Math.max(0,Math.min(10,R-1))};
  return head(editMem&&editMem.id?'Редактировать участника':'Добавить участника',`<p class="amut">Вы можете изменять только участников с уровнем ниже вашего (${R}). <a href="#apps">Заявки в партию →</a></p>`)+
  `<div class="kp-f kp-grid">${MFIELDS.map(([k,l,t])=>t?`<label class="fl kp-w">${l}<textarea id="pm-${k}" rows="3">${esc(m[k])}</textarea></label>`:`<label class="fl">${l}<input id="pm-${k}" value="${esc(m[k])}"></label>`).join('')}
- <label class="fl">Уровень (0–${R-1}) *<input id="pm-rank" type="number" min="0" max="${R-1}" value="${esc(m.rank??0)}"></label><label class="fl">Порядок<input id="pm-order" type="number" value="${esc(m.order??'')}"></label>
+ <label class="fl">Уровень (0–${R-1}) *<input id="pm-rank" type="number" min="0" max="${R-1}" value="${esc(m.rank??0)}"${isCh(m)?' disabled':''}></label><label class="fl">Порядок<input id="pm-order" type="number" value="${esc(m.order??'')}"></label>
  <label class="fl">Фото — ссылка<input id="pm-photo" value="${esc(m.photo&&!String(m.photo).startsWith('data:')?m.photo:'')}"></label><label class="fl">или загрузить<input id="pm-file" type="file" accept="image/*"></label>
  <div class="kp-w"><p class="aerr" id="pmsg"></p><button class="btn" id="pm-save">${m.id?'Сохранить':'Добавить в состав'}</button>${editMem?' <button class="btn o" id="pm-cancel">Отмена</button>':''}</div></div>
- ${D().members?`<h3>Состав (доступные вам)</h3><table class="tbl">${low.map(x=>`<tr><td>${esc(x.name)}<br><small>${esc(x.role)}</small></td><td>ур. ${x.rank??0}</td><td class="kp-a"><button class="btn sm o" data-mu="${esc(x.id)}" title="Повысить">▲</button> <button class="btn sm o" data-md="${esc(x.id)}" title="Понизить">▼</button> <button class="btn sm o" data-me="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-mx="${esc(x.id)}">Удалить</button></td></tr>`).join('')||'<tr><td>Нет участников ниже вашего уровня.</td></tr>'}</table>`:'<p class="amut">Состав пока берётся из content.json; после переноса в базу его можно будет править здесь.</p>'}</div>`;}
+ ${D().members?`<h3>Состав (доступные вам)</h3><table class="tbl">${low.map(x=>`<tr><td>${esc(x.name)}<br><small>${esc(x.role)}</small></td><td>ур. ${x.rank??0}</td><td class="kp-a">${isCh(x)?`<button class="btn sm o" data-me="${esc(x.id)}">Изменить</button>`:`<button class="btn sm o" data-mu="${esc(x.id)}" title="Повысить">▲</button> <button class="btn sm o" data-md="${esc(x.id)}" title="Понизить">▼</button> <button class="btn sm o" data-me="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-mx="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')||'<tr><td>Нет участников ниже вашего уровня.</td></tr>'}</table>`:'<p class="amut">Состав пока берётся из content.json; после переноса в базу его можно будет править здесь.</p>'}</div>`;}
 
 function appsPage(){const c=`<div class="crumbs"><a href="#home">Главная</a> / Заявки в партию</div>`;
  if(rank()<1)return c+`<div class="pg"><h1>Нет доступа</h1><p>Раздел доступен только обладателям действующего ключа.</p></div>`;
@@ -57,7 +57,7 @@ export function install(){const P=window.P,on=P.news,ol=P.leadership;
   if(d.mu||d.md){const m=(D().members||[]).find(x=>x.id===(d.mu||d.md));const r=(m.rank??0)+(d.mu?10:-10);const nr=Math.max(0,Math.min(rank()-1,r));
    const {id:_,...rest}=m;await f.setDoc(f.doc(db(),'members',m.id),{...rest,rank:nr,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});await done(`${m.name}: уровень ${nr}.`);}
   if(id==='pm-save'){const o=editMem||{};const m={};MFIELDS.forEach(([k])=>{const x=v('pm-'+k).trim();if(x)m[k]=x});if(!m.name)return msg('Укажите имя.');
-   m.rank=parseInt(v('pm-rank'),10);if(!(m.rank>=0&&m.rank<rank()))return msg(`Уровень должен быть от 0 до ${rank()-1}.`);const ord=parseInt(v('pm-order'),10);if(!isNaN(ord))m.order=ord;
+   if(o.id&&isCh(o))m.rank=o.rank;else{m.rank=parseInt(v('pm-rank'),10);}if(!(o.id&&isCh(o))&&!(m.rank>=0&&m.rank<rank()))return msg(`Уровень должен быть от 0 до ${rank()-1}.`);const ord=parseInt(v('pm-order'),10);if(!isNaN(ord))m.order=ord;
    b.disabled=true;const ph=await imgVal('pm-photo','pm-file',o.photo);if(ph)m.photo=ph;m.updatedBy=FB().user.uid;m.updatedAt=f.serverTimestamp();
    if(o.id)await f.setDoc(f.doc(db(),'members',o.id),m);else await f.addDoc(f.collection(db(),'members'),m);editMem=null;await done('Сохранено.');}
   if(d.aa||d.ar||d.am){const aid=d.aa||d.ar||d.am,a=apps.find(x=>x.id===aid),st=d.aa?'accepted':d.ar?'rejected':'member';
