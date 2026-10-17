@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=73';
+import { firebaseConfig } from './firebase-config.js?v=74';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -18,7 +18,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  const field=(id,l,t='text',ph='')=>`<label class="fl">${l}<input id="${id}" type="${t}" placeholder="${ph}" autocomplete="${t==='password'?'current-password':'username'}"></label>`;
  // Фото персонажа: до 800px, JPEG q≈0.88, адаптивно ≤ ~190 КБ (лимит в правилах — 200 000 символов)
  function photoData(f){return new Promise((res,rej)=>{if(!f)return res('');if(!/^image\//.test(f.type))return rej(new Error('Выберите файл изображения.'));const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{let s=800,q=.88,u='';for(let i=0;i<10;i++){const k=Math.min(1,s/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);u=c.toDataURL('image/jpeg',q);if(u.length<=190000)return res(u);if(q>.55)q=Math.max(.55,+(q-.08).toFixed(2));else s=Math.round(s*.85);}rej(new Error('Изображение слишком большое.'))};im.onerror=()=>rej(new Error('Не удалось прочитать изображение.'));im.src=r.result};r.readAsDataURL(f);});}
- const photoField=(id,cur)=>`<div class="fl phf">Фото персонажа из игры (необязательно)<div class="phrow"><img id="${id}-pv" class="phpv" alt="" src="${esc(cur||'')}"${cur?'':' hidden'}><div><input id="${id}" type="file" accept="image/*"><p class="phnote">⚠ Фото персонажа <b>без головного убора</b>, лицо хорошо видно. JPG/PNG, будет уменьшено до ~800px.</p></div></div></div>`;
+ const photoField=(id,cur)=>`<div class="fl phf">Фото персонажа из игры (необязательно)<div class="phrow"><img id="${id}-pv" class="phpv" alt="" src="${esc(cur||'')}"${cur?'':' hidden'}><div><label class="btn sm o phbtn"><input id="${id}" type="file" accept="image/*" style="display:none">Выбрать файл</label> <span class="phname" id="${id}-nm">Файл не выбран</span><p class="phnote">⚠ Фото персонажа <b>без головного убора</b>, лицо хорошо видно. JPG/PNG, будет уменьшено до ~800px.</p></div></div></div>`;
  const box=(title,body)=>`${crumbs(title)}<div class="pg"><div class="blk auth">${body}</div></div>`;
  P.login=()=>user?P.account():box('Вход',`<h2>Вход</h2>${field('a-d','Discord (ссылка на профиль или имя пользователя)','text','https://discord.com/users/123… или username')}${field('a-p','Пароль','password')}<p class="aerr" id="a-e"></p><button class="btn" id="a-go">Войти</button><p class="amut">Нет аккаунта? <a href="#register">Зарегистрироваться</a></p>`);
  P.register=()=>user?P.account():box('Регистрация',`<h2>Регистрация</h2>${field('r-d','Ссылка на профиль Discord или имя пользователя','text','https://discord.com/users/123… или username')}${field('r-n','Ник (необязательно)')}${field('r-p','Пароль (мин. 6 символов)','password')}${field('r-p2','Повторите пароль','password')}${photoField('r-ph')}${field('r-k','Ключ доступа (необязательно)','password','если выдан руководством')}<p class="aerr" id="a-e"></p><button class="btn" id="r-go">Зарегистрироваться</button><p class="amut">Уже есть аккаунт? <a href="#login">Войти</a></p>`);
@@ -56,7 +56,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   if(id==='a-out'){await A.signOut(auth);location.hash='#home';}
   }catch(e){err(em(e));ev.target.disabled=false;}
  });
- document.addEventListener('change',async ev=>{const t=ev.target;if(t.id!=='r-ph'&&t.id!=='p-ph')return;const pv=document.getElementById(t.id+'-pv');try{const u=await photoData(t.files[0]);if(pv&&u){pv.src=u;pv.hidden=false;}}catch(e){err(e.message)}});
+ document.addEventListener('change',async ev=>{const t=ev.target;if(t.id!=='r-ph'&&t.id!=='p-ph')return;const nm=document.getElementById(t.id+'-nm');if(nm)nm.textContent=t.files[0]?.name||'Файл не выбран';const pv=document.getElementById(t.id+'-pv');try{const u=await photoData(t.files[0]);if(pv&&u){pv.src=u;pv.hidden=false;}}catch(e){err(e.message)}});
  paintAuth();
  if(['login','register','account'].includes(location.hash.slice(1)))route();
  const [{initializeApp},A_,F_]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
@@ -110,7 +110,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   link.innerHTML=`<span class="av">${av}</span><span class="avtx"><span class="avname">${esc(name)}</span>${pos?`<span class="avpos">${esc(pos)}</span>`:''}</span>`;
  }
 
- await loadData();route();liveStart();import('./panel.js?v=73').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=73').then(m=>m.install()).catch(e=>console.error('notif',e));import('./chat.js?v=73').then(m=>m.install()).catch(e=>console.error('chat',e));
+ await loadData();route();liveStart();import('./panel.js?v=74').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=74').then(m=>m.install()).catch(e=>console.error('notif',e));import('./chat.js?v=74').then(m=>m.install()).catch(e=>console.error('chat',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();
