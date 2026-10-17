@@ -96,7 +96,19 @@ function guestBlock(){if(!canM())return '';gStart();
 // ---------- «Уволить» из партии: владелец и ступень 5; только записи со ступенью ниже своей, не председатель ----------
 const xMem=()=>(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[];
 const canX=m=>!!m&&tier()>=5&&mt(m)<tier()&&(m.rank??0)<(rank()>=1000?1000:100)&&!window.VPPKA_HIDDEN(m)&&m.name&&m.name!=='Вакансия'&&!(m.discordId&&m.discordId===((window.VPPKA_AUTH||{}).profile||{}).discordId);
-const xMenu=m=>`<div class="g-mn"><button class="g-dots" aria-label="Действия" aria-haspopup="true" onclick="VPPKA_GMENU(event,this)">⋮</button><div class="g-dd" hidden role="menu"><button role="menuitem" class="g-dd-del" onclick="event.preventDefault();event.stopPropagation();VPPKA_EXPEL('${esc(m.id)}')">Уволить</button></div></div>`;
+const OWNER_IDS=['p_Xglv_ypsOH3s7mW2UTXD','m11'];
+const canP=m=>!!m&&tier()>=4&&PR.includes(String(m.role||''))&&String(m.id||'').startsWith('p_')&&!OWNER_IDS.includes(m.id)&&mt(m)<tier()&&m.name&&m.name!=='Вакансия'&&!(m.discordId&&m.discordId===((window.VPPKA_AUTH||{}).profile||{}).discordId);
+const pIdx=m=>{const i=PR.indexOf(String(m.role||''));return i<0?0:i};
+const xMenu=m=>{const p=canP(m),x=canX(m),i=pIdx(m),st='event.preventDefault();event.stopPropagation();';if(!p&&!x)return '';
+ return `<div class="g-mn"><button class="g-dots" aria-label="Действия" aria-haspopup="true" onclick="VPPKA_GMENU(event,this)">⋮</button><div class="g-dd" hidden role="menu">${p&&i<PR.length-1?`<button role="menuitem" onclick="${st}VPPKA_PROMO('${esc(m.id)}',1)">▲ Повысить → ${esc(PR[i+1])}</button>`:''}${p&&i>0?`<button role="menuitem" onclick="${st}VPPKA_PROMO('${esc(m.id)}',-1)">▼ Понизить → ${esc(PR[i-1])}</button>`:''}${x?`<button role="menuitem" class="g-dd-del" onclick="${st}VPPKA_EXPEL('${esc(m.id)}')">Уволить</button>`:''}</div></div>`};
+window.VPPKA_PROMO=async(id,dir)=>{const m=xMem().find(x=>x.id===id);if(!canP(m))return msg('Нет прав менять звание этого человека.');
+ const f=F(),d=db(),aid=id.slice(2);try{const ar=f.doc(d,'applications',aid),as=await f.getDoc(ar);if(!as.exists())return msg('Не найдена заявка этого члена партии.');
+  const a=as.data(),cur=a.partyRank??pIdx(m),nr=cur+dir;if(nr<0||nr>=PR.length)return;
+  if(!confirm(`${dir>0?'Повысить':'Понизить'} «${m.name}»?\n\n${prn(cur)} → ${prn(nr)}`))return;
+  await f.updateDoc(ar,{partyRank:nr,partyRole:prn(nr),rankedBy:FB().user.uid,rankedAt:f.serverTimestamp()});
+  await f.updateDoc(f.doc(d,'members',id),{role:prn(nr),updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()}).catch(e=>console.warn('member',e.code||e));
+  msg(`${m.name}: ${prn(nr)}.`);window.VPPKA_RELOAD&&window.VPPKA_RELOAD()}
+ catch(e){msg('Не удалось: '+(e.code==='permission-denied'?'нет прав (правила базы).':(e.code||e.message)))}};
 window.VPPKA_EXPEL=async id=>{const m=xMem().find(x=>x.id===id);if(!canX(m))return msg('Этого человека уволить нельзя.');
  const r=prompt(`Уволить «${m.name}» из партии?\n\nЗапись уберётся из «Членов партии»`+(m.group!==window.VPPKA_PG?' и должность станет вакансией':'')+`, а человек перейдёт в «Гости».\n\nПричина (необязательно):`,'');if(r===null)return;
  const f=F(),d=db(),me=FB().user.uid,now=f.serverTimestamp(),reason=r.trim().slice(0,500);
@@ -126,7 +138,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest?.('.hn-del'
 window.VPPKA_HN=()=>{hnStart();return hnActive()};function hnPaint(){const e=document.getElementById('hnote');if(e)e.innerHTML=hnHtml()}
 function hnStart(){if(hnSub||!FB()||!F())return;const f=F();hnSub=f.onSnapshot(f.query(f.collection(db(),'notifications'),f.where('type','in',['convocation','other'])),s=>{hn=s.docs.map(x=>({...x.data(),id:x.id}));hnPaint()},e=>{console.warn('home notices',e.code);hnSub=null})}
 setInterval(()=>{if(!hnSub)hnStart();hnPaint()},60000);
-export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace(/(<div class="blk"><h2>Документы<\/h2>[\s\S]*?<\/ul><\/div>)/,'$1<div id="hnote">'+hnHtml()+'</div>')};if(/^#?(home)?$/.test(location.hash))window.route();P.party=()=>{const h0=op();const h=tier()>=5?h0.replace(/<a class="pm-card" href="#member\/([^"]*)"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return canX(m)?s+xMenu(m):s}):h0;const g=guestBlock();return g?h.replace(/<\/div>(\s*)$/,g+'</div>$1'):h};const on=P.news,ol=P.leadership;installAssign();
+export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace(/(<div class="blk"><h2>Документы<\/h2>[\s\S]*?<\/ul><\/div>)/,'$1<div id="hnote">'+hnHtml()+'</div>')};if(/^#?(home)?$/.test(location.hash))window.route();P.party=()=>{const h0=op();const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"]*)"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const g=guestBlock();return g?h.replace(/<\/div>(\s*)$/,g+'</div>$1'):h};const on=P.news,ol=P.leadership;installAssign();
  P.news=id=>{const h=on(id);return id===undefined&&tier()>=4?h.replace(/<\/div>$/,newsPanel()+'</div>'):h};
  P.leadership=()=>{const h=ol();return tier()>=4||chair()?h.replace(/<\/div>$/,memPanel()+'</div>'):h};
  P.apps=appsPage;P.members=membersPage;
