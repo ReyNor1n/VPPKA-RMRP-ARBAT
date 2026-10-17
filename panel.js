@@ -42,7 +42,7 @@ function appsPage(){const c=`<div class="crumbs"><a href="#home">Главная<
  const T=tier();return c+`<div class="pg"><h1>Заявки в партию</h1>${T<3?'<p class="amut">Принимать заявки могут ключи ступени 3 и выше.</p>':''}<p class="aerr" id="pmsg"></p>${apps.length?'':'<p>Заявок нет.</p>'}${apps.map(a=>{const x=a.answers||{};return `<div class="blk kapp"><div class="kp-h"><span>// ${esc(a.createdAt?.toDate?a.createdAt.toDate().toLocaleString('ru-RU'):'')} · ${esc(STATUS[a.status]||a.status)}</span><h2>${esc(x.fio)}</h2></div><table class="tbl">${AQ.map(([k,l])=>`<tr><td>${l}</td><td>${esc(x[k])}</td></tr>`).join('')}</table>
  ${T>=3?`<div class="kp-row"><button class="btn sm" data-aa="${a.id}">Принять</button> <button class="btn sm o kp-del" data-ar="${a.id}">Отклонить</button>${T>=4?` <span class="kp-in">в руководство: должность <input id="ar-${a.id}" value="Член партии"> уровень <input id="ak-${a.id}" type="number" min="0" max="${maxR()}" value="10"></span> <button class="btn sm" data-am="${a.id}">Принять и назначить в руководство</button>`:''}</div>`:''}
  ${['accepted','member'].includes(a.status)?`<div class="kp-row"><span class="kp-in">Звание в партии: <b>${esc(prn(a.partyRank||0))}</b></span>${T>=4?` <button class="btn sm o" data-pu="${a.id}" title="Повысить">▲ Повысить</button> <button class="btn sm o" data-pd="${a.id}" title="Понизить">▼ Понизить</button>`:''}</div>`:''}</div>`}).join('')}</div>`;}
-async function loadApps(){try{const s=await F().getDocs(F().query(F().collection(db(),'applications'),F().orderBy('createdAt','desc')));apps=s.docs.map(d=>({...d.data(),id:d.id}));}catch(e){apps=[];setTimeout(()=>msg('Ошибка загрузки: '+(e.code||e.message)),0)}if(location.hash==='#apps')window.route();}
+async function loadApps(){try{const s=await F().getDocs(F().query(F().collection(db(),'applications'),F().orderBy('createdAt','desc')));apps=s.docs.map(d=>({...d.data(),id:d.id})).filter(a=>!window.VPPKA_HIDDEN({discordId:a.discordId,uid:a.uid})||a.uid===FB().user?.uid);}catch(e){apps=[];setTimeout(()=>msg('Ошибка загрузки: '+(e.code||e.message)),0)}if(location.hash==='#apps')window.route();}
 
 // ---------- Участники партии (только ключи с canViewMembers и владельцы) ----------
 let mlist=null;
@@ -56,8 +56,8 @@ function membersPage(){const c=`<div class="crumbs"><a href="#home">Главна
  return c+`<div class="pg"><h1>Участники партии</h1><p class="amut">Закрытый список: зарегистрированные на сайте и принятые по заявкам. Всего: ${mlist.length}.</p><p class="aerr" id="pmsg"></p>
  <table class="tbl kmem"><tr><th></th><th>Имя</th><th>Discord</th><th>Статус / должность</th><th>Дата</th></tr>${mlist.map(row).join('')||'<tr><td colspan="5">Пока никого.</td></tr>'}</table></div>`;}
 async function loadMembers(){const out=[],seen=new Set();let er='';
- try{const s=await F().getDocs(F().collection(db(),'users'));s.docs.forEach(d=>{const u=d.data();seen.add(u.discordId);out.push({name:u.displayName||u.discordId,discord:u.discordLink||u.discordId,photo:u.photo,status:u.rank?`${u.roleName} (ур. ${u.rank})`:'Зарегистрирован',date:fdt(u.createdAt),src:'аккаунт на сайте',t:u.createdAt?.toMillis?.()||0});});}catch(e){er='Аккаунты: '+(e.code==='permission-denied'?'нет доступа (правила базы не обновлены или нет разрешения).':(e.code||e.message));}
- try{const s=await F().getDocs(F().collection(db(),'applications'));s.docs.forEach(d=>{const a=d.data();if(!['accepted','member'].includes(a.status))return;const x=a.answers||{};const dup=a.discordId&&seen.has(a.discordId);
+ try{const s=await F().getDocs(F().collection(db(),'users'));s.docs.forEach(d=>{const u={...d.data(),uid:d.id};if(window.VPPKA_HIDDEN(u)&&d.id!==FB().user?.uid)return;seen.add(u.discordId);out.push({name:u.displayName||u.discordId,discord:u.discordLink||u.discordId,photo:u.photo,status:u.rank?`${u.roleName} (ур. ${u.rank})`:'Зарегистрирован',date:fdt(u.createdAt),src:'аккаунт на сайте',t:u.createdAt?.toMillis?.()||0});});}catch(e){er='Аккаунты: '+(e.code==='permission-denied'?'нет доступа (правила базы не обновлены или нет разрешения).':(e.code||e.message));}
+ try{const s=await F().getDocs(F().collection(db(),'applications'));s.docs.forEach(d=>{const a=d.data();if(!['accepted','member'].includes(a.status)||window.VPPKA_HIDDEN(a))return;const x=a.answers||{};const dup=a.discordId&&seen.has(a.discordId);
   const t=a.reviewedAt||a.createdAt;out.push({name:x.fio,discord:x.discord,status:STATUS[a.status]+' · '+prn(a.partyRank||0)+(dup?' · есть аккаунт':''),date:fdt(t),src:'заявка',t:t?.toMillis?.()||0});});}catch(e){er+=(er?' ':'')+'Заявки: '+(e.code||e.message);}
  mlist=out.sort((a,b)=>b.t-a.t);if(location.hash==='#members'){window.route();if(er)msg(er);}}
 
@@ -111,9 +111,9 @@ async function asgOpen(pid){asgPos=(D().members||[]).find(m=>m.id===pid);if(!can
  const o=document.createElement('div');o.id='asg-ov';o.className='asg-ov';o.innerHTML=`<div class="asg-box" role="dialog" aria-modal="true"><div class="asg-h"><div><span>// НАЗНАЧЕНИЕ</span><h3>${esc(asgPos.role)}</h3></div><button class="asg-x" id="asg-x" aria-label="Закрыть">✕</button></div><input id="asg-q" class="asg-q" placeholder="Поиск по имени или Discord"><div id="asg-l" class="asg-l"><p class="amut">Загрузка членов партии…</p></div><p class="aerr" id="asg-e"></p></div>`;
  document.body.appendChild(o);document.body.classList.add('asg-lock');
  o.addEventListener('click',e=>{if(e.target===o)asgClose()});document.getElementById('asg-q').oninput=e=>{document.getElementById('asg-l').innerHTML=asgList(e.target.value)};
- try{if(!asgUsers){let us=[];try{const s=await F().getDocs(F().collection(db(),'users'));us=s.docs.map(d=>({id:d.id,...d.data()}))}catch(e){if(e.code!=='permission-denied')throw e}
+ try{if(!asgUsers){let us=[];try{const s=await F().getDocs(F().collection(db(),'users'));us=s.docs.map(d=>({id:d.id,...d.data()})).filter(u=>!window.VPPKA_HIDDEN(u))}catch(e){if(e.code!=='permission-denied')throw e}
   // Только члены партии: принятые заявки (p_*) и действующие обладатели должностей. Просто зарегистрированные не попадают.
-  const seen=new Set(),out=[];for(const m of (D().members||[])){const isP=String(m.id||'').startsWith('p_');if(!isP&&(!m.name||/^Вакансия/i.test(m.name)))continue;
+  const seen=new Set(),out=[];for(const m of (D().members||[])){if(window.VPPKA_HIDDEN(m))continue;const isP=String(m.id||'').startsWith('p_');if(!isP&&(!m.name||/^Вакансия/i.test(m.name)))continue;
    const key=m.discordId?'d:'+m.discordId:'n:'+String(m.name).toLowerCase().trim();if(seen.has(key))continue;seen.add(key);
    const u=m.discordId&&us.find(x=>x.discordId===m.discordId);
    out.push({id:u?u.id:'m:'+m.id,displayName:m.name||(u&&u.displayName)||m.discordId,discordId:m.discordId||'',photo:(u&&u.photo)||m.photo||'',roleName:m.role})}
@@ -140,7 +140,7 @@ function installAssign(){const P=window.P,om=P.member;
 // ---------- Публичный список членов партии: принятые заявки → members/p_<id> (group «Члены партии»), ступень 4+ ----------
 let rsBusy=false;
 async function rosterSync(){if(rsBusy||tier()<4)return;rsBusy=true;try{const f=F();const qs=await f.getDocs(f.collection(db(),'applications'));const cur=Object.fromEntries((D().members||[]).map(m=>[m.id,m]));
- for(const d of qs.docs){const a=d.data();if(!['accepted','member'].includes(a.status))continue;const id='p_'+d.id,o=cur[id]||{};
+ for(const d of qs.docs){const a=d.data();if(!['accepted','member'].includes(a.status)||window.VPPKA_HIDDEN(a))continue;const id='p_'+d.id,o=cur[id]||{};
   const ts=a.reviewedAt||a.createdAt;const dt=ts&&ts.toDate?ts.toDate():null;
   const m={name:String((a.answers||{}).fio||'Товарищ').slice(0,100),role:String(a.partyRole||PR[a.partyRank||0]||'Кандидат').slice(0,120),group:'Члены партии',rank:0,
    joined:o.joined||(dt?dt.toLocaleDateString('ru-RU'):new Date().toLocaleDateString('ru-RU'))};
