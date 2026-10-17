@@ -72,6 +72,7 @@ document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.getAtt
 if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;if(/VPPKA-App/.test(navigator.userAgent))return;
 if(/android/i.test(navigator.userAgent)){const a=document.createElement('a');a.id='apkBtn';a.href='https://github.com/ReyNor1n/VPPKA-RMRP-ARBAT/releases/download/apk-v1/vppka.apk';a.textContent='📱 Скачать APK';document.body.appendChild(a)}
 if(/windows/i.test(navigator.userAgent)&&!/VPPKA-Desktop|Electron/.test(navigator.userAgent)){const w=document.createElement('a');w.id='winBtn';w.href='https://github.com/ReyNor1n/VPPKA-RMRP-ARBAT/releases/download/win-v1/VPPKA-Arbat-Setup-1.0.0.exe';w.textContent='💻 Скачать для Windows';document.body.appendChild(w)}
+(function(){const ms=window.__dlHideMs||60000;setTimeout(()=>{["apkBtn","winBtn"].forEach(id=>{const b=document.getElementById(id);if(!b)return;b.style.transition="opacity .8s";b.style.opacity="0";b.style.pointerEvents="none";setTimeout(()=>{b.style.display="none"},850)})},ms)})();
 const b=document.createElement('button');b.id='installBtn';b.textContent='⬇ Установить приложение';b.hidden=true;document.body.appendChild(b);let ev=null;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();ev=e;b.hidden=false});
 addEventListener('appinstalled',()=>{b.hidden=true});
