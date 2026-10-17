@@ -185,3 +185,5 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .asg-av{flex:0 0 42px;height:42px;border-radius:50%;overflow:hidden;background:#222;display:flex;align-items:center;justify-content:center;font-weight:600}.asg-av img{width:100%;height:100%;object-fit:cover}
 .asg-tx{display:flex;flex-direction:column}.asg-tx small{color:#9aa0ab}
 @media(max-width:600px){.asg-ov{align-items:flex-end;padding:0}.asg-box{max-height:90vh;width:100%}}
+
+.fresh{animation:fresh 2.4s ease-out}@keyframes fresh{0%{background:rgba(220,40,40,.25);transform:translateY(-6px);opacity:.3}30%{opacity:1;transform:none}100%{background:transparent}}

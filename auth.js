@@ -60,6 +60,16 @@ async function init(){
   if(!n.empty)D.news=n.docs.map(d=>fixD({...d.data(),id:d.id}));if(!m.empty)D.members=m.docs.map(d=>fixD({...d.data(),id:d.id})).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
   window.VPPKA_DATA=(D.news||D.members)?D:null;}catch(e){console.warn('Firestore данные недоступны, используется content.json',e)}}
  window.VPPKA_RELOAD=async()=>{await loadData();route();};
+ let liveN=null,liveM=null,livePend=false,liveNew=new Set();
+ const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
+ const liveApply=()=>{if(!liveN&&!liveM)return;if(busy()){livePend=true;return}livePend=false;const D={...(window.VPPKA_DATA||{})};
+  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
+  window.VPPKA_DATA=(D.news||D.members)?D:null;const y=scrollY;route();scrollTo(0,y);
+  liveNew.forEach(id=>document.querySelectorAll('a[href="#news/'+id+'"]').forEach(a=>{const it=a.closest('.it,.card,div');it&&it.classList.add('fresh')}));liveNew.clear();};
+ document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
+ function liveStart(){let fn=true,fm=true;
+  F.onSnapshot(F.collection(db,'news'),s=>{if(fn){fn=false;liveN=s;return}s.docChanges().forEach(c=>{if(c.type==='added')liveNew.add(c.doc.id)});liveN=s;liveApply()},e=>console.warn('live news',e));
+  F.onSnapshot(F.collection(db,'members'),s=>{if(fm){fm=false;liveM=s;return}liveM=s;liveApply()},e=>console.warn('live members',e));}
  window.VPPKA_AUTH={get user(){return user},get profile(){return profile},get power(){return power},async submitApplication(answers){const d={answers,status:'new',createdAt:F.serverTimestamp()};if(user){d.uid=user.uid;if(profile&&profile.discordId)d.discordId=profile.discordId;}await F.addDoc(F.collection(db,'applications'),d);}};
  window.VPPKA_FB={get F(){return F},get db(){return db},get user(){return user},get power(){return power}};
  async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
@@ -92,7 +102,7 @@ async function init(){
   link.innerHTML=`<span class="av">${av}</span><span class="avtx"><span class="avname">${esc(name)}</span>${pos?`<span class="avpos">${esc(pos)}</span>`:''}</span>`;
  }
 
- await loadData();route();import('./panel.js?v=42').then(m=>m.install()).catch(e=>console.error('panel',e));
+ await loadData();route();liveStart();import('./panel.js?v=43').then(m=>m.install()).catch(e=>console.error('panel',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();
