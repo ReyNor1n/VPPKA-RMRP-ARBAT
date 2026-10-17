@@ -207,3 +207,4 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .pm-stack a:hover .pm-av{transform:translateY(-3px);z-index:2}
 @media(max-width:768px){.pm-grid{grid-template-columns:repeat(2,1fr);gap:10px}.pm-av{width:72px;height:72px}.pm-card{padding:14px 6px}.pm-n{font-size:14px}}
 @media(min-width:769px){.nav a{padding-left:11px;padding-right:11px;letter-spacing:.05em}.nav .w{flex-wrap:nowrap}}
+.fl textarea::placeholder{color:rgba(255,255,255,.35)}

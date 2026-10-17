@@ -106,7 +106,7 @@ service cloud.firestore {
           && a.keys().hasOnly(['fio','passport','discord','source','reason','bio'])
           && a.keys().hasAll(['fio','passport','discord','source','reason','bio'])
           && reqStr(a, 'fio', 2000) && reqStr(a, 'passport', 2000) && reqStr(a, 'discord', 2000)
-          && reqStr(a, 'source', 2000) && reqStr(a, 'reason', 2000) && reqStr(a, 'bio', 2000);
+          && reqStr(a, 'source', 2000) && reqStr(a, 'reason', 2000) && optStr(a, 'bio', 2000);
       }
       allow create: if request.resource.data.keys().hasOnly(['answers','status','createdAt','uid','discordId'])
         && request.resource.data.keys().hasAll(['answers','status','createdAt'])
