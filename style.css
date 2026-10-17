@@ -169,5 +169,7 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 
 .pinm{display:block;margin-top:4px;color:var(--red);font:12px Oxanium,monospace;letter-spacing:.5px}.nl .it.pin{border-left:2px solid var(--red);padding-left:10px;background:linear-gradient(90deg,#ff2a3a12,transparent 60%)}
 
-.authlink .avtx{display:flex;flex-direction:column;min-width:0;line-height:1.15}.authlink .avpos{color:#8fb8bf;font:11px Oxanium,monospace;letter-spacing:.04em;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85;margin-top:2px}
+.authlink .avtx{display:flex;flex-direction:column;min-width:0;line-height:1.15}.authlink .avpos{color:#8fb8bf;font:10.5px/1.2 Oxanium,monospace;letter-spacing:.02em;max-width:260px;white-space:normal;overflow:visible;overflow-wrap:break-word;opacity:.85;margin-top:2px}
+@media(min-width:769px){.hd .w>div:not(.rt){min-width:0;flex:0 1 auto}.hd .rt{flex:0 1 auto;min-width:0;margin-left:auto}.authlink.in{max-width:340px}.authlink .avtx{min-width:160px}}
+@media(min-width:769px) and (max-width:1100px){.authlink .avpos{max-width:200px;font-size:10px}.authlink .avname{max-width:200px}.authlink.in{margin-right:6px}}
 @media(max-width:768px){.authlink.in .avtx{display:none}}
