@@ -11,7 +11,7 @@ fieldset{border:1px solid var(--ln);margin:10px 0;padding:10px 14px}legend{font:
 <div class="wrap">
 <div id="login" class="box"><h2>Вход владельца</h2>
 <p>Изменения публикуются прямо в ваш репозиторий GitHub. Опубликовать что-либо может только тот, у кого есть ваш личный токен GitHub с доступом к репозиторию — то есть только вы. Токен хранится только в этом браузере.</p>
-<label>Репозиторий (владелец/имя)</label><input id="repo" value="ReyNor1n/vppka">
+<label>Репозиторий (владелец/имя)</label><input id="repo" value="ReyNor1n/VPPKA-RMRP-ARBAT">
 <label>Ветка</label><input id="branch" value="main">
 <label>Личный токен GitHub (fine-grained, права Contents: Read and write только на этот репозиторий)</label><input id="token" type="password">
 <div class="row" style="margin-top:12px"><button class="btn" onclick="login()">Войти</button><button class="btn sm" onclick="offline()">Локальный режим (без публикации, только экспорт файла)</button></div></div>
@@ -52,7 +52,7 @@ function field(obj,key,label){const v=obj[key];
  return w;}
 async function publish(){if(OFF)return msg('Локальный режим: скачайте content.json и загрузите его в репозиторий вручную');
  const cur=await (await api('content.json?ref='+G.branch)).json();if(G.sha&&cur.sha!==G.sha&&!confirm('Файл content.json на сайте изменился после вашего входа (другая вкладка или обновление сайта). Опубликовать ваши данные поверх? Рекомендуется «Отмена», затем выйти и войти заново.'))return;const r=await api('content.json',{method:'PUT',body:JSON.stringify({message:'Обновление контента через админку',content:b64(JSON.stringify(C,null,1)),sha:cur.sha,branch:G.branch})});
- if(r.ok)return msg('Опубликовано! Сайт обновится через 1–2 минуты');let t='';try{t=(await r.json()).message||''}catch(e){};msg('Ошибка публикации ('+r.status+'): '+({401:'токен неверный или истёк',403:'у токена нет права Contents: Read and write',404:'токен не имеет доступа к репозиторию ReyNor1n/vppka',409:'конфликт версий, нажмите ещё раз',422:'GitHub отклонил данные'}[r.status]||t));}
+ if(r.ok)return msg('Опубликовано! Сайт обновится через 1–2 минуты');let t='';try{t=(await r.json()).message||''}catch(e){};msg('Ошибка публикации ('+r.status+'): '+({401:'токен неверный или истёк',403:'у токена нет права Contents: Read and write',404:'токен не имеет доступа к репозиторию ReyNor1n/VPPKA-RMRP-ARBAT',409:'конфликт версий, нажмите ещё раз',422:'GitHub отклонил данные'}[r.status]||t));}
 function preview(){localStorage.setItem('vppka_preview',JSON.stringify(C));window.open('index.html?preview=1','_blank');}
 function exportJson(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(C,null,1)],{type:'application/json'}));a.download='content.json';a.click();}
 function importJson(i){const fr=new FileReader();fr.onload=()=>{C=JSON.parse(fr.result);save();render();msg('Загружено')};fr.readAsText(i.files[0]);}
