@@ -113,4 +113,9 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
  document.addEventListener('focusout',()=>setTimeout(()=>{if(pending&&!typing())go()},300));
  if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had)apply();had=true});
  async function chk(){try{const r=window.VPPKA_SWREG;r&&r.update().catch(()=>{});const j=await (await fetch('version.json?t='+Date.now(),{cache:'no-store'})).json();if(ver===null)ver=j.v;else if(j.v!==ver){ver=j.v;r&&r.update().catch(()=>{});setTimeout(apply,1500)}}catch(e){}}
+ // мгновенно: Firestore meta/site.version (пишет tools/publish-version.mjs после деплоя)
+ let rt=false;async function rtStart(){if(rt)return;const fb=window.VPPKA_FB;if(!fb||!fb.F||!fb.db)return;rt=true;const f=fb.F;
+  f.onSnapshot(f.doc(fb.db,'meta','site'),async s=>{const v=s.exists()?String(s.data().version||''):'';if(!v)return;if(ver===null){try{ver=(await (await fetch('version.json?t='+Date.now(),{cache:'no-store'})).json()).v}catch(e){return}}
+   if(+v<=+ver)return;for(let i=0;i<20;i++){try{const j=await (await fetch('version.json?t='+Date.now(),{cache:'no-store'})).json();if(+j.v>=+v){ver=j.v;const r=window.VPPKA_SWREG;r&&r.update().catch(()=>{});setTimeout(apply,1000);return}}catch(e){}await new Promise(r=>setTimeout(r,5000))}},e=>console.warn('meta/site',e.code))}
+ const rtI=setInterval(()=>{rtStart();if(rt)clearInterval(rtI)},1000);
  chk();setInterval(chk,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});addEventListener('focus',chk)})();

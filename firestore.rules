@@ -340,6 +340,11 @@ service cloud.firestore {
       allow delete: if signedIn() && (request.auth.uid == uid || request.auth.uid == 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2');
     }
 
+    // meta/site {version}: версия сайта для мгновенного автообновления; читают все, пишет только admin SDK
+    match /meta/{d} {
+      allow get: if d == 'site';
+      allow list, write: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }

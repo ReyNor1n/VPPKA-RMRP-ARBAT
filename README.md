@@ -43,3 +43,4 @@
 
 ## Деплой
 Перед каждым коммитом: `node tools/bump.mjs` — унифицирует ?v=, повышает CACHE в sw.js и пишет version.json (сайт и PWA обновятся у всех сами в течение ~1 мин).
+После `git push`: `node tools/publish-version.mjs` — ждёт, пока Pages отдаст новый version.json, и пишет meta/site.version в Firestore: открытые вкладки обновятся за секунды (иначе — опрос раз в 60 с).
