@@ -101,7 +101,7 @@ export function install(){const P=window.P,on=P.news,ol=P.leadership;installAssi
 
 // ---------- Назначение на должность (владелец и ступень 5) ----------
 const isOwnerP=()=>rank()>=1000;
-const canAssign=m=>!!m&&(isOwnerP()||(tier()>=5&&mt(m)<5&&(m.rank??0)<100));
+const canAssign=m=>!!m&&m.group!=='Члены партии'&&!String(m.id||'').startsWith('p_')&&(isOwnerP()||(tier()>=5&&mt(m)<5&&(m.rank??0)<100));
 let asgUsers=null,asgPos=null;
 function asgClose(){const o=document.getElementById('asg-ov');if(o)o.remove();document.body.classList.remove('asg-lock')}
 function asgList(q){const ms=D().members||[];q=(q||'').toLowerCase();
@@ -112,7 +112,7 @@ async function asgOpen(pid){asgPos=(D().members||[]).find(m=>m.id===pid);if(!can
  document.body.appendChild(o);document.body.classList.add('asg-lock');
  o.addEventListener('click',e=>{if(e.target===o)asgClose()});document.getElementById('asg-q').oninput=e=>{document.getElementById('asg-l').innerHTML=asgList(e.target.value)};
  try{if(!asgUsers){const s=await F().getDocs(F().collection(db(),'users'));asgUsers=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.displayName||a.discordId).localeCompare(String(b.displayName||b.discordId),'ru'))}
-  document.getElementById('asg-l').innerHTML=asgList('')}catch(e){document.getElementById('asg-l').innerHTML='';document.getElementById('asg-e').textContent='Не удалось загрузить список: '+(e.code||e.message)}}
+  document.getElementById('asg-l').innerHTML=asgList('')}catch(e){document.getElementById('asg-l').innerHTML='';document.getElementById('asg-e').textContent=e.code==='permission-denied'?'Нет доступа к списку членов партии: правила Firestore не разрешают чтение. Владельцу нужно опубликовать актуальный firestore.rules в консоли Firebase.':'Не удалось загрузить список: '+(e.code||e.message)}}
 const KEEP=['role','group','rank','tier','order'];
 const pick=(m,ks)=>Object.fromEntries(ks.filter(k=>m[k]!=null).map(k=>[k,m[k]]));
 async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if(!u||!p)return;const f=F(),ms=D().members||[];
