@@ -115,3 +115,16 @@ footer .big{font-size:clamp(26px,5.5vw,96px)}
 .tile:nth-child(4){background:var(--p);color:var(--k)}.tile:nth-child(5){background:var(--r);color:var(--p)}.tile:nth-child(5) li::marker{color:var(--k)}.tile:nth-child(4) li::marker{color:var(--r)}
 @media(max-width:900px){.hero h1{font-size:9.6vw}.hero .disk{display:none}.row{font-size:16px}.sh h2{font-size:8vw}.page h1{font-size:10vw}.tile,.tile:nth-child(n){grid-column:auto}footer .big{font-size:9vw}}
 @media(max-width:900px){.sh{gap:12px}.sh h2{font-size:6.6vw}.sh .n{font-size:52px}}
+/* calm mode v9 */
+.marq{transform:none;margin:0}.marq div{animation:none!important}
+.hero .emb,.hero .emb:hover{transform:none!important;animation:none!important;filter:none;transition:none}
+.hero .bar{display:none}.hero .disk{width:12vw;height:12vw}
+.fade{opacity:1!important;transform:none!important;transition:none!important}
+.card:hover,.tile:hover,.ncard:hover,.btn:hover,.btn.red:hover{transform:none!important}
+.tile:hover{box-shadow:none}.ncard:hover{box-shadow:none;border-color:var(--r)}.ncard img,.ncard:hover img{filter:none}
+.per .ph,.per img,.per:hover img,.per:hover .ph{filter:none;transition:none}.per:hover .ph{background:var(--k);color:var(--r)}
+.row,.row:hover{transition:color .2s;background:none;color:var(--k);padding-left:10px}.row:hover{color:var(--r)}.row:hover:before{color:var(--r)}
+summary:hover{padding-left:4px}
+.btn{transition:background .2s,color .2s}.btn:hover{box-shadow:6px 6px 0 var(--r);background:var(--r)}.btn.red:hover{background:var(--k);box-shadow:6px 6px 0 var(--k)}
+.group,.hero h1 .l3{transform:none}
+.joinb{clip-path:none}

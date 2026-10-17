@@ -43,4 +43,4 @@ contacts(){const c=C.contacts;return `${head('07','Связь','Контакты
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.05});
 function route(){const [k,id]=(location.hash.slice(1)||'home').split('/');const key=P[k]?k:'home';app.innerHTML=P[key](id);menu.classList.remove('open');
 document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+key));scrollTo(0,0);
-const f=document.querySelectorAll('.fade');f.forEach(el=>io.observe(el));requestAnimationFrame(()=>f.forEach(el=>{if(el.getBoundingClientRect().top<innerHeight)el.classList.add('in')}));setTimeout(()=>f.forEach(el=>el.classList.add('in')),1500);}
+const f=document.querySelectorAll('.fade');f.forEach(el=>el.classList.add('in'));if(0)requestAnimationFrame(()=>f.forEach(el=>{if(el.getBoundingClientRect().top<innerHeight)el.classList.add('in')}));setTimeout(()=>f.forEach(el=>el.classList.add('in')),1500);}
