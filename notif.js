@@ -2,7 +2,7 @@
 const FB=()=>window.VPPKA_FB,F=()=>FB().F,db=()=>FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tier=()=>(FB().power||{}).tier||0, isOwner=()=>((FB().power||{}).rank||0)>=1000;
-const canApps=()=>isOwner()||tier()>=3, canPost=()=>isOwner()||tier()>=5;
+const canApps=()=>isOwner()||tier()>=3, canPost=()=>isOwner()||tier()>=4;
 const TYPES={news:'Новость',convocation:'Созыв',other:'Объявление'};
 let uid=null,unsub=[],news=[],notes=[],apps=[],tab='n',open=false;
 const ms=t=>t&&t.toMillis?t.toMillis():(t&&t.seconds?t.seconds*1000:(typeof t==='string'?Date.parse(t)||0:0));
@@ -23,11 +23,18 @@ function panelHtml(){const A=canApps(),s1=seen('n');
  if(tab==='a'&&A)return tabs+`<div class="nb-l">${apps.map(a=>{const x=a.answers||{};return `<a class="nb-it" href="#apps" data-app="${esc(a.id)}"><span class="nb-av">${a.photo?`<img src="${esc(a.photo)}" alt="">`:esc((x.fio||'?')[0])}</span><span class="nb-tx"><b>${esc(x.fio||'Без имени')}</b><small>Заявка · ${fdt(a.createdAt)}</small></span></a>`}).join('')||'<p class="nb-e">Новых заявок нет.</p>'}</div>`;
  const form=canPost()?`<details class="nb-f"><summary>+ Созыв / объявление</summary><select id="nb-ty"><option value="convocation">Созыв (съезд, заседание)</option><option value="other">Объявление</option></select><input id="nb-ti" maxlength="200" placeholder="Заголовок"><input id="nb-wh" maxlength="100" placeholder="Когда (напр. 20.10, 19:00)"><textarea id="nb-tx" maxlength="2000" rows="2" placeholder="Текст (необязательно)"></textarea><button class="btn sm" id="nb-send">Отправить всем</button><small id="nb-er" class="aerr"></small></details>`:'';
  return tabs+form+`<div class="nb-l">${items().map(x=>`<${x.href?`a href="${x.href}"`:'div'} class="nb-it${x.t>s1?' new':''}"><span class="nb-tg nb-${x.type}">${TYPES[x.type]||'Объявление'}</span><span class="nb-tx"><b>${esc(x.title)}</b>${x.when?`<small>Когда: ${esc(x.when)}</small>`:''}${x.text?`<small>${esc(x.text)}</small>`:''}<small>${fdt(x.t?{seconds:x.t/1000}:null)}</small></span></${x.href?'a':'div'}>`).join('')||'<p class="nb-e">Уведомлений пока нет.</p>'}</div>`}
+// Отправка созыва/объявления в Discord (вебхук хранится в config/discord, читают ступень 4+ и владелец)
+async function toDiscord(d){try{const c=await F().getDoc(F().doc(db(),'config','discord'));const w=c.exists()&&c.data().webhook;if(!w)return 'вебхук не настроен.';
+ const fl=[];if(d.when)fl.push({name:'Когда',value:String(d.when).slice(0,1000)});
+ const body={username:'ВППКА «Коммунисты Арбата»',allowed_mentions:{parse:[]},embeds:[{title:((d.type==='convocation'?'📢 Созыв: ':'📣 Объявление: ')+d.title).slice(0,256),description:(d.text||'').slice(0,4000)||undefined,url:'https://vppka-arbat-rmrp.ru/',color:0xE32B2B,fields:fl,footer:{text:'vppka-arbat-rmrp.ru'},timestamp:new Date().toISOString()}]};
+ const r=await fetch(w,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});return r.ok?true:'ошибка '+r.status+'.'}
+ catch(x){return x.code==='permission-denied'?'нет доступа к настройке вебхука (опубликуйте firestore.rules).':'не удалось отправить.'}}
 async function onPanel(e){const t=e.target.closest('[data-tab]');if(t){tab=t.dataset.tab;markTab();paint();return}
  const ap=e.target.closest('[data-app]');if(ap){e.preventDefault();open=false;paint();window.VPPKA_APPS_RESET&&window.VPPKA_APPS_RESET();location.hash='#apps';window.route&&window.route();const id=ap.dataset.app;let n=0;const go=()=>{const x=document.getElementById('app-'+id);if(x){x.scrollIntoView({block:'center'});x.classList.add('nb-hl')}else if(n++<40)setTimeout(go,150)};go();return}
  if(e.target.closest('.nb-it[href]')){open=false;paint();return}
  if(e.target.id==='nb-send'){const v=i=>document.getElementById(i).value.trim(),er=document.getElementById('nb-er');const ti=v('nb-ti');if(!ti){er.textContent='Введите заголовок.';return}
-  e.target.disabled=true;try{const d={type:v('nb-ty'),title:ti,author:FB().user.uid,createdAt:F().serverTimestamp()};if(v('nb-tx'))d.text=v('nb-tx');if(v('nb-wh'))d.when=v('nb-wh');await F().addDoc(F().collection(db(),'notifications'),d);er.textContent='';}
+  e.target.disabled=true;try{const d={type:v('nb-ty'),title:ti,author:FB().user.uid,createdAt:F().serverTimestamp()};if(v('nb-tx'))d.text=v('nb-tx');if(v('nb-wh'))d.when=v('nb-wh');await F().addDoc(F().collection(db(),'notifications'),d);er.textContent='Опубликовано на сайте.';
+   const dr=await toDiscord(d);er.textContent=dr===true?'Опубликовано на сайте и в Discord.':'Опубликовано на сайте. Discord: '+dr;['nb-ti','nb-wh','nb-tx'].forEach(i=>{const x=document.getElementById(i);if(x)x.value=''});}
   catch(x){er.textContent='Ошибка: '+(x.code==='permission-denied'?'нет прав (опубликуйте firestore.rules).':(x.code||x.message))}e.target.disabled=false}}
 function paint(){const b=el();if(!b)return;b.style.display=uid?'':'none';if(!uid){document.getElementById('nb-p').hidden=true;return}
  const u=unread(),c=b.querySelector('.nb-c');c.textContent=u>99?'99+':u;c.hidden=!u;

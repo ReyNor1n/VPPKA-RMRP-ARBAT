@@ -95,21 +95,25 @@ service cloud.firestore {
 
     // ---------- служебное: только из консоли ----------
     match /config/{d} {
-      allow get: if signedIn() && d == 'owners';
-      allow list, write: if false;
+      allow get: if (signedIn() && d == 'owners') || (d == 'discord' && myTier() >= 4);
+      allow write: if d == 'discord' && isOwner()
+        && request.resource.data.keys().hasOnly(['webhook'])
+        && request.resource.data.webhook is string
+        && request.resource.data.webhook.matches('^https://(discord|discordapp)[.]com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+$');
+      allow list: if false;
     }
 
     // ---------- уведомления (созывы, объявления) ----------
     match /notifications/{id} {
       allow read: if signedIn();
-      allow create: if myTier() >= 5
+      allow create: if myTier() >= 4
         && request.resource.data.keys().hasOnly(['type','title','text','when','author','createdAt'])
         && request.resource.data.type in ['news','convocation','other']
         && reqStr(request.resource.data, 'title', 200)
         && optStr(request.resource.data, 'text', 2000) && optStr(request.resource.data, 'when', 100)
         && request.resource.data.author == request.auth.uid
         && request.resource.data.createdAt == request.time;
-      allow delete: if myTier() >= 5;
+      allow delete: if myTier() >= 4;
     }
 
     // ---------- заявки в партию ----------
