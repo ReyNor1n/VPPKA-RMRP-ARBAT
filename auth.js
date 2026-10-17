@@ -44,12 +44,12 @@ async function init(){
   if(id==='k-rm'){await F.updateDoc(F.doc(db,'users',user.uid),{keyHash:F.deleteField(),rank:F.deleteField(),roleName:F.deleteField()});delete profile.keyHash;delete profile.rank;delete profile.roleName;await refreshPower();route();}
   if(id==='p-go'||id==='p-rm'){const pe=t=>{const e=document.getElementById('p-e');if(e)e.textContent=t};let ph=null;
    if(id==='p-go'){try{ph=await photoData(document.getElementById('p-ph').files[0]);}catch(e){return pe(e.message)}if(!ph)return pe('Выберите файл.');}
-   ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{photo:ph?ph:F.deleteField()});if(ph)profile.photo=ph;else delete profile.photo;route();if(ph&&power.rank>0)syncPhoto().catch(e=>console.warn('автофото',e.code||e));}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает фото (правила базы не обновлены).':em(e));}return;}
+   ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{photo:ph?ph:F.deleteField()});if(ph)profile.photo=ph;else delete profile.photo;paintAuth();route();if(ph&&power.rank>0)syncPhoto().catch(e=>console.warn('автофото',e.code||e));}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает фото (правила базы не обновлены).':em(e));}return;}
   if(id==='a-out'){await A.signOut(auth);location.hash='#home';}
   }catch(e){err(em(e));ev.target.disabled=false;}
  });
  document.addEventListener('change',async ev=>{const t=ev.target;if(t.id!=='r-ph'&&t.id!=='p-ph')return;const pv=document.getElementById(t.id+'-pv');try{const u=await photoData(t.files[0]);if(pv&&u){pv.src=u;pv.hidden=false;}}catch(e){err(e.message)}});
- if(link)link.style.display='';
+ paintAuth();
  if(['login','register','account'].includes(location.hash.slice(1)))route();
  const [{initializeApp},A_,F_]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
  A=A_;F=F_;const app=initializeApp(firebaseConfig);auth=A.getAuth(app);db=F.getFirestore(app);
@@ -73,9 +73,26 @@ async function init(){
  // Автофото: фото из профиля копируется в запись руководства с тем же discordId
  async function syncPhoto(){const ph=profile&&profile.photo;if(!ph||!profile.discordId)return;const s=await F.getDocs(F.query(F.collection(db,'members'),F.where('discordId','==',profile.discordId)));let ch=false;
   for(const d of s.docs){if(d.data().photo!==ph){await F.updateDoc(d.ref,{photo:ph,updatedBy:user.uid,updatedAt:F.serverTimestamp()});ch=true;}}if(ch&&window.VPPKA_RELOAD)window.VPPKA_RELOAD();}
+
+ function paintAuth(){
+  if(!link)return;
+  link.style.display='';
+  if(!user){
+   link.className='authlink';link.href='#login';link.title='';link.removeAttribute('aria-label');
+   link.innerHTML='Войти';return;
+  }
+  const name=((profile&&profile.displayName)||'').trim()||'Кабинет';
+  const ph=profile&&profile.photo;
+  const ini=name==='Кабинет'?'':name.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const person='<svg class="avic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>';
+  const av=ph?`<img class="avimg" src="${esc(ph)}" alt="">`:(ini?`<span class="avini" aria-hidden="true">${esc(ini)}</span>`:person);
+  link.className='authlink in';link.href='#account';link.title=name;link.setAttribute('aria-label',name);
+  link.innerHTML=`<span class="av">${av}</span><span class="avname">${esc(name)}</span>`;
+ }
+
  await loadData();route();import('./panel.js?v=26').then(m=>m.install()).catch(e=>console.error('panel',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;}catch(e){console.warn(e)}}await refreshPower();
-  if(link){link.style.display='';link.textContent=u?((profile&&profile.displayName)||'Кабинет'):'Войти';link.href=u?'#account':'#login';}
+  paintAuth();
   if(['login','register','account','join','news','leadership','apps','members'].includes(location.hash.slice(1).split('/')[0]))route();});
 }
