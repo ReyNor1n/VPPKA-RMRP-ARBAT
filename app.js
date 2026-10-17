@@ -122,15 +122,15 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
 
 // --- Музыка страниц: маршрут → трек. Добавить новый: 'member/<id>':{src,start,vol}. keep:true — продолжать с места, иначе каждый раз с start ---
 window.VPPKA_MUSIC={
- 'about':{src:'audio/about.mp3',start:0,vol:0.2,keep:true},          // «О партии»: Интернационал (без слов)
- 'member/m4':{src:'audio/bykov.mp3',start:18,vol:0.2}                 // Быков В. А.: Аким Апачев — «Лето и арбалеты»
+ 'about':{src:'audio/about.mp3',start:0,vol:0.1,keep:true},          // «О партии»: Интернационал (без слов)
+ 'member/m4':{src:'audio/bykov.mp3',start:18,vol:0.1}                 // Быков В. А.: Аким Апачев — «Лето и арбалеты»
 };
 (function(){const K='vppka-about-mute';const A={};let cur=null;const muted=()=>localStorage.getItem(K+(cur&&cur!=='about'?':'+cur:''))==='1';
  const norm=s=>{s=String(s||'').replace(/^#/,'');return s.startsWith('member/')?s.split('/').slice(0,2).join('/'):s};
  const keyOf=()=>{const h=norm(location.hash);const M=window.VPPKA_MUSIC||{};if(M[h])return h;
   // профиль того же человека под другим id (запись «Члены партии» p_…) — по Discord ID
   if(h.startsWith('member/')){const ms=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[],m=ms.find(x=>'member/'+x.id===h);if(m&&m.discordId){const o=ms.find(x=>x.discordId===m.discordId&&M['member/'+x.id]);if(o)return 'member/'+o.id}}return null};
- function el(k){const c=window.VPPKA_MUSIC[k];if(!A[k]){const au=new Audio(c.src);au.loop=true;au.preload='auto';A[k]=au}A[k].volume=c.vol??0.2;return A[k]}
+ function el(k){const c=window.VPPKA_MUSIC[k];if(!A[k]){const au=new Audio(c.src);au.loop=true;au.preload='auto';A[k]=au}A[k].volume=c.vol??0.1;return A[k]}
  function btn(){let b=document.getElementById('amu');if(!b){b=document.createElement('button');b.id='amu';b.className='amu';b.onclick=()=>{localStorage.setItem(K+(cur&&cur!=='about'?':'+cur:''),muted()?'0':'1');sync()}}
   const h=cur&&document.querySelector('.pg h1');if(h&&b.parentNode!==h)h.appendChild(b);else if(!h&&!b.parentNode)document.body.appendChild(b);
   b.hidden=!cur;b.textContent=muted()?'🔇':'🔊';b.title=muted()?'Включить музыку':'Выключить музыку';b.setAttribute('aria-label',b.title)}
