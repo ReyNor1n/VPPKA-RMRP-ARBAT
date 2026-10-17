@@ -1,5 +1,5 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>Админ-панель ВППКА</title><link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@400;600&family=Oxanium&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=17">
+<title>Админ-панель ВППКА</title><link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@400;600&family=Oxanium&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=18">
 <style>.wrap{max-width:1000px;margin:auto;padding:24px}.box{background:linear-gradient(180deg,var(--p2),var(--p1));border:1px solid var(--ln);padding:22px;margin:16px 0;clip-path:var(--cut)}
 header{border-bottom:1px solid var(--ln)}.nav{display:flex;align-items:center;height:72px;max-width:1000px;margin:auto;padding:0 24px;position:static;border:0;background:none}.brand{display:flex;gap:12px;align-items:center;color:#fff;font:18px "Russo One"}.brand img{height:46px;filter:drop-shadow(0 0 10px #ff2a3a88)}
 label{display:block;font:12px Oxanium,monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--cy);margin-top:10px}input,textarea,select{width:100%;padding:9px 10px;background:#07090d;color:var(--tx);border:1px solid var(--ln);font:inherit}input:focus,textarea:focus{outline:1px solid var(--red);box-shadow:0 0 10px #ff2a3a55}textarea{min-height:80px}
@@ -29,7 +29,7 @@ const api=(p,o={})=>fetch(`https://api.github.com/repos/${G.repo}/contents/${p}`
 const b64=s=>btoa(unescape(encodeURIComponent(s)));
 async function login(){G={repo:$('repo').value.trim(),branch:$('branch').value.trim()||'main',token:$('token').value.trim()};
  const r=await api('content.json?ref='+G.branch);if(!r.ok)return msg('Ошибка доступа: проверьте репозиторий и токен');
- const j=await r.json();C=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));localStorage.setItem('vppka_gh',JSON.stringify({repo:G.repo,branch:G.branch,token:G.token}));start();}
+ const j=await r.json();G.sha=j.sha;C=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));localStorage.setItem('vppka_gh',JSON.stringify({repo:G.repo,branch:G.branch,token:G.token}));start();}
 async function offline(){OFF=true;C=JSON.parse(localStorage.getItem('vppka_draft')||'null')||await (await fetch('content.json?'+Date.now())).json();start();}
 function logout(){localStorage.removeItem('vppka_gh');location.reload();}
 function start(){$('login').style.display='none';$('ed').style.display='block';render();}
@@ -51,7 +51,7 @@ function field(obj,key,label){const v=obj[key];
    else obj[key]=data;inp.value=obj[key].slice(0,80);im.src=data;save();msg('Картинка добавлена')};w.append(f,im);}
  return w;}
 async function publish(){if(OFF)return msg('Локальный режим: скачайте content.json и загрузите его в репозиторий вручную');
- const cur=await (await api('content.json?ref='+G.branch)).json();const r=await api('content.json',{method:'PUT',body:JSON.stringify({message:'Обновление контента через админку',content:b64(JSON.stringify(C,null,1)),sha:cur.sha,branch:G.branch})});
+ const cur=await (await api('content.json?ref='+G.branch)).json();if(G.sha&&cur.sha!==G.sha&&!confirm('Файл content.json на сайте изменился после вашего входа (другая вкладка или обновление сайта). Опубликовать ваши данные поверх? Рекомендуется «Отмена», затем выйти и войти заново.'))return;const r=await api('content.json',{method:'PUT',body:JSON.stringify({message:'Обновление контента через админку',content:b64(JSON.stringify(C,null,1)),sha:cur.sha,branch:G.branch})});
  if(r.ok)return msg('Опубликовано! Сайт обновится через 1–2 минуты');let t='';try{t=(await r.json()).message||''}catch(e){};msg('Ошибка публикации ('+r.status+'): '+({401:'токен неверный или истёк',403:'у токена нет права Contents: Read and write',404:'токен не имеет доступа к репозиторию ReyNor1n/vppka',409:'конфликт версий, нажмите ещё раз',422:'GitHub отклонил данные'}[r.status]||t));}
 function preview(){localStorage.setItem('vppka_preview',JSON.stringify(C));window.open('index.html?preview=1','_blank');}
 function exportJson(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(C,null,1)],{type:'application/json'}));a.download='content.json';a.click();}

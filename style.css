@@ -61,3 +61,5 @@ footer a{display:block;color:var(--mut);margin:4px 0}footer a:hover{color:#fff}f
 /* v17 full photos */
 .ph{clip-path:none;width:100%;height:auto;aspect-ratio:3/4;background-size:cover;background-position:center top;border:1px solid #ff2a3a88;box-shadow:0 0 12px #ff2a3a33}
 .prof-ph{clip-path:none;background-position:center top}
+@media(max-width:860px){.hd .rt{display:block;margin-left:auto}.hd .rt .btn{padding:7px 10px;font-size:11px}.hd .burger{margin-left:8px}}
+@media(max-width:860px){.hd .w{gap:10px}.hd img{height:44px}.hd .nm{font-size:16px}.hd .os{font-size:9px;letter-spacing:.1em}.hd .nm span{display:none}}
