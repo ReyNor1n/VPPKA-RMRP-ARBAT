@@ -97,6 +97,11 @@ function guestBlock(){if(!canM())return '';gStart();
 const xMem=()=>(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[];
 const canX=m=>!!m&&tier()>=5&&mt(m)<tier()&&(m.rank??0)<(rank()>=1000?1000:100)&&!window.VPPKA_HIDDEN(m)&&m.name&&m.name!=='Вакансия'&&!(m.discordId&&m.discordId===((window.VPPKA_AUTH||{}).profile||{}).discordId);
 const OWNER_IDS=['p_Xglv_ypsOH3s7mW2UTXD','m11'];
+// уведомление в раздел чата «Повышения и понижения» (по Discord ID цели — дойдёт и до тех, кто ещё не зарегистрирован)
+const myDidP=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');
+const actorName=()=>{const did=myDidP(),me=(D().members||[]).find(x=>did&&x.discordId===did&&!String(x.id).startsWith('p_'))||(D().members||[]).find(x=>did&&x.discordId===did);const role=(me&&me.role)||(FB().power||{}).roleName||'';const nm=(me&&me.name)||((window.VPPKA_AUTH||{}).profile||{}).displayName||'';return [role,nm].filter(Boolean).join(' ')};
+async function rankNote(did,kind,text){did=String(did||'');if(!did||did===myDidP())return;const f=F();try{await f.addDoc(f.collection(db(),'rankNotes'),{did,kind,text:String(text).slice(0,300),by:FB().user.uid,byName:actorName().slice(0,160),at:f.serverTimestamp(),read:false})}catch(e){console.warn('rankNote',e.code||e)}}
+window.VPPKA_RANKNOTE=rankNote;
 const canP=m=>!!m&&tier()>=4&&PR.includes(String(m.role||''))&&String(m.id||'').startsWith('p_')&&!OWNER_IDS.includes(m.id)&&mt(m)<tier()&&m.name&&m.name!=='Вакансия'&&!(m.discordId&&m.discordId===((window.VPPKA_AUTH||{}).profile||{}).discordId);
 const pIdx=m=>{const i=PR.indexOf(String(m.role||''));return i<0?0:i};
 const xMenu=m=>{const p=canP(m),x=canX(m),i=pIdx(m),st='event.preventDefault();event.stopPropagation();';if(!p&&!x)return '';
@@ -107,6 +112,7 @@ window.VPPKA_PROMO=async(id,dir)=>{const m=xMem().find(x=>x.id===id);if(!canP(m)
   if(!confirm(`${dir>0?'Повысить':'Понизить'} «${m.name}»?\n\n${prn(cur)} → ${prn(nr)}`))return;
   await f.updateDoc(ar,{partyRank:nr,partyRole:prn(nr),rankedBy:FB().user.uid,rankedAt:f.serverTimestamp()});
   await f.updateDoc(f.doc(d,'members',id),{role:prn(nr),updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()}).catch(e=>console.warn('member',e.code||e));
+  await rankNote(a.discordId||m.discordId,dir>0?'up':'down',`Вы ${dir>0?'повышены':'понижены'}: ${prn(cur)} → ${prn(nr)}`);
   msg(`${m.name}: ${prn(nr)}.`);window.VPPKA_RELOAD&&window.VPPKA_RELOAD()}
  catch(e){msg('Не удалось: '+(e.code==='permission-denied'?'нет прав (правила базы).':(e.code||e.message)))}};
 window.VPPKA_EXPEL=async id=>{const m=xMem().find(x=>x.id===id);if(!canX(m))return msg('Этого человека уволить нельзя.');
@@ -171,7 +177,7 @@ export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(..
    await f.updateDoc(f.doc(db(),'applications',aid),{status:st,reviewedBy:FB().user.uid,reviewedAt:f.serverTimestamp(),reviewerRole:String(FB().power.roleName||'').slice(0,60)});
    a.status=st;window.route();msg('Статус заявки: '+STATUS[st]);rosterSync().catch(e=>console.warn('roster',e.code||e));}
   if(d.pu||d.pd){const aid=d.pu||d.pd,a=apps.find(x=>x.id===aid),nr=Math.max(0,Math.min(PR.length-1,(a.partyRank||0)+(d.pu?1:-1)));
-   await f.updateDoc(f.doc(db(),'applications',aid),{partyRank:nr,partyRole:prn(nr),rankedBy:FB().user.uid,rankedAt:f.serverTimestamp()});a.partyRank=nr;a.partyRole=prn(nr);window.route();msg(`${(a.answers||{}).fio}: ${prn(nr)}.`);rosterSync().catch(e=>console.warn('roster',e.code||e));}
+   await f.updateDoc(f.doc(db(),'applications',aid),{partyRank:nr,partyRole:prn(nr),rankedBy:FB().user.uid,rankedAt:f.serverTimestamp()});const _c=a.partyRank||0;a.partyRank=nr;a.partyRole=prn(nr);if(nr!==_c)rankNote(a.discordId,nr>_c?'up':'down',`Вы ${nr>_c?'повышены':'понижены'}: ${prn(_c)} → ${prn(nr)}`);window.route();msg(`${(a.answers||{}).fio}: ${prn(nr)}.`);rosterSync().catch(e=>console.warn('roster',e.code||e));}
   }catch(e){console.error(e);b.disabled=false;msg('Ошибка: '+(e.code==='permission-denied'?'нет прав (правила Firestore отклонили действие).':(e.code||e.message)));}
  });
  window.route();if(tier()>=4)rosterSync().catch(e=>console.warn('roster',e.code||e));}
@@ -206,7 +212,7 @@ async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if
   if(old)await f.setDoc(f.doc(db(),'members',old.id),{...pick(old,KEEP),name:'Вакансия',bio:'Должность вакантна.',...meta});
   const d={...pick(p,KEEP),name:String(nm).slice(0,100),discordId:u.discordId||'',discord:/^\d{15,21}$/.test(u.discordId)?'https://discord.com/users/'+u.discordId:'',joined:new Date().toLocaleDateString('ru-RU'),...meta};
   if(u.photo)d.photo=u.photo;
-  await f.setDoc(f.doc(db(),'members',p.id),d);asgClose();await window.VPPKA_RELOAD();location.hash='#member/'+p.id;window.route();
+  await f.setDoc(f.doc(db(),'members',p.id),d);rankNote(u.discordId,'assign',`Вы назначены на должность: ${p.role}`+(old?` (прежняя: ${old.role})`:''));asgClose();await window.VPPKA_RELOAD();location.hash='#member/'+p.id;window.route();
   alert(`«${nm}» назначен(а): ${p.role}.`+(mt(p)?` Ступень ключа по должности: ${mt(p)} — выдайте/обновите ключ, если нужно.`:''))}
  catch(e){const el=document.getElementById('asg-e');if(el)el.textContent='Ошибка: '+(e.code==='permission-denied'?'недостаточно прав':(e.message||e.code))}}
 function installAssign(){const P=window.P,om=P.member;

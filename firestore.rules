@@ -276,6 +276,23 @@ service cloud.firestore {
             && request.resource.data.ph.matches('^data:image/jpeg;base64,.*')));
       allow delete: if signedIn() && (request.auth.uid == uid || isOwner() || myTier() >= 5);
     }
+    // rankNotes: системный раздел чата «Повышения и понижения». Цель — по Discord ID (did).
+    match /rankNotes/{id} {
+      function myDid() { return request.auth.token.email.split('@')[0]; }
+      allow read: if signedIn() && request.auth.token.email is string && resource.data.did == myDid();
+      allow update: if signedIn() && request.auth.token.email is string && resource.data.did == myDid()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) && request.resource.data.read == true;
+      allow create: if signedIn() && myTier() >= 4
+        && request.resource.data.keys().hasOnly(['did','kind','text','by','byName','at','read'])
+        && request.resource.data.did is string && request.resource.data.did.size() > 0 && request.resource.data.did.size() <= 64
+        && request.resource.data.did != myDid()
+        && request.resource.data.kind in ['up','down','assign']
+        && request.resource.data.text is string && request.resource.data.text.size() <= 300
+        && request.resource.data.byName is string && request.resource.data.byName.size() <= 160
+        && request.resource.data.by == request.auth.uid && request.resource.data.at == request.time
+        && request.resource.data.read == false;
+      allow delete: if isOwner();
+    }
     // chats/{a_b}: participants = [a,b] (по возрастанию), id = a_b
     match /chats/{chatId} {
       function owners() { return get(/databases/$(database)/documents/config/owners).data.uids; }
