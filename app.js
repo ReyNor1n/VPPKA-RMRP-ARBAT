@@ -120,16 +120,26 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
  const rtI=setInterval(()=>{rtStart();if(rt)clearInterval(rtI)},1000);
  chk();setInterval(chk,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});addEventListener('focus',chk)})();
 
-// --- Музыка на вкладке «О партии»: Интернационал (без слов), тихо, по кругу ---
-(function(){const K='vppka-about-mute';let au=null,want=false;const muted=()=>localStorage.getItem(K)==='1';
- function el(){if(au)return au;au=new Audio('audio/about.mp3');au.loop=true;au.volume=0.15;au.preload='none';return au}
+// --- Музыка страниц: маршрут → трек. Добавить новый: 'member/<id>':{src,start,vol}. keep:true — продолжать с места, иначе каждый раз с start ---
+window.VPPKA_MUSIC={
+ 'about':{src:'audio/about.mp3',start:0,vol:0.15,keep:true},          // «О партии»: Интернационал (без слов)
+ 'member/m4':{src:'audio/bykov.mp3',start:18,vol:0.4}                 // Быков В. А.: Аким Апачев — «Лето и арбалеты»
+};
+(function(){const K='vppka-about-mute';const A={};let cur=null;const muted=()=>localStorage.getItem(K)==='1';
+ const keyOf=()=>{const h=location.hash.replace(/^#/,'');const M=window.VPPKA_MUSIC||{};if(M[h])return h;
+  // профиль того же человека под другим id (запись «Члены партии» p_…) — по Discord ID
+  if(h.startsWith('member/')){const ms=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[],m=ms.find(x=>'member/'+x.id===h);if(m&&m.discordId){const o=ms.find(x=>x.discordId===m.discordId&&M['member/'+x.id]);if(o)return 'member/'+o.id}}return null};
+ function el(k){const c=window.VPPKA_MUSIC[k];if(!A[k]){const au=new Audio(c.src);au.loop=true;au.preload='auto';A[k]=au}A[k].volume=c.vol??0.3;return A[k]}
  function btn(){let b=document.getElementById('amu');if(!b){b=document.createElement('button');b.id='amu';b.className='amu';b.onclick=()=>{localStorage.setItem(K,muted()?'0':'1');sync()}}
-  const h=want&&document.querySelector('.pg h1');if(h&&b.parentNode!==h)h.appendChild(b);else if(!h&&!b.parentNode)document.body.appendChild(b);
-  b.hidden=!want;b.textContent=muted()?'🔇':'🔊';b.title=muted()?'Включить музыку':'Выключить музыку';b.setAttribute('aria-label',b.title)}
- function play(){const a=el();a.volume=0.15;a.play().catch(()=>{})}
- function sync(){want=/^#?about$/.test(location.hash.split('/')[0]);btn();if(want&&!muted()&&!document.hidden)play();else if(au)au.pause()}
- const kick=()=>{if(want&&!muted()&&!document.hidden&&(!au||au.paused))play()};['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,kick,{passive:true}));
- addEventListener('hashchange',()=>setTimeout(sync,0));document.addEventListener('visibilitychange',sync);new MutationObserver(()=>{if(want){const b=document.getElementById('amu'),h=document.querySelector('.pg h1');if(h&&(!b||b.parentNode!==h))btn()}}).observe(document.body,{childList:true,subtree:true});if(document.readyState==='loading')addEventListener('DOMContentLoaded',sync);else sync();window.VPPKA_ABOUT_AUDIO=()=>au})();
+  const h=cur&&document.querySelector('.pg h1');if(h&&b.parentNode!==h)h.appendChild(b);else if(!h&&!b.parentNode)document.body.appendChild(b);
+  b.hidden=!cur;b.textContent=muted()?'🔇':'🔊';b.title=muted()?'Включить музыку':'Выключить музыку';b.setAttribute('aria-label',b.title)}
+ function play(){if(!cur)return;const a=el(cur);a.play().catch(()=>{})}
+ function enter(k){const c=window.VPPKA_MUSIC[k],a=el(k);if(!c.keep){const go=()=>{try{a.currentTime=c.start||0}catch(e){}};if(a.readyState>=1)go();else a.addEventListener('loadedmetadata',go,{once:true})}}
+ function leave(k){const a=A[k];if(!a)return;a.pause();const c=window.VPPKA_MUSIC[k];if(!c.keep){try{a.currentTime=c.start||0}catch(e){}}}
+ function sync(){const k=keyOf();if(k!==cur){if(cur)leave(cur);cur=k;if(k)enter(k)}btn();if(cur&&!muted()&&!document.hidden)play();else if(cur&&A[cur])A[cur].pause()}
+ const kick=()=>{if(cur&&!muted()&&!document.hidden&&(!A[cur]||A[cur].paused))play()};['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,kick,{passive:true}));
+ addEventListener('hashchange',()=>setTimeout(sync,0));document.addEventListener('visibilitychange',sync);new MutationObserver(()=>{if(cur){const b=document.getElementById('amu'),h=document.querySelector('.pg h1');if(h&&(!b||b.parentNode!==h))btn()}else if(!cur&&window.VPPKA_DATA&&location.hash.startsWith('#member/')&&keyOf())sync()}).observe(document.body,{childList:true,subtree:true});
+ if(document.readyState==='loading')addEventListener('DOMContentLoaded',sync);else sync();window.VPPKA_ABOUT_AUDIO=()=>A.about;window.VPPKA_PAGE_AUDIO=()=>cur&&A[cur]})();
 
 // --- Баннер профиля: файл (видео/картинка/GIF, частями в Firestore banners/{uid}/chunks) или прямая ссылка ---
 (function(){let B=null,started=false,lastMsg='';const RX=/^https:\/\/[^\s]+\.(mp4|webm)([?#].*)?$/i,MAXB=8*1048576,CH=900000,blobs={};
