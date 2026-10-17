@@ -62,7 +62,28 @@ async function loadMembers(){const out=[],seen=new Set();let er='';
   const t=a.reviewedAt||a.createdAt;out.push({name:x.fio,discord:x.discord,status:STATUS[a.status]+' · '+prn(a.partyRank||0)+(dup?' · есть аккаунт':''),date:fdt(t),src:'заявка',t:t?.toMillis?.()||0});});}catch(e){er+=(er?' ':'')+'Заявки: '+(e.code||e.message);}
  mlist=out.sort((a,b)=>b.t-a.t);if(location.hash==='#members'){window.route();if(er)msg(er);}}
 
-export function install(){const P=window.P,on=P.news,ol=P.leadership;installAssign();
+
+// ---------- Гости: зарегистрированы на сайте, но не приняты в партию (та же аудитория, что «Участники») ----------
+const KEYMASTER='ZpVGAXbbg1a9I8kRsNEm0OU8QAt2';let gU=null,gA=null,gSub=null,gT=0;
+const gIni=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
+function gStart(){if(gSub)return;const f=F(),d=db();gSub=[];
+ const rr=()=>{clearTimeout(gT);gT=setTimeout(()=>{if((location.hash||'')==='#party'){const q=document.getElementById('pm-q'),v=q&&q.value,y=scrollY;window.route();const q2=document.getElementById('pm-q');if(q2&&v){q2.value=v;window.VPPKA_PQ(v)}scrollTo(0,y)}},120)};
+ gSub.push(f.onSnapshot(f.collection(d,'users'),s=>{gU=s.docs.map(x=>({...x.data(),uid:x.id}));rr()},e=>{console.warn('guests users',e.code);gU=gU||[];rr()}));
+ gSub.push(f.onSnapshot(f.collection(d,'applications'),s=>{gA=s.docs.map(x=>({...x.data(),id:x.id}));rr()},e=>{console.warn('guests apps',e.code);gA=gA||[];rr()}));}
+function guests(){const mem=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||(window.VPPKA_C&&window.VPPKA_C().leadership.members)||[];
+ const md=new Set(mem.map(m=>String(m.discordId||'')).filter(Boolean)),apps=gA||[];
+ const acc=a=>['accepted','member'].includes(a.status);const ts=t=>t?.toMillis?.()||0;
+ return (gU||[]).filter(u=>!window.VPPKA_HIDDEN(u)&&u.uid!==KEYMASTER&&!u.keyHash&&!md.has(String(u.discordId||''))
+   &&!apps.some(a=>acc(a)&&((a.uid&&a.uid===u.uid)||(a.discordId&&a.discordId===u.discordId))))
+  .map(u=>{const my=apps.filter(a=>(a.uid&&a.uid===u.uid)||(a.discordId&&a.discordId===u.discordId)).sort((a,b)=>ts(b.createdAt)-ts(a.createdAt))[0];
+   const st=!my?'заявка не подана':my.status==='new'?'заявка на рассмотрении':my.status==='rejected'?'заявка отклонена':'заявка: '+(STATUS[my.status]||my.status);
+   return {name:u.displayName||u.discordId||'Гость',discord:u.discordLink||u.discordId,photo:u.photo,date:fdt(u.createdAt),st,pend:my&&my.status==='new',t:ts(u.createdAt)}}).sort((a,b)=>b.t-a.t);}
+function guestBlock(){if(!canM())return '';gStart();
+ if(!gU)return `<div class="blk gst"><h2>Гости</h2><p class="amut">Загрузка…</p></div>`;const g=guests();
+ const card=x=>`<div class="pm-card gcard" data-q="${esc((x.name+' гость '+x.st).toLowerCase())}"><span class="pm-av${x.photo?'':' noph'}">${x.photo?`<img src="${esc(x.photo)}" alt="" loading="lazy">`:`<b>${esc(gIni(x.name))}</b>`}</span><span class="pm-n">${esc(x.name)}</span><span class="pm-r g-st${x.pend?' pend':''}">${esc(x.st)}</span>${x.discord?`<span class="pm-j g-d">${dlink(x.discord)}</span>`:''}<span class="pm-j">рег. ${esc(x.date)}</span></div>`;
+ return `<div class="blk gst"><h2>Гости <span class="g-cnt">${g.length}</span></h2><p class="amut">Зарегистрировались на сайте, но пока не приняты в партию. Раздел виден только по разрешению ключа.</p><div class="pm-grid">${g.map(card).join('')||'<p class="amut">Гостей нет.</p>'}</div></div>`;}
+
+export function install(){const P=window.P,op=P.party;P.party=()=>{const h=op();const g=guestBlock();return g?h.replace(/<\/div>(\s*)$/,g+'</div>$1'):h};const on=P.news,ol=P.leadership;installAssign();
  P.news=id=>{const h=on(id);return id===undefined&&tier()>=4?h.replace(/<\/div>$/,newsPanel()+'</div>'):h};
  P.leadership=()=>{const h=ol();return tier()>=4||chair()?h.replace(/<\/div>$/,memPanel()+'</div>'):h};
  P.apps=appsPage;P.members=membersPage;
