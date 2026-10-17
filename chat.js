@@ -11,7 +11,7 @@ const person=(u,c)=>{const p=pub[u];if(p)return {n:p.n||'Пользовател�
 const av=(p,cls='')=>`<span class="ch-av ${cls}${p.ph?'':' noph'}">${p.ph?`<img src="${esc(p.ph)}" alt="">`:`<b>${esc(ini(p.n))}</b>`}</span>`;
 function ft(t,full){const d=t?.toDate?.();if(!d)return '';const n=new Date(),hm=d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
  if(d.toDateString()===n.toDateString())return hm;const dm=d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});return full?dm+' '+hm:dm}
-const unreadTotal=()=>Object.values(chats).reduce((s,c)=>s+((c.unread||{})[me]||0),0);
+const unreadTotal=()=>Object.values(chats).filter(c=>((c.unread||{})[me]||0)>0).length;
 // миниатюра для справочника (≈96px), чтобы не тянуть полные фото
 function thumb(src){return new Promise(r=>{if(!src)return r('');const im=new Image();im.onload=()=>{const k=96/Math.max(im.width,im.height,96),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.8))};im.onerror=()=>r('');im.src=src})}
 async function pubSelf(){const a=window.VPPKA_AUTH,pf=a&&a.profile;if(!pf||isOwn||me===KEYMASTER||window.VPPKA_HIDDEN({uid:me,discordId:pf.discordId}))return;
@@ -50,7 +50,7 @@ function els(){let b=document.getElementById('chBtn'),p=document.getElementById(
 function people(){const s=q.trim().toLowerCase();return Object.entries(pub).filter(([u,p])=>u!==me&&(!s||(p.n||'').toLowerCase().includes(s)||(p.did||'').toLowerCase().includes(s))).sort((a,b)=>(a[1].n||'').localeCompare(b[1].n||'','ru')).slice(0,60)}
 function paintPeople(){const l=document.getElementById('ch-pl');if(!l)return;const L=people();l.innerHTML=L.map(([u,p])=>`<button class="ch-row" data-a="open" data-u="${esc(u)}">${av(p)}<span class="ch-rt"><span class="ch-nm">${esc(p.n)}</span><span class="ch-lm">${chats[cid(me,u)]?'есть переписка':'начать чат'}</span></span></button>`).join('')||'<p class="ch-empty">Никого не найдено.</p>'}
 function paint(msgOnly){if(!me){const b=document.getElementById('chBtn'),p=document.getElementById('chPanel');if(b)b.hidden=true;if(p)p.hidden=true;document.body.classList.remove('ch-open');return}
- const {b,p}=els();b.hidden=false;const n=unreadTotal(),bd=b.querySelector('.ch-bdg');bd.hidden=!n;bd.textContent=n>99?'99+':n;b.classList.toggle('on',open);
+ const {b,p}=els();b.hidden=false;const n=unreadTotal(),bd=b.querySelector('.ch-bdg');bd.hidden=!n;bd.textContent=n>99?'99+':n;b.title=n?'Непрочитанных чатов: '+n:'Сообщения';b.classList.toggle('on',open);
  p.hidden=!open;document.body.classList.toggle('ch-open',open);if(!open)return;
  if(view==='conv'&&cur){const c=chats[cur.id],o=person(cur.uid,c),box=document.getElementById('ch-msgs');
   if(msgOnly&&box&&p.dataset.v==='conv:'+cur.id){const nearEnd=box.scrollHeight-box.scrollTop-box.clientHeight<80;box.innerHTML=msgHtml();if(nearEnd||msgs.at(-1)?.from===me)box.scrollTop=box.scrollHeight;return}
