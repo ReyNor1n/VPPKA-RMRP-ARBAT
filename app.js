@@ -7,7 +7,7 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',news:'Новости',legal:'Правовая база',contacts:'Контакты'};
 load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src=S.logo;
-pname.innerHTML=`<span>Всероссийская политическая партия</span>«${esc(S.name.split('«')[1]||S.name)}`;srv.textContent=S.name+' · '+S.server;
+pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+S.server;
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
 <div><h4>О партии</h4><a href="#about">Общие сведения</a><a href="#program">Программа</a><a href="#charter">Устав</a><a href="#leadership">Руководство</a></div>
