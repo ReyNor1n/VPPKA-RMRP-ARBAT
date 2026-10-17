@@ -168,3 +168,6 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .joinbig:hover{border-color:#ff2a3c;color:#fff;box-shadow:0 0 18px rgba(255,40,60,.6)}
 
 .pinm{display:block;margin-top:4px;color:var(--red);font:12px Oxanium,monospace;letter-spacing:.5px}.nl .it.pin{border-left:2px solid var(--red);padding-left:10px;background:linear-gradient(90deg,#ff2a3a12,transparent 60%)}
+
+.authlink .avtx{display:flex;flex-direction:column;min-width:0;line-height:1.15}.authlink .avpos{color:#8fb8bf;font:11px Oxanium,monospace;letter-spacing:.04em;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85;margin-top:2px}
+@media(max-width:768px){.authlink.in .avtx{display:none}}
