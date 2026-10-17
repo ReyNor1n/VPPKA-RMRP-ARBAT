@@ -161,9 +161,9 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
    if(f.size>MAXB)return say(`Файл ${(f.size/1048576).toFixed(1)} МБ — максимум 8 МБ.`);if(!myDid())return say('Нет Discord ID в профиле.');
    const img=f.type.startsWith('image/');if(!img){const u=URL.createObjectURL(f),c=await check(u);URL.revokeObjectURL(u);if(c==='long')return say('Видео длиннее 2 минут.');if(c==='err')return say('Браузер не может воспроизвести это видео.')}
    e.target.disabled=true;try{const s=await b64(f),n=Math.ceil(s.length/CH),ver=String(Date.now());
-    for(let i=0;i<n;i++){say(`Загрузка ${i+1}/${n}…`);await fb.F.setDoc(fb.F.doc(fb.db,'banners',uid,'chunks',ver+'_'+i),{d:s.slice(i*CH,(i+1)*CH)})}
-    await fb.F.setDoc(fb.F.doc(fb.db,'banners',uid),{did:myDid(),t:fb.F.serverTimestamp(),kind:img?'image':'video',mime:f.type,n,size:f.size,ver});await delChunks(uid,ver);say('Баннер загружен.')}
-   catch(x){say('Не удалось: '+perr(x))}e.target.disabled=false}
+    let step='';try{for(let i=0;i<n;i++){step=`часть файла ${i+1}/${n}`;say(`Загрузка ${i+1}/${n}…`);await fb.F.setDoc(fb.F.doc(fb.db,'banners',uid,'chunks',ver+'_'+i),{d:s.slice(i*CH,(i+1)*CH)})}
+    step='запись баннера';await fb.F.setDoc(fb.F.doc(fb.db,'banners',uid),{did:myDid(),t:fb.F.serverTimestamp(),kind:img?'image':'video',mime:f.type,n,size:f.size,ver});step='удаление старых частей';await delChunks(uid,ver).catch(()=>{});say('Баннер загружен.')}
+   catch(x){say(`Не удалось (шаг: ${step}): `+perr(x))}}catch(x){say('Не удалось прочитать файл: '+(x.message||x))}e.target.disabled=false}
   if(e.target.id==='vb-save'){const u=document.getElementById('vb-url').value.trim();if(!RX.test(u))return say('Нужна прямая ссылка https на .mp4 или .webm.');if(!myDid())return say('Нет Discord ID в профиле.');
    say('Проверяю видео…');const c=await check(u);if(c==='err')return say('Видео по ссылке не открывается.');if(c==='long')return say('Видео длиннее 2 минут.');
    try{await fb.F.setDoc(fb.F.doc(fb.db,'banners',uid),{url:u,did:myDid(),t:fb.F.serverTimestamp(),kind:'video'});await delChunks(uid);say('Сохранено.')}catch(x){say('Не удалось: '+perr(x))}}
