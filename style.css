@@ -296,3 +296,4 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .acc-pw{margin-top:14px}.acc-pw summary{cursor:pointer;opacity:.7;font-size:13px}.acc-pw summary:hover{opacity:1}.acc-md td{word-break:break-all}
 
 .phbtn{cursor:pointer;display:inline-block;margin:4px 0}.phname{font-size:12px;opacity:.7;word-break:break-all}
+.nh{margin:22px 0 8px;color:var(--red);font-size:19px}.ninl{margin:10px 0 16px}
