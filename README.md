@@ -32,3 +32,11 @@
 
 ## Локальный просмотр
 `python3 -m http.server` в папке → http://localhost:8000 (через двойной клик по файлу content.json не загрузится).
+
+## Firestore: заявки, ключи доступа, новости, состав (v21)
+- `#join` → `applications/{autoId}` (status `new`), создавать может любой; читать/обрабатывать — обладатели ключа.
+- Ключи: `accessKeys/{sha256(ключ)}` = `{rank, roleName, discordId, revoked}`; ключ привязан к одному Discord. Ранг вычисляется правилами «вживую» при каждой записи → аннулирование/восстановление действует мгновенно.
+- Владелец/keymaster: uid в `config/owners.uids` (только через консоль) — ранг 1000.
+- Новости (`news`) и состав (`members`, числовой `rank`) — публичное чтение; правка по правилам. Пока коллекции пусты, сайт показывает content.json.
+- Служебные скрипты (`tools/`, Node 20): `create-keymaster.mjs`, `add-key.mjs`, `revoke-key.mjs`, `restore-key.mjs`, `list-keys.mjs`, `migrate.mjs`. Пароль keymaster хранится только в `/workspace/.vppka-keymaster`, не в репозитории.
+- Правила: `firestore.rules` → консоль Firebase → Firestore → Rules → Publish.
