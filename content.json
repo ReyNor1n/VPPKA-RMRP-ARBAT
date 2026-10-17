@@ -33,20 +33,17 @@
    {
     "name": "Укажите имя",
     "role": "Председатель Партии (Первый секретарь ЦК)",
-    "photo": "",
-    "memberId": "m1"
+    "photo": ""
    },
    {
     "name": "Вакансия",
     "role": "Член Центрального Комитета",
-    "photo": "",
-    "memberId": "m2"
+    "photo": ""
    },
    {
     "name": "Вакансия",
     "role": "Председатель Контрольно-ревизионной комиссии",
-    "photo": "",
-    "memberId": "m3"
+    "photo": ""
    }
   ],
   "trioLeft": "За справедливость, что сильнее страха.",
@@ -337,15 +334,7 @@
     "group": "Руководство",
     "photo": "img/uploads/1792201424096-Gv9Di.jpg",
     "bio": "",
-    "contact": "",
-    "id": "m1",
-    "joined": "",
-    "birth": "",
-    "city": "",
-    "achievements": "",
-    "discord": "",
-    "forum": "",
-    "quote": ""
+    "contact": ""
    },
    {
     "name": "Вакансия",
@@ -353,15 +342,7 @@
     "group": "Центральный Комитет",
     "photo": "",
     "bio": "Место будет заполнено после Съезда.",
-    "contact": "",
-    "id": "m2",
-    "joined": "",
-    "birth": "",
-    "city": "",
-    "achievements": "",
-    "discord": "",
-    "forum": "",
-    "quote": ""
+    "contact": ""
    },
    {
     "name": "Вакансия",
@@ -369,15 +350,7 @@
     "group": "Контрольно-ревизионная комиссия",
     "photo": "",
     "bio": "",
-    "contact": "",
-    "id": "m3",
-    "joined": "",
-    "birth": "",
-    "city": "",
-    "achievements": "",
-    "discord": "",
-    "forum": "",
-    "quote": ""
+    "contact": ""
    }
   ]
  },
@@ -442,12 +415,12 @@
   "items": [
    {
     "label": "Discord",
-    "value": "Ссылка-приглашение (укажите в админке)",
-    "url": ""
+    "value": "Спец. связь партии",
+    "url": "https://discord.gg/Wt6XFqVhY"
    },
    {
     "label": "Форум RMRP",
-    "value": "Тема партии на форуме (укажите в админке)",
+    "value": "....",
     "url": ""
    },
    {
