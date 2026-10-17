@@ -78,3 +78,9 @@ footer a{display:block;color:var(--mut);margin:4px 0}footer a:hover{color:#fff}f
 .kp-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}.kp-in{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:13px}.kp-in input{display:inline-block;width:auto;margin:0}.kp-in input[type=number]{width:70px}
 .kapp{border-left:3px solid var(--cy)}
 @media(max-width:860px){.kp-grid{grid-template-columns:1fr}.kp-a{white-space:normal}}
+/* фото персонажа */
+.phrow{display:flex;gap:14px;align-items:flex-start;margin-top:6px}.phpv{width:84px;height:84px;object-fit:cover;border:1px solid var(--line,#2a2f3a);border-radius:6px}
+.phnote{margin:6px 0 0;font-size:.85em;color:var(--gold,#e0b04a)}.phnote b{color:#fff}
+.phacc{width:140px;height:140px;object-fit:cover;border:1px solid var(--line,#2a2f3a);border-radius:8px;float:right;margin:0 0 12px 16px}
+.phmini{width:44px;height:44px;object-fit:cover;border-radius:6px;display:inline-block;vertical-align:middle}.ph0{background:#151922;border:1px solid #2a2f3a}
+.kmem th{text-align:left;font-weight:600;opacity:.7}

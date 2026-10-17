@@ -14,12 +14,16 @@ async function init(){
   m=s.replace(/^@/,'').toLowerCase();if(/^(?!.*\.\.)[a-z0-9_.]{2,32}$/.test(m))return m;return null;}
  const mail=id=>`${id}@vppka.local`;
  const field=(id,l,t='text',ph='')=>`<label class="fl">${l}<input id="${id}" type="${t}" placeholder="${ph}" autocomplete="${t==='password'?'current-password':'username'}"></label>`;
+ // Фото персонажа: уменьшается в браузере до 400px, JPEG, не больше ~150 КБ (лимит в правилах — 200 000 символов)
+ function photoData(f){return new Promise((res,rej)=>{if(!f)return res('');if(!/^image\//.test(f.type))return rej(new Error('Выберите файл изображения.'));const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{let s=400,q=.8,u='';for(let i=0;i<8;i++){const k=Math.min(1,s/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);u=c.toDataURL('image/jpeg',q);if(u.length<=150000)return res(u);q=Math.max(.4,q-.1);s=Math.round(s*.85);}rej(new Error('Изображение слишком большое.'))};im.onerror=()=>rej(new Error('Не удалось прочитать изображение.'));im.src=r.result};r.readAsDataURL(f)});}
+ const photoField=(id,cur)=>`<div class="fl phf">Фото персонажа из игры (необязательно)<div class="phrow"><img id="${id}-pv" class="phpv" alt="" src="${esc(cur||'')}"${cur?'':' hidden'}><div><input id="${id}" type="file" accept="image/*"><p class="phnote">⚠ Фото персонажа <b>без головного убора</b>, лицо хорошо видно. JPG/PNG, будет уменьшено до 400px.</p></div></div></div>`;
  const box=(title,body)=>`${crumbs(title)}<div class="pg"><div class="blk auth">${body}</div></div>`;
  P.login=()=>user?P.account():box('Вход',`<h2>Вход</h2>${field('a-d','Discord (ссылка на профиль или имя пользователя)','text','https://discord.com/users/123… или username')}${field('a-p','Пароль','password')}<p class="aerr" id="a-e"></p><button class="btn" id="a-go">Войти</button><p class="amut">Нет аккаунта? <a href="#register">Зарегистрироваться</a></p>`);
- P.register=()=>user?P.account():box('Регистрация',`<h2>Регистрация</h2>${field('r-d','Ссылка на профиль Discord или имя пользователя','text','https://discord.com/users/123… или username')}${field('r-n','Ник (необязательно)')}${field('r-p','Пароль (мин. 6 символов)','password')}${field('r-p2','Повторите пароль','password')}${field('r-k','Ключ доступа (необязательно)','password','если выдан руководством')}<p class="aerr" id="a-e"></p><button class="btn" id="r-go">Зарегистрироваться</button><p class="amut">Уже есть аккаунт? <a href="#login">Войти</a></p>`);
+ P.register=()=>user?P.account():box('Регистрация',`<h2>Регистрация</h2>${field('r-d','Ссылка на профиль Discord или имя пользователя','text','https://discord.com/users/123… или username')}${field('r-n','Ник (необязательно)')}${field('r-p','Пароль (мин. 6 символов)','password')}${field('r-p2','Повторите пароль','password')}${photoField('r-ph')}${field('r-k','Ключ доступа (необязательно)','password','если выдан руководством')}<p class="aerr" id="a-e"></p><button class="btn" id="r-go">Зарегистрироваться</button><p class="amut">Уже есть аккаунт? <a href="#login">Войти</a></p>`);
  P.account=()=>{if(!user)return P.login();const p=profile||{};const dt=p.createdAt?.toDate?p.createdAt.toDate().toLocaleDateString('ru-RU'):'—';
-  return box('Личный кабинет',`<h2>Личный кабинет</h2><table class="tbl">${p.displayName?`<tr><td>Ник</td><td>${esc(p.displayName)}</td></tr>`:''}<tr><td>Discord</td><td>${/^https?:/.test(p.discordLink||'')?`<a href="${esc(p.discordLink)}" target="_blank" rel="noopener">${esc(p.discordLink)}</a>`:esc(p.discordLink||p.discordId||'')}</td></tr><tr><td>Discord ID</td><td>${esc(p.discordId||'')}</td></tr><tr><td>Дата регистрации</td><td>${dt}</td></tr><tr><td>Статус</td><td>${power.rank>0?`<b style="color:var(--gold)">${esc(power.roleName)}</b> (уровень ${power.rank})`:(p.keyHash?'<span style="color:var(--red)">ключ аннулирован или недействителен</span>':'член сайта, без ключа')}</td></tr></table>
-  ${power.rank>0?`<p style="margin-top:16px"><a class="btn sm" href="#apps">Заявки в партию</a> <a class="btn sm o" href="#news">Новости</a> <a class="btn sm o" href="#leadership">Руководство</a></p>`:''}
+  return box('Личный кабинет',`<h2>Личный кабинет</h2>${p.photo?`<img class="phacc" src="${esc(p.photo)}" alt="Фото персонажа">`:''}<table class="tbl">${p.displayName?`<tr><td>Ник</td><td>${esc(p.displayName)}</td></tr>`:''}<tr><td>Discord</td><td>${/^https?:/.test(p.discordLink||'')?`<a href="${esc(p.discordLink)}" target="_blank" rel="noopener">${esc(p.discordLink)}</a>`:esc(p.discordLink||p.discordId||'')}</td></tr><tr><td>Discord ID</td><td>${esc(p.discordId||'')}</td></tr><tr><td>Дата регистрации</td><td>${dt}</td></tr><tr><td>Статус</td><td>${power.rank>0?`<b style="color:var(--gold)">${esc(power.roleName)}</b> (уровень ${power.rank})`:(p.keyHash?'<span style="color:var(--red)">ключ аннулирован или недействителен</span>':'член сайта, без ключа')}</td></tr></table>
+  ${power.rank>0?`<p style="margin-top:16px"><a class="btn sm" href="#apps">Заявки в партию</a> <a class="btn sm o" href="#news">Новости</a> <a class="btn sm o" href="#leadership">Руководство</a>${power.members||power.rank>=1000?' <a class="btn sm o" href="#members">Участники партии</a>':''}</p>`:''}
+  <h3 style="margin-top:22px">Фото персонажа</h3>${photoField('p-ph',p.photo)}<button class="btn sm" id="p-go">Сохранить фото</button>${p.photo?' <button class="btn sm o" id="p-rm">Удалить фото</button>':''}<p class="aerr" id="p-e"></p>
   <h3 style="margin-top:22px">Ключ доступа</h3>${field('k-in','Введите ключ, выданный руководством','password')}<p class="aerr" id="a-e"></p><button class="btn sm" id="k-go">Применить ключ</button>${p.keyHash?' <button class="btn sm o" id="k-rm">Снять ключ</button>':''}<p style="margin-top:20px"><button class="btn o" id="a-out">Выйти</button></p>`)};
  const err=t=>{const e=document.getElementById('a-e');if(e)e.textContent=t};
  document.addEventListener('click',async ev=>{const id=ev.target.id;const v=x=>(document.getElementById(x)||{}).value||'';
@@ -29,17 +33,22 @@ async function init(){
    ev.target.disabled=true;await A.signInWithEmailAndPassword(auth,mail(d),v('a-p'));location.hash='#account';}
   if(id==='r-go'){const raw=v('r-d').trim(),d=did(raw),p=v('r-p');if(!d)return err('Неверный формат Discord. Укажите ссылку discord.com/users/… или имя пользователя.');
    if(p.length<6)return err('Пароль должен быть не короче 6 символов.');if(p!==v('r-p2'))return err('Пароли не совпадают.');
-   ev.target.disabled=true;const c=await A.createUserWithEmailAndPassword(auth,mail(d),p);
-   profile={discordLink:raw.slice(0,200),discordId:d,displayName:v('r-n').trim().slice(0,40),createdAt:F.serverTimestamp()};
-   let kmsg='';const kk=v('r-k').trim();if(kk){const r=await checkKey(kk,d);if(r.ok)Object.assign(profile,{keyHash:r.h,rank:r.rank,roleName:r.roleName});else kmsg=r.msg;}
-   try{await F.setDoc(F.doc(db,'users',c.user.uid),profile);}catch(e){console.warn('Профиль не сохранён',e);}profile.createdAt={toDate:()=>new Date()};await refreshPower();
-   location.hash='#account';if(kmsg)setTimeout(()=>err('Аккаунт создан, но ключ не принят: '+kmsg),50);}
+   ev.target.disabled=true;const ph=await photoData((document.getElementById('r-ph')||{}).files?.[0]).catch(e=>{err(e.message);return null});if(ph===null){ev.target.disabled=false;return;}
+   const c=await A.createUserWithEmailAndPassword(auth,mail(d),p);
+   profile={discordLink:raw.slice(0,200),discordId:d,displayName:v('r-n').trim().slice(0,40),createdAt:F.serverTimestamp()};if(ph)profile.photo=ph;
+   let kmsg='';const kk=v('r-k').trim();if(kk){const r=await checkKey(kk,d);if(r.ok)Object.assign(profile,{keyHash:r.h,rank:r.rank,roleName:r.roleName});else kmsg='Ключ не принят: '+r.msg;}
+   try{await F.setDoc(F.doc(db,'users',c.user.uid),profile);}catch(e){console.warn('Профиль не сохранён',e);if(profile.photo){const {photo,...rest}=profile;try{await F.setDoc(F.doc(db,'users',c.user.uid),rest);delete profile.photo;kmsg=(kmsg?kmsg+' ':'')+'Фото пока не сохранено — загрузите его позже в кабинете.';}catch(e2){}}}profile.createdAt={toDate:()=>new Date()};await refreshPower();
+   location.hash='#account';if(kmsg)setTimeout(()=>err('Аккаунт создан. '+kmsg),50);}
   if(id==='k-go'){const kk=v('k-in').trim();if(!kk)return err('Введите ключ.');ev.target.disabled=true;const r=await checkKey(kk,profile.discordId);if(!r.ok){ev.target.disabled=false;return err(r.msg);}
    await F.updateDoc(F.doc(db,'users',user.uid),{keyHash:r.h,rank:r.rank,roleName:r.roleName});Object.assign(profile,{keyHash:r.h,rank:r.rank,roleName:r.roleName});await refreshPower();route();}
   if(id==='k-rm'){await F.updateDoc(F.doc(db,'users',user.uid),{keyHash:F.deleteField(),rank:F.deleteField(),roleName:F.deleteField()});delete profile.keyHash;delete profile.rank;delete profile.roleName;await refreshPower();route();}
+  if(id==='p-go'||id==='p-rm'){const pe=t=>{const e=document.getElementById('p-e');if(e)e.textContent=t};let ph=null;
+   if(id==='p-go'){try{ph=await photoData(document.getElementById('p-ph').files[0]);}catch(e){return pe(e.message)}if(!ph)return pe('Выберите файл.');}
+   ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{photo:ph?ph:F.deleteField()});if(ph)profile.photo=ph;else delete profile.photo;route();}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает фото (правила базы не обновлены).':em(e));}return;}
   if(id==='a-out'){await A.signOut(auth);location.hash='#home';}
   }catch(e){err(em(e));ev.target.disabled=false;}
  });
+ document.addEventListener('change',async ev=>{const t=ev.target;if(t.id!=='r-ph'&&t.id!=='p-ph')return;const pv=document.getElementById(t.id+'-pv');try{const u=await photoData(t.files[0]);if(pv&&u){pv.src=u;pv.hidden=false;}}catch(e){err(e.message)}});
  if(link)link.style.display='';
  if(['login','register','account'].includes(location.hash.slice(1)))route();
  const [{initializeApp},A_,F_]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
@@ -57,11 +66,11 @@ async function init(){
   if(!s.exists())return{ok:false,msg:'ключ не найден.'};const x=s.data();if(x.revoked)return{ok:false,msg:'ключ аннулирован.'};if(x.discordId!==discordId)return{ok:false,msg:'ключ выдан другому пользователю Discord.'};return{ok:true,h,rank:x.rank,roleName:x.roleName};}
  // Живая проверка полномочий: владелец (config/owners) или действующий ключ, привязанный к этому Discord
  async function refreshPower(){power={rank:0,roleName:''};if(!user)return;
-  try{const o=await F.getDoc(F.doc(db,'config','owners'));if(o.exists()&&(o.data().uids||[]).includes(user.uid)){power={rank:1000,roleName:'Владелец'};return;}}catch(e){}
-  const h=profile&&profile.keyHash;if(!h)return;try{const s=await F.getDoc(F.doc(db,'accessKeys',h));const x=s.exists()&&s.data();if(x&&!x.revoked&&x.discordId===profile.discordId&&user.email===profile.discordId+'@vppka.local')power={rank:x.rank,roleName:x.roleName,chair:x.canEditChairman===true};}catch(e){}}
- await loadData();route();import('./panel.js?v=22').then(m=>m.install()).catch(e=>console.error('panel',e));
+  try{const o=await F.getDoc(F.doc(db,'config','owners'));if(o.exists()&&(o.data().uids||[]).includes(user.uid)){power={rank:1000,roleName:'Владелец',members:true};return;}}catch(e){}
+  const h=profile&&profile.keyHash;if(!h)return;try{const s=await F.getDoc(F.doc(db,'accessKeys',h));const x=s.exists()&&s.data();if(x&&!x.revoked&&x.discordId===profile.discordId&&user.email===profile.discordId+'@vppka.local')power={rank:x.rank,roleName:x.roleName,chair:x.canEditChairman===true,members:x.canViewMembers===true};}catch(e){}}
+ await loadData();route();import('./panel.js?v=23').then(m=>m.install()).catch(e=>console.error('panel',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;}catch(e){console.warn(e)}}await refreshPower();
   if(link){link.style.display='';link.textContent=u?((profile&&profile.displayName)||'Кабинет'):'Войти';link.href=u?'#account':'#login';}
-  if(['login','register','account','join','news','leadership','apps'].includes(location.hash.slice(1).split('/')[0]))route();});
+  if(['login','register','account','join','news','leadership','apps','members'].includes(location.hash.slice(1).split('/')[0]))route();});
 }

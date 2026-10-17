@@ -33,6 +33,13 @@ service cloud.firestore {
       return signedIn() && keyRank() >= 1 && isHash(h)
           && get(keyPath(h)).data.get('canEditChairman', false) == true;
     }
+    // Доп. право: ключ с canViewMembers==true видит список участников партии (users)
+    function canMembers() {
+      let up = /databases/$(database)/documents/users/$(request.auth.uid);
+      let h = exists(up) ? get(up).data.get('keyHash', '') : '';
+      return signedIn() && keyRank() >= 1 && isHash(h)
+          && get(keyPath(h)).data.get('canViewMembers', false) == true;
+    }
     function myRank() { return !signedIn() ? 0 : (isOwner() ? 1000 : keyRank()); }
 
     // необязательное строковое поле не длиннее max
@@ -51,14 +58,15 @@ service cloud.firestore {
               && d.get('roleName', null) == get(keyPath(d.keyHash)).data.roleName);
       }
       function validUser(d) {
-        return d.keys().hasOnly(['discordLink','discordId','displayName','createdAt','keyHash','rank','roleName'])
+        return d.keys().hasOnly(['discordLink','discordId','displayName','createdAt','keyHash','rank','roleName','photo'])
           && reqStr(d, 'discordId', 64) && optStr(d, 'discordLink', 200) && optStr(d, 'displayName', 40)
+          && (!('photo' in d) || (d.photo is string && d.photo.size() <= 200000 && d.photo.matches('^data:image/jpeg;base64,.*')))
           && request.auth.token.email == d.discordId + '@vppka.local';
       }
-      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow read: if signedIn() && (request.auth.uid == uid || isOwner() || canMembers());
       allow create: if signedIn() && request.auth.uid == uid && validUser(request.resource.data) && validKey(request.resource.data);
       allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo'])
         && validUser(request.resource.data)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['keyHash','rank','roleName'])
             || validKey(request.resource.data));
@@ -70,8 +78,9 @@ service cloud.firestore {
       allow get: if signedIn();                 // нужно знать хэш, т.е. сам ключ
       allow list: if myRank() >= 100;           // перечислять может только управляющий ключами
       allow create, update: if myRank() >= 100 && isHash(h)
-        && request.resource.data.keys().hasOnly(['rank','roleName','discordId','label','createdBy','createdAt','revoked','revokedAt','canEditChairman'])
+        && request.resource.data.keys().hasOnly(['rank','roleName','discordId','label','createdBy','createdAt','revoked','revokedAt','canEditChairman','canViewMembers'])
         && (!('canEditChairman' in request.resource.data) || request.resource.data.canEditChairman is bool)
+        && (!('canViewMembers' in request.resource.data) || request.resource.data.canViewMembers is bool)
         && (!('revoked' in request.resource.data) || request.resource.data.revoked is bool)
         && reqStr(request.resource.data, 'discordId', 64)
         && request.resource.data.rank is int && request.resource.data.rank >= 1

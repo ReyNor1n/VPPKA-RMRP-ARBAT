@@ -37,10 +37,27 @@ function appsPage(){const c=`<div class="crumbs"><a href="#home">Главная<
  <div class="kp-row"><button class="btn sm" data-aa="${a.id}">Принять</button> <button class="btn sm o kp-del" data-ar="${a.id}">Отклонить</button> <span class="kp-in">в состав: должность <input id="ar-${a.id}" value="Член партии"> уровень <input id="ak-${a.id}" type="number" min="0" max="${R-1}" value="${Math.min(10,R-1)}"></span> <button class="btn sm" data-am="${a.id}">Принять и назначить в состав</button></div></div>`}).join('')}</div>`;}
 async function loadApps(){try{const s=await F().getDocs(F().query(F().collection(db(),'applications'),F().orderBy('createdAt','desc')));apps=s.docs.map(d=>({...d.data(),id:d.id}));}catch(e){apps=[];setTimeout(()=>msg('Ошибка загрузки: '+(e.code||e.message)),0)}if(location.hash==='#apps')window.route();}
 
+// ---------- Участники партии (только ключи с canViewMembers и владельцы) ----------
+let mlist=null;
+const canM=()=>{const p=FB().power||{};return !!p.members||(p.rank||0)>=1000};
+const dlink=x=>{const s=String(x||'');const id=s.match(/(\d{15,21})/);return id?`<a href="https://discord.com/users/${id[1]}" target="_blank" rel="noopener">${esc(/^https?:/.test(s)?s:'discord.com/users/'+id[1])}</a>`:esc(s)};
+const fdt=t=>t&&t.toDate?t.toDate().toLocaleDateString('ru-RU'):(t||'—');
+function membersPage(){const c=`<div class="crumbs"><a href="#home">Главная</a> / Участники партии</div>`;
+ if(!canM())return c+`<div class="pg"><h1>Нет доступа</h1><p>Раздел доступен только по специальному разрешению ключа.</p></div>`;
+ if(!mlist){loadMembers();return c+`<div class="pg"><h1>Участники партии</h1><p>Загрузка…</p></div>`;}
+ const row=m=>`<tr><td>${m.photo?`<img class="phmini" src="${esc(m.photo)}" alt="">`:'<span class="phmini ph0"></span>'}</td><td><b>${esc(m.name||'—')}</b>${m.src?`<br><small>${esc(m.src)}</small>`:''}</td><td>${dlink(m.discord)}</td><td>${esc(m.status)}</td><td>${esc(m.date)}</td></tr>`;
+ return c+`<div class="pg"><h1>Участники партии</h1><p class="amut">Закрытый список: зарегистрированные на сайте и принятые по заявкам. Всего: ${mlist.length}.</p><p class="aerr" id="pmsg"></p>
+ <table class="tbl kmem"><tr><th></th><th>Имя</th><th>Discord</th><th>Статус / должность</th><th>Дата</th></tr>${mlist.map(row).join('')||'<tr><td colspan="5">Пока никого.</td></tr>'}</table></div>`;}
+async function loadMembers(){const out=[],seen=new Set();let er='';
+ try{const s=await F().getDocs(F().collection(db(),'users'));s.docs.forEach(d=>{const u=d.data();seen.add(u.discordId);out.push({name:u.displayName||u.discordId,discord:u.discordLink||u.discordId,photo:u.photo,status:u.rank?`${u.roleName} (ур. ${u.rank})`:'Зарегистрирован',date:fdt(u.createdAt),src:'аккаунт на сайте',t:u.createdAt?.toMillis?.()||0});});}catch(e){er='Аккаунты: '+(e.code==='permission-denied'?'нет доступа (правила базы не обновлены или нет разрешения).':(e.code||e.message));}
+ try{const s=await F().getDocs(F().collection(db(),'applications'));s.docs.forEach(d=>{const a=d.data();if(!['accepted','member'].includes(a.status))return;const x=a.answers||{};const dup=a.discordId&&seen.has(a.discordId);
+  const t=a.reviewedAt||a.createdAt;out.push({name:x.fio,discord:x.discord,status:STATUS[a.status]+(dup?' · есть аккаунт':''),date:fdt(t),src:'заявка',t:t?.toMillis?.()||0});});}catch(e){er+=(er?' ':'')+'Заявки: '+(e.code||e.message);}
+ mlist=out.sort((a,b)=>b.t-a.t);if(location.hash==='#members'){window.route();if(er)msg(er);}}
+
 export function install(){const P=window.P,on=P.news,ol=P.leadership;
  P.news=id=>{const h=on(id);return id===undefined&&rank()>=1?h.replace(/<\/div>$/,newsPanel()+'</div>'):h};
  P.leadership=()=>{const h=ol();return rank()>=1?h.replace(/<\/div>$/,memPanel()+'</div>'):h};
- P.apps=appsPage;
+ P.apps=appsPage;P.members=membersPage;
  document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;const d=b.dataset,id=b.id,f=F();
   const done=async t=>{await window.VPPKA_RELOAD();msg(t)};
   try{
