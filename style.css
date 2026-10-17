@@ -154,3 +154,27 @@ body.top{padding:0}
 .tmenu{display:none;flex-direction:column}.tmenu.open{display:flex}.tmenu a{border-right:0;border-bottom:1px solid #ffffff22}
 .trio{grid-template-columns:repeat(3,1fr);gap:10px;padding:30px 4vw 10px}.tri-cap h3{font-size:11px}.tri-cap .role{font-size:9px}.trio-sl{font-size:7vw;padding:20px 5vw 40px}}
 .btn{white-space:nowrap}
+/* v11 header + triangles */
+.orn,.plate{display:none}
+.hb{position:relative;background:#922a26;background-image:repeating-linear-gradient(60deg,transparent 0 46px,#e6c79a99 46px 48px),repeating-linear-gradient(-60deg,transparent 0 46px,#e6c79a99 46px 48px);display:flex;align-items:center;justify-content:center;min-height:110px;padding:14px 120px;border-bottom:3px solid #6e1d1a}
+.hb-logo{position:absolute;left:4vw;top:50%;transform:translateY(-50%)}.hb-logo img{height:78px;display:block}
+.hb-t{text-align:center;background:#922a26;padding:4px 24px}
+.hb-os{font:600 11px Manrope;letter-spacing:.18em;text-transform:uppercase;color:#f0dcb8}
+.hb-n{font:700 clamp(28px,4.6vw,60px)/1.1 "PT Serif",Georgia,serif;color:#fff}
+.hb .burger{display:none}
+.tmenu .tj{margin-left:auto;background:var(--r)}
+main{background:var(--p)}
+.tri3{position:relative;width:min(960px,94vw);aspect-ratio:2/1;margin:50px auto 0}
+.tri3>div{position:absolute;top:0;height:100%}
+.tl{left:0;width:48%}.tr{left:52%;width:48%}
+.tmw{left:19%;width:62%;background:var(--p);clip-path:polygon(0 0,100% 0,50% 100%);z-index:2}
+.tm{left:22.5%;width:55%;height:95%!important;z-index:3}
+.tp{position:absolute;inset:0;background:#d4ab7a center/cover no-repeat}
+.tp.up{clip-path:polygon(50% 0,100% 100%,0 100%)}.tp.dn{clip-path:polygon(0 0,100% 0,50% 100%);background-color:#922a26}
+.tp.none span{position:absolute;left:0;right:0;top:42%;text-align:center;font:700 clamp(22px,4vw,48px) "PT Mono",monospace;color:#fff;opacity:.9}
+.tp.dn.none span{top:22%}
+.tt{position:absolute;left:8%;right:8%;bottom:6%;margin:0;text-align:center;font:clamp(10px,1.45vw,17px)/1.35 "PT Mono",monospace;color:var(--k);z-index:1}
+.tri-sl{text-align:center;font:clamp(13px,1.8vw,22px) "PT Mono",monospace;margin:22px 5vw 60px}
+@media(max-width:900px){.hb{justify-content:flex-start;padding:12px 56px 12px 84px;min-height:80px}.hb-logo{left:14px}.hb-logo img{height:54px}.hb-t{text-align:left;padding:2px 8px}.hb-os{font-size:8px}.hb-n{font-size:6.6vw}
+.hb .burger{display:block;position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#fff;font-size:28px;background:none;border:0}.tmenu .tj{margin:0}.tri3{margin-top:28px}.tt{bottom:4%;left:4%;right:4%}}
+@media(max-width:900px){.tri3{width:100vw}.tt{font-size:2.7vw;line-height:1.25}.tp.none span{font-size:5vw}}
