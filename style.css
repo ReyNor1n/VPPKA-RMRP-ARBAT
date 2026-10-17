@@ -289,3 +289,8 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 
 .ch-push{padding:8px 12px;border-bottom:1px solid var(--ln);font-size:12.5px;color:var(--mut);display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ch-pbtn{padding:6px 12px;font-size:13px}
 .pw-lnk{color:inherit;opacity:.45;font-size:11px;text-decoration:none}.pw-lnk:hover{opacity:.8;text-decoration:none}
+.acc-row{cursor:pointer}.acc-row:hover td{color:var(--red)}
+.acc-ov{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:14px}.acc-ov[hidden]{display:none}
+.acc-md{position:relative;width:min(460px,100%);max-height:90vh;overflow:auto;background:#0d0f14;border:1px solid rgba(255,42,58,.5);padding:20px 20px 16px;box-shadow:0 0 30px -10px var(--red)}
+.acc-md h3{margin:0 0 12px}.acc-x{position:absolute;top:8px;right:10px;background:none;border:0;color:#aaa;font-size:24px;cursor:pointer}.acc-x:hover{color:#fff}
+.acc-pw{margin-top:14px}.acc-pw summary{cursor:pointer;opacity:.7;font-size:13px}.acc-pw summary:hover{opacity:1}.acc-md td{word-break:break-all}
