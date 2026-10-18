@@ -42,6 +42,13 @@ service cloud.firestore {
       return isHash(h) && exists(keyPath(h)) && get(keyPath(h)).data.get('revoked', false) == false
         ? get(keyPath(h)).data.get('tier', 0) : 0;
     }
+    // член партии: действующий ключ, принятая заявка с id = uid, или отметка mem/{uid} (ставит бот/админ)
+    function partyMember() {
+      return signedIn() && (keyRank() >= 1
+        || exists(/databases/$(database)/documents/mem/$(request.auth.uid))
+        || (exists(/databases/$(database)/documents/applications/$(request.auth.uid))
+            && get(/databases/$(database)/documents/applications/$(request.auth.uid)).data.status in ['accepted','member']));
+    }
     function myRank() { return !signedIn() ? 0 : (isOwner() ? 1000 : keyRank()); }
 
     // необязательное строковое поле не длиннее max
@@ -80,9 +87,9 @@ service cloud.firestore {
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['keyHash','rank','roleName'])
             || validKey(request.resource.data));
       allow delete: if signedIn() && request.auth.uid == uid;
-      // личные данные (дата рождения, паспорт): сам пользователь, владелец, ступень 5+
+      // РП-данные персонажа (дата рождения, паспорт-статик): видят члены партии (ключ, принятая заявка или отметка mem/{uid}); гости — нет
       match /priv/{d} {
-        allow read: if signedIn() && (request.auth.uid == uid || isOwner() || myTier() >= 5);
+        allow read: if signedIn() && (request.auth.uid == uid || isOwner() || partyMember());
         allow write: if signedIn() && request.auth.uid == uid && d == 'p'
           && request.resource.data.keys().hasOnly(['birth','passport'])
           && (!('birth' in request.resource.data) || (request.resource.data.birth is string && request.resource.data.birth.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')))
@@ -404,6 +411,8 @@ service cloud.firestore {
         && (request.method == 'delete' || (request.resource.data.keys().hasOnly(['d']) && request.resource.data.d is string
             && request.resource.data.d.size() <= 200000 && request.resource.data.d.matches('^data:image/jpeg;base64,.*')));
     }
+    // mem/{uid}: отметка «член партии» (пишет только admin SDK)
+    match /mem/{uid} { allow get: if signedIn() && request.auth.uid == uid; allow list, write: if false; }
     // verifyCodes: только admin SDK (бот); правила users проверяют наличие через exists()
     match /verifyCodes/{id} { allow read, write: if false; }
     match /{document=**} { allow read, write: if false; }

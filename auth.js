@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=104';
+import { firebaseConfig } from './firebase-config.js?v=105';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -26,7 +26,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  const fv=(id,l,val,ph='')=>`<label class="fl">${l}<input id="${id}" type="text" placeholder="${ph}" value="${esc(val||'')}"></label>`;
  window.VPPKA_SETOPEN=()=>{document.querySelectorAll('body>#set-ov').forEach(x=>x.remove());const o=document.getElementById('set-ov');if(!o)return;document.body.appendChild(o);o.hidden=false};addEventListener('hashchange',()=>document.querySelectorAll('body>#set-ov').forEach(x=>x.remove()));
  const fmtD=t=>t&&t.toDate?t.toDate().toLocaleDateString('ru-RU'):'';
- let priv=null,privT=0;const AV={};
+ let priv=null,privT=0;const AV={},PV={};
  // полноразмерная аватарка для больших профилей: avatars/{uid} = avatar||photo (до 800px)
  async function syncAv(){try{const d=profile&&(profile.avatar||profile.photo);if(d)await F.setDoc(F.doc(db,'avatars',user.uid),{d});else await F.deleteDoc(F.doc(db,'avatars',user.uid))}catch(e){console.warn('avatars',e.code||e)}}
  P.account=()=>{if(!user)return P.login();const p=profile||{};if(!myApp)loadMyApp();const ap=myApp||{},ans=ap.answers||{};
@@ -44,8 +44,9 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   const m=ms.find(x=>x.id===mid)||(pb&&pb.did&&ms.find(x=>x.discordId===pb.did));
   if(!m&&!pb)return box('Профиль',user?'<h2>Профиль</h2><p>Загрузка… или профиль не найден.</p>':'<h2>Профиль</h2><p>Профили участников видны после входа.</p>');
   if(user&&AV[uid]===undefined){AV[uid]=null;F.getDoc(F.doc(db,'avatars',uid)).then(x=>{AV[uid]=x.exists()?x.data().d:'';if(location.hash.startsWith('#user/'))window.route()}).catch(()=>{AV[uid]=''})}
+  if(user&&PV[uid]===undefined){PV[uid]=null;F.getDoc(F.doc(db,'users',uid,'priv','p')).then(x=>{PV[uid]=x.exists()?x.data():{};if(location.hash.startsWith('#user/'))window.route()}).catch(()=>{PV[uid]=false})}const pr=PV[uid];
   const av=AV[uid]||(m&&m.photo)||(pb&&pb.ph)||'',NA='<span class="amut">не указано</span>',row=(k,v)=>`<tr><td>${k}</td><td>${v?esc(v):NA}</td></tr>`;
-  return box('Профиль',`<h2 class="acc-h2">Профиль</h2><div class="phead${av?'':' noav'}"><div id="vb-prev" class="phead-bn" data-uid="${esc(uid)}"></div>${av?`<img class="phacc" src="${esc(av)}" alt="Аватар">`:''}</div><table class="tbl">${row('ФИО',(m&&m.name)||(pb&&pb.n))}${row('Дата вступления',m&&m.joined)}${row('Должность',m&&m.role)}</table>`)};
+  return box('Профиль',`<h2 class="acc-h2">Профиль</h2><div class="phead${av?'':' noav'}"><div id="vb-prev" class="phead-bn" data-uid="${esc(uid)}"></div>${av?`<img class="phacc" src="${esc(av)}" alt="Аватар">`:''}</div><table class="tbl">${row('ФИО',(m&&m.name)||(pb&&pb.n))}${pr?row('Дата рождения',pr.birth)+row('Номер паспорта',pr.passport):''}${row('Дата вступления',m&&m.joined)}${row('Должность',m&&m.role)}</table>`)};
  const err=t=>{const e=document.getElementById('a-e');if(e)e.textContent=t};
  document.addEventListener('click',async ev=>{const id=ev.target.id;const v=x=>(document.getElementById(x)||{}).value||'';
   if(id==='c-go'){const p0=profile||{};const ce=t=>{const e=document.getElementById('c-e');if(e)e.textContent=t};const fio=v('c-fio').trim().replace(/\s+/g,' '),birth=v('c-birth').trim();let pass=v('c-pass').replace(/\s/g,'');
@@ -144,7 +145,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   link.innerHTML=`<span class="av">${av}</span><span class="avtx"><span class="avname">${esc(name)}</span>${pos?`<span class="avpos">${esc(pos)}</span>`:''}</span>`;
  }
 
- await loadData();route();liveStart();import('./panel.js?v=104').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=104').then(m=>m.install()).catch(e=>console.error('notif',e));import('./chat.js?v=104').then(m=>m.install()).catch(e=>console.error('chat',e));
+ await loadData();route();liveStart();import('./panel.js?v=105').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=105').then(m=>m.install()).catch(e=>console.error('notif',e));import('./chat.js?v=105').then(m=>m.install()).catch(e=>console.error('chat',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();
