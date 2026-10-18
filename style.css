@@ -384,3 +384,4 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .cm-b{display:block;width:100%;box-sizing:border-box;text-align:center;margin:0}
 .blk.cm ul.cm-l{padding:0!important;margin:0 0 14px!important}
 .nlike{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 10px;border:1px solid var(--ln);border-radius:14px;background:#0b0d12;color:var(--mut);font:12px Oxanium,monospace;cursor:pointer;transition:.15s}.nlike:hover{border-color:var(--red);color:#fff}.nlike.on{color:#ff4d5e;border-color:#ff2a3a88;background:#ff2a3a18}.nlk-row{margin-top:14px}
+.jcnt{display:block;text-align:right;font:11px Oxanium,monospace;color:var(--mut);margin-top:2px;text-transform:none}

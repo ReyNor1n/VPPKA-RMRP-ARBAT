@@ -158,7 +158,7 @@ service cloud.firestore {
           && a.keys().hasOnly(['fio','passport','discord','source','reason','bio'])
           && a.keys().hasAll(['fio','passport','discord','source','reason','bio'])
           && reqStr(a, 'fio', 2000) && reqStr(a, 'passport', 2000) && reqStr(a, 'discord', 2000)
-          && reqStr(a, 'source', 2000) && reqStr(a, 'reason', 2000) && optStr(a, 'bio', 2000);
+          && reqStr(a, 'source', 2000) && reqStr(a, 'reason', 2000) && optStr(a, 'bio', 4000);
       }
       // заявка с сайта: только вошедший, одна заявка на аккаунт (id документа = uid)
       allow create: if signedIn() && id == request.auth.uid
