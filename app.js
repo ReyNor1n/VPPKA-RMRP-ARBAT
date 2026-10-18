@@ -6,7 +6,7 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches||w.querySelector('.mjoin'))return;const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',legal:'Правовая база',contacts:'Контакты'};
-load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=120';
+load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=121';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+S.server;
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
@@ -24,7 +24,7 @@ const ini=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join
 const pav=m=>`<span class="pm-av${m.photo?'':' noph'}">${m.photo?`<img src="${esc(m.photo)}" alt="" loading="lazy">`:`<b>${esc(ini(m.name))}</b>`}</span>`;
 const pcard=m=>`<a class="pm-card" href="#member/${esc(m.id)}" data-q="${esc((m.name+' '+m.title).toLowerCase())}">${pav(m)}<span class="pm-n">${esc(m.name)}</span><span class="pm-r">${esc(m.title)}</span>${m.joined?`<span class="pm-j">с ${esc(m.joined)}</span>`:''}</a>`;
 window.VPPKA_PQ=q=>{q=String(q||'').toLowerCase().trim();let n=0;document.querySelectorAll('#pm-grid .pm-card').forEach(c=>{const ok=!q||c.dataset.q.includes(q);c.style.display=ok?'':'none';if(ok)n++});const e=document.getElementById('pm-none');if(e)e.style.display=n?'none':''};
-const nw=n=>{const a=n%10,b=n%100;return a===1&&b!==11?'товарищ':a>=2&&a<=4&&(b<12||b>14)?'товарища':'товарищей'};
+const nw=n=>{const a=n%10,b=n%100;return a===1&&b!==11?'член':a>=2&&a<=4&&(b<12||b>14)?'члена':'членов'};
 
 // медиа новостей: фото (data URL/ссылки) и видео (YouTube, VK, Rutube, mp4)
 function vemb(u){let m;u=String(u||'');const fr=src=>`<div class="vid"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
@@ -74,9 +74,9 @@ home(){const H=C.home,t=['m1','m4','m5'].map(id=>MEM().find(y=>y.id===id)||{id,n
 <div class="blk"><h2>Основные направления программы</h2><table class="tbl">${C.program.sections.map(s=>`<tr><td>${esc(strip(s.title))}</td><td>${esc(s.items[0]||'')}</td></tr>`).join('')}</table></div></div>${side(1,(()=>{const pp=PARTY(),N=7,jd=m=>{const x=String(m.joined||'').match(/(\d{2})\.(\d{2})\.(\d{4})/);return x?x[3]+x[2]+x[1]:''},
  av=(m,c)=>`<span class="cm-av ${c||''}">${m.photo?`<img src="${esc(m.photo)}" alt="" loading="lazy">`:`<i>${esc(ini(m.name))}</i>`}</span>`,
  nw3=pp.slice().sort((a,b)=>jd(b).localeCompare(jd(a))).slice(0,3);
- return `<div class="blk cm"><h2>Товарищи</h2><div class="cm-n"><b>${pp.length}</b><span>${nw(pp.length)}<br>в партии</span></div>
+ return `<div class="blk cm"><h2>Члены партии</h2><div class="cm-n"><b>${pp.length}</b><span>${nw(pp.length)}<br>партии</span></div>
  <div class="cm-st">${pp.slice(0,N).map(m=>`<a href="#member/${esc(m.id)}/home" title="${esc(m.name)}" aria-label="${esc(m.name)}">${av(m)}</a>`).join('')}${pp.length>N?`<a href="#party" class="cm-more" title="Все члены партии">+${pp.length-N}</a>`:''}</div>
- ${nw3.length?`<div class="cm-h">Новые товарищи</div><ul class="cm-l">${nw3.map(m=>`<li><a href="#member/${esc(m.id)}/home">${av(m,'sm')}<span><b>${esc(m.name)}</b>${m.joined?`<small>${esc(m.joined)}</small>`:''}</span></a></li>`).join('')}</ul>`:''}
+ ${nw3.length?`<div class="cm-h">Новые члены партии</div><ul class="cm-l">${nw3.map(m=>`<li><a href="#member/${esc(m.id)}/home">${av(m,'sm')}<span><b>${esc(m.name)}</b>${m.joined?`<small>${esc(m.joined)}</small>`:''}</span></a></li>`).join('')}</ul>`:''}
  <a class="btn o cm-b" href="#party">Все члены партии</a></div>`})())}</div></div>`},
 about(){const a=C.about;return pg('about',`<h1>О партии</h1><div class="about-one"><div class="blk about-hero"><img class="banner" src="${esc(S.banner)}" alt=""><p class="lead">${esc(a.text)}</p></div>
 <div class="about-2"><div class="blk"><h2>Цели партии</h2><ol>${a.goals.map(g=>`<li>${esc(g)}</li>`).join('')}</ol></div><div class="blk"><h2>Сведения</h2><table class="tbl"><tr><td>Полное наименование</td><td>${esc(S.name)}</td></tr><tr><td>Сокращённое</td><td>${esc(S.short)}</td></tr><tr><td>Идеология</td><td>${esc(S.ideology)}</td></tr><tr><td>Членство</td><td>${esc(a.membership)}</td></tr></table></div></div></div>`)},
