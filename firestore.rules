@@ -239,7 +239,7 @@ service cloud.firestore {
     match /votes/{id} {
       function vPath() { return /databases/$(database)/documents/votes/$(id); }
       function validVote(d) {
-        return d.keys().hasOnly(['title','type','desc','options','deadline','closed','createdBy','createdAt','counts','total'])
+        return d.keys().hasOnly(['title','type','desc','options','deadline','closed','createdBy','createdAt','counts','total','discordMessageId'])
           && reqStr(d, 'title', 200) && d.type in ['decision','candidates','amendment']
           && optStr(d, 'desc', 4000) && d.options is list && d.options.size() >= 2 && d.options.size() <= 10
           && d.deadline is int && d.closed is bool && d.counts is map && d.total is int;
