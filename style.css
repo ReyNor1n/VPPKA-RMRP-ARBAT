@@ -421,3 +421,9 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .vt-who{margin-top:10px;border-top:1px dashed var(--ln);padding-top:8px;font-size:13px;display:grid;gap:3px}
 .ev-form select{display:block;width:100%;margin-top:4px;background:#0a0c11;border:1px solid var(--ln);color:var(--tx);padding:8px}
 .nav a{padding:14px 8px;font-size:12px}
+/* история званий */
+.rh-l{list-style:none;margin:0!important;padding:0 0 0 14px!important;position:relative}.rh-l:before{content:"";position:absolute;left:4px;top:6px;bottom:6px;width:1px;background:var(--ln)}
+.rh-l li{position:relative;display:grid;grid-template-columns:86px 1fr;gap:10px;padding:6px 0;font-size:14px}.rh-l li:before{content:"";position:absolute;left:-14px;top:12px;width:9px;height:9px;transform:rotate(45deg);background:var(--bg);border:1px solid var(--cy)}
+.rh-l li.up:before{background:#4cd27a;border-color:#4cd27a}.rh-l li.dn:before{background:var(--red);border-color:var(--red)}.rh-l li.as:before{background:var(--gold);border-color:var(--gold)}
+.rh-l li.up b{color:#7be29b}.rh-l li.dn b{color:#ff6b74}.rh-l li.as b{color:var(--gold)}.rh-d{font:12px Oxanium,monospace;color:var(--cy);padding-top:2px}.rh-l p{margin:2px 0 0;font-size:13px}.rh-l small{display:block;font-size:11px;color:var(--mut)}
+.rh-d{padding-left:6px}

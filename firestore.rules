@@ -222,6 +222,19 @@ service cloud.firestore {
         && resource.data.status in ['new','rejected','expelled'] && targetTier() == 0;
     }
 
+    // ---------- история званий: видят члены партии, пишет ступень 4+ ----------
+    match /rankHist/{id} {
+      allow read: if isOwner() || partyMember() || myTier() >= 1;
+      allow create: if myTier() >= 4
+        && request.resource.data.keys().hasOnly(['did','kind','from','to','name','reason','by','byName','at'])
+        && reqStr(request.resource.data, 'did', 64) && request.resource.data.kind in ['up','down','assign']
+        && optStr(request.resource.data, 'from', 80) && optStr(request.resource.data, 'to', 80)
+        && optStr(request.resource.data, 'name', 160) && optStr(request.resource.data, 'reason', 300)
+        && optStr(request.resource.data, 'byName', 160)
+        && request.resource.data.by == request.auth.uid && request.resource.data.at == request.time;
+      allow delete: if isOwner();
+    }
+
     // ---------- внутрипартийные голосования ----------
     match /votes/{id} {
       function vPath() { return /databases/$(database)/documents/votes/$(id); }
