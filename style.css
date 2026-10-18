@@ -462,8 +462,11 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 /* карточка руководства — тонкая золотая рамка */
 .prof.blk.ldr-card{clip-path:none!important;border:2px solid var(--gold)!important;box-shadow:0 0 18px -4px rgba(216,180,90,.7),inset 0 0 12px -8px rgba(216,180,90,.5)}
 .prof.blk.ldr-card{background:linear-gradient(135deg,rgba(236,112,160,.25),rgba(236,112,160,.10) 45%,rgba(236,112,160,.22)),var(--p1)!important}
-/* герб в правом верхнем углу карточки руководства */
-.prof.blk.ldr-card{background:url(img/gerb-red.png) right 16px top 16px/84px auto no-repeat,linear-gradient(135deg,rgba(236,112,160,.25),rgba(236,112,160,.10) 45%,rgba(236,112,160,.22)),var(--p1)!important}
-.prof.blk.ldr-card>div:not(.prof-ph){padding-right:100px}
-@media(max-width:860px){.prof.blk.ldr-card{background-size:50px auto,auto,auto!important;background-position:right 12px top 12px,0 0,0 0!important}.prof.blk.ldr-card>div:not(.prof-ph){padding-right:0}.prof.blk.ldr-card .prof-n{padding-right:0}}
-@media(max-width:860px){.prof.blk.ldr-card{background-size:0 0,auto,auto!important}.prof.blk.ldr-card .prof-ph{position:relative}.prof.blk.ldr-card .prof-ph:after{content:"";position:absolute;top:8px;right:8px;width:52px;height:54px;background:url(img/gerb-red.png) center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(0,0,0,.7)) drop-shadow(0 0 6px rgba(255,40,60,.4));pointer-events:none;z-index:2;display:block}}
+/* герб + подпись «Руководство партии» на карточке руководства */
+.prof.blk.ldr-card{position:relative}
+.ldr-badge{position:absolute;top:30px;right:70px;width:110px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:2}
+.ldr-badge img{width:76px;height:auto;filter:drop-shadow(0 0 8px rgba(255,40,60,.35))}
+.ldr-badge span{font:600 10.5px Oxanium,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);text-align:center;white-space:nowrap;border-top:1px solid rgba(216,180,90,.5);padding-top:5px}
+.prof.blk.ldr-card>div:not(.prof-ph):not(.ldr-badge){padding-right:180px}
+@media(max-width:860px){.ldr-badge{top:26px;right:26px;width:auto;gap:3px;background:rgba(10,8,12,.55);padding:6px 6px 4px}.ldr-badge img{width:46px}.ldr-badge span{font-size:8px;letter-spacing:.08em;padding-top:3px}.prof.blk.ldr-card>div:not(.prof-ph):not(.ldr-badge){padding-right:0}}
+.prof.blk.ldr-card .ldr-badge{z-index:20}
