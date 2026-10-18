@@ -71,8 +71,8 @@ service cloud.firestore {
           && optStr(d, 'fio', 100) && (!('birth' in d) || (d.birth is string && d.birth.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')))
           && (!('passport' in d) || (d.passport is string && d.passport.matches('^[0-9]{3}-[0-9]{3}$')))
           && reqStr(d, 'discordId', 64) && optStr(d, 'discordLink', 200) && optStr(d, 'displayName', 40)
-          && (!('photo' in d) || (d.photo is string && d.photo.size() <= 200000 && d.photo.matches('^data:image/jpeg;base64,.*')))
-          && (!('avatar' in d) || (d.avatar is string && d.avatar.size() <= 200000 && d.avatar.matches('^data:image/jpeg;base64,.*')))
+          && (!('photo' in d) || (d.photo is string && d.photo.size() <= 410000 && d.photo.matches('^data:image/(jpeg|gif);base64,.*')))
+          && (!('avatar' in d) || (d.avatar is string && d.avatar.size() <= 410000 && d.avatar.matches('^data:image/(jpeg|gif);base64,.*')))
           && request.auth.token.email == d.discordId + '@vppka.local';
       }
       allow read: if signedIn() && (request.auth.uid == uid || isOwner() || canMembers() || myTier() >= 5);
@@ -382,8 +382,7 @@ service cloud.firestore {
         && reqStr(request.resource.data, 'n', 40) && optStr(request.resource.data, 'did', 64)
         // did своего справочника = Discord ID из логина (нельзя выдать себя за другого)
         && (request.auth.uid != uid || request.resource.data.get('did', '') == request.auth.token.email.split('@')[0])
-        && (!('ph' in request.resource.data) || (request.resource.data.ph is string && request.resource.data.ph.size() <= 30000
-            && request.resource.data.ph.matches('^data:image/jpeg;base64,.*')));
+        && (!('ph' in request.resource.data) || (request.resource.data.ph is string && (request.resource.data.ph.size() <= 30000 && request.resource.data.ph.matches('^data:image/jpeg;base64,.*') || request.resource.data.ph.size() <= 100000 && request.resource.data.ph.matches('^data:image/gif;base64,.*'))));
       allow delete: if signedIn() && (request.auth.uid == uid || isOwner() || myTier() >= 5);
     }
     // rankNotes: системный раздел чата «Повышения и понижения». Цель — по Discord ID (did).
@@ -497,14 +496,14 @@ service cloud.firestore {
       allow read: if true;
       allow write: if signedIn() && request.auth.uid == uid && (isOwner() || myTier() >= 1)
         && (request.method == 'delete' || (request.resource.data.keys().hasOnly(['d','n'])
-            && request.resource.data.d is string && request.resource.data.d.size() <= 200000
-            && request.resource.data.d.matches('^data:image/jpeg;base64,.*') && reqStr(request.resource.data, 'n', 160)));
+            && request.resource.data.d is string && request.resource.data.d.size() <= 410000
+            && request.resource.data.d.matches('^data:image/(jpeg|gif);base64,.*') && reqStr(request.resource.data, 'n', 160)));
     }
     match /avatars/{uid} {
       allow read: if signedIn();
       allow write: if signedIn() && request.auth.uid == uid
         && (request.method == 'delete' || (request.resource.data.keys().hasOnly(['d']) && request.resource.data.d is string
-            && request.resource.data.d.size() <= 200000 && request.resource.data.d.matches('^data:image/jpeg;base64,.*')));
+            && request.resource.data.d.size() <= 410000 && request.resource.data.d.matches('^data:image/(jpeg|gif);base64,.*')));
     }
     // mem/{uid}: отметка «член партии» (пишет только admin SDK)
     match /mem/{uid} { allow get: if signedIn() && request.auth.uid == uid; allow list, write: if false; }
