@@ -60,7 +60,7 @@ service cloud.firestore {
               && d.get('roleName', null) == get(keyPath(d.keyHash)).data.roleName);
       }
       function validUser(d) {
-        return d.keys().hasOnly(['discordLink','discordId','displayName','createdAt','keyHash','rank','roleName','photo','avatar','fio','birth','passport'])
+        return d.keys().hasOnly(['discordLink','discordId','displayName','createdAt','keyHash','rank','roleName','photo','avatar','fio','birth','passport','vcode'])
           && optStr(d, 'fio', 100) && (!('birth' in d) || (d.birth is string && d.birth.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')))
           && (!('passport' in d) || (d.passport is string && d.passport.matches('^[0-9]{3}-[0-9]{3}$')))
           && reqStr(d, 'discordId', 64) && optStr(d, 'discordLink', 200) && optStr(d, 'displayName', 40)
@@ -69,13 +69,25 @@ service cloud.firestore {
           && request.auth.token.email == d.discordId + '@vppka.local';
       }
       allow read: if signedIn() && (request.auth.uid == uid || isOwner() || canMembers() || myTier() >= 5);
-      allow create: if signedIn() && request.auth.uid == uid && validUser(request.resource.data) && validKey(request.resource.data);
+      // новый аккаунт: обязателен код подтверждения Discord, выданный ботом в ЛС (verifyCodes/{discordId}_{code})
+      allow create: if signedIn() && request.auth.uid == uid && validUser(request.resource.data) && validKey(request.resource.data)
+        && request.resource.data.get('vcode', '') is string && request.resource.data.get('vcode', '').matches('^[A-Z0-9]{8}$')
+        && exists(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode))
+        && get(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode)).data.exp > request.time;
       allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo','avatar','fio','birth','passport'])
         && validUser(request.resource.data)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['keyHash','rank','roleName'])
             || validKey(request.resource.data));
       allow delete: if signedIn() && request.auth.uid == uid;
+      // личные данные (дата рождения, паспорт): сам пользователь, владелец, ступень 5+
+      match /priv/{d} {
+        allow read: if signedIn() && (request.auth.uid == uid || isOwner() || myTier() >= 5);
+        allow write: if signedIn() && request.auth.uid == uid && d == 'p'
+          && request.resource.data.keys().hasOnly(['birth','passport'])
+          && (!('birth' in request.resource.data) || (request.resource.data.birth is string && request.resource.data.birth.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')))
+          && (!('passport' in request.resource.data) || (request.resource.data.passport is string && request.resource.data.passport.matches('^[0-9]{3}-[0-9]{3}$')));
+      }
       // удаление гостя: владелец или ступень 4+; нельзя удалять держателей ключей, владельцев и служебный аккаунт
       allow delete: if signedIn() && (isOwner() || myTier() >= 4)
         && request.auth.uid != uid && uid != 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2'
@@ -141,12 +153,14 @@ service cloud.firestore {
           && reqStr(a, 'fio', 2000) && reqStr(a, 'passport', 2000) && reqStr(a, 'discord', 2000)
           && reqStr(a, 'source', 2000) && reqStr(a, 'reason', 2000) && optStr(a, 'bio', 2000);
       }
-      allow create: if request.resource.data.keys().hasOnly(['answers','status','createdAt','uid','discordId'])
-        && request.resource.data.keys().hasAll(['answers','status','createdAt'])
+      // заявка с сайта: только вошедший, одна заявка на аккаунт (id документа = uid)
+      allow create: if signedIn() && id == request.auth.uid
+        && request.resource.data.keys().hasOnly(['answers','status','createdAt','uid','discordId'])
+        && request.resource.data.keys().hasAll(['answers','status','createdAt','uid'])
         && request.resource.data.status == 'new'
         && request.resource.data.createdAt == request.time
         && validAnswers(request.resource.data.answers)
-        && (!('uid' in request.resource.data) || (signedIn() && request.resource.data.uid == request.auth.uid))
+        && request.resource.data.uid == request.auth.uid
         && optStr(request.resource.data, 'discordId', 64);
       // заявка из Discord (создаёт бот через служебный аккаунт владельца)
       allow create: if isOwner()
@@ -158,7 +172,9 @@ service cloud.firestore {
         && reqStr(request.resource.data.answers, 'fio', 2000)
         && reqStr(request.resource.data, 'discordSourceId', 32)
         && optStr(request.resource.data, 'discordId', 64);
-      allow read: if myRank() >= 1;
+      allow read: if myTier() >= 3 || (signedIn() && resource.data.get('uid', '') == request.auth.uid);
+      // заявитель может удалить свою отклонённую заявку, чтобы подать новую
+      allow delete: if signedIn() && id == request.auth.uid && resource.data.status == 'rejected';
       function aChanged() { return request.resource.data.diff(resource.data).affectedKeys(); }
       // ступень заявителя: по ключу его аккаунта (нет аккаунта/ключа → 0)
       function targetTier() { return resource.data.get('uid', '') == '' ? 0 : userTier(resource.data.uid); }
@@ -368,12 +384,28 @@ service cloud.firestore {
       match /chunks/{cid} {
         allow read: if true;
         allow create, update: if signedIn() && request.auth.uid == uid
-          && cid.matches('^[0-9]{1,20}_[0-9]{1,2}$')
+          && cid.matches('^[0-9]{1,20}_([0-9]|1[0-2])$')
           && request.resource.data.keys().hasOnly(['d'])
           && request.resource.data.d is string && request.resource.data.d.size() <= 900000;
         allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
       }
     }
+    // подтверждение Discord: запрос кода (бот отправляет код в ЛС и пишет status)
+    match /verifyReq/{id} {
+      allow get: if true;
+      allow create: if request.resource.data.keys().hasOnly(['did','t','status'])
+        && request.resource.data.did is string && request.resource.data.did.matches('^[0-9]{15,21}$')
+        && request.resource.data.status == 'new' && request.resource.data.t == request.time;
+    }
+    // avatars/{uid}: полноразмерная аватарка для больших профилей; видят вошедшие, меняет только сам пользователь
+    match /avatars/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid
+        && (request.method == 'delete' || (request.resource.data.keys().hasOnly(['d']) && request.resource.data.d is string
+            && request.resource.data.d.size() <= 200000 && request.resource.data.d.matches('^data:image/jpeg;base64,.*')));
+    }
+    // verifyCodes: только admin SDK (бот); правила users проверяют наличие через exists()
+    match /verifyCodes/{id} { allow read, write: if false; }
     match /{document=**} { allow read, write: if false; }
   }
 }

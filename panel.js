@@ -40,7 +40,7 @@ function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m
 
 window.VPPKA_APPS_RESET=()=>{apps=null};window.VPPKA_ROSTER_SYNC=()=>rosterSync();
 function appsPage(){const c=`<div class="crumbs"><a href="#home">Главная</a> / Заявки в партию</div>`;
- if(rank()<1)return c+`<div class="pg"><h1>Нет доступа</h1><p>Раздел доступен только обладателям действующего ключа.</p></div>`;
+ if(tier()<3&&rank()<1000)return c+`<div class="pg"><h1>Нет доступа</h1><p>Раздел доступен ключам ступени 3 и выше.</p></div>`;
  if(!apps){loadApps();return c+`<div class="pg"><h1>Заявки в партию</h1><p>Загрузка…</p></div>`;}
  const T=tier();return c+`<div class="pg"><h1>Заявки в партию</h1>${T<3?'<p class="amut">Принимать заявки могут ключи ступени 3 и выше.</p>':''}<p class="aerr" id="pmsg"></p>${apps.length?'':'<p>Заявок нет.</p>'}${apps.map(a=>{const x=a.answers||{};return `<div class="blk kapp" id="app-${esc(a.id)}"><div class="kp-h"><span>// ${esc(a.createdAt?.toDate?a.createdAt.toDate().toLocaleString('ru-RU'):'')} · ${esc(STATUS[a.status]||a.status)}</span><h2>${esc(x.fio)}</h2></div><table class="tbl">${AQ.map(([k,l])=>`<tr><td>${l}</td><td>${esc(x[k])}</td></tr>`).join('')}</table>
  ${T>=3?`<div class="kp-row"><button class="btn sm" data-aa="${a.id}">Принять</button> <button class="btn sm o kp-del" data-ar="${a.id}">Отклонить</button>${T>=4?` <span class="kp-in">в руководство: должность <input id="ar-${a.id}" value="Член партии"> уровень <input id="ak-${a.id}" type="number" min="0" max="${maxR()}" value="10"></span> <button class="btn sm" data-am="${a.id}">Принять и назначить в руководство</button>`:''}</div>`:''}
@@ -250,9 +250,9 @@ function installAssign(){const P=window.P,om=P.member;
 // ---------- Публичный список членов партии: принятые заявки → members/p_<id> (group «Члены партии»), ступень 4+ ----------
 let rsBusy=false;
 async function rosterSync(){if(rsBusy||tier()<4)return;rsBusy=true;try{const f=F();const qs=await f.getDocs(f.collection(db(),'applications'));const cur=Object.fromEntries((D().members||[]).map(m=>[m.id,m]));
- for(const d of qs.docs){const a=d.data();if(!['accepted','member'].includes(a.status)||window.VPPKA_HIDDEN(a))continue;const id='p_'+d.id,o=cur[id]||{};
+ for(const d of qs.docs){const a=d.data();if(!['accepted','member'].includes(a.status)||window.VPPKA_HIDDEN(a))continue;const id='p_'+d.id,o=cur[id]||{};if(!cur[id]&&a.discordId&&(D().members||[]).some(x=>x.discordId===a.discordId&&!String(x.id).startsWith('p_')))continue;
   const ts=a.reviewedAt||a.createdAt;const dt=ts&&ts.toDate?ts.toDate():null;
-  const m={name:String((a.answers||{}).fio||'Товарищ').slice(0,100),role:String(a.partyRole||PR[a.partyRank||0]||'Кандидат').slice(0,120),group:'Члены партии',rank:0,
+  const m={name:String((a.answers||{}).fio||'Товарищ').trim().replace(/\s+/g,' ').slice(0,100),role:String(a.partyRole||PR[a.partyRank||0]||'Кандидат').slice(0,120),group:'Члены партии',rank:0,
    joined:o.joined||(dt?dt.toLocaleDateString('ru-RU'):new Date().toLocaleDateString('ru-RU'))};
   if(a.discordId)m.discordId=String(a.discordId).slice(0,64);if(o.discordId&&!m.discordId)m.discordId=o.discordId;
   let ph=o.photo;if(a.uid){try{const u=await f.getDoc(f.doc(db(),'users',a.uid));if(u.exists()){const x=u.data();if(x.photo)ph=x.photo;if(!m.discordId&&x.discordId)m.discordId=x.discordId}}catch(e){}}
