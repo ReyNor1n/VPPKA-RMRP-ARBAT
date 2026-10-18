@@ -13,9 +13,10 @@ function ft(t,full){const d=t?.toDate?.();if(!d)return '';const n=new Date(),hm=
  if(d.toDateString()===n.toDateString())return hm;const dm=d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});return full?dm+' '+hm:dm}
 const unreadTotal=()=>Object.values(chats).filter(c=>((c.unread||{})[me]||0)>0).length+(rn.some(x=>!x.read)?1:0);
 // миниатюра для справочника (≈96px), чтобы не тянуть полные фото
-function thumb(src){return new Promise(r=>{if(!src)return r('');const im=new Image();im.onload=()=>{const k=96/Math.max(im.width,im.height,96),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.8))};im.onerror=()=>r('');im.src=src})}
+function thumb(src){return new Promise(r=>{if(!src)return r('');const im=new Image();im.onload=()=>{const k=160/Math.max(im.width,im.height,160),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.8))};im.onerror=()=>r('');im.src=src})}
+window.VPPKA_PUBMAP=()=>pub;window.VPPKA_PUBSELF=()=>pubSelf();
 async function pubSelf(){const a=window.VPPKA_AUTH,pf=a&&a.profile;if(!pf||isOwn||me===KEYMASTER||window.VPPKA_HIDDEN({uid:me,discordId:pf.discordId}))return;
- const n=(pf.displayName||pf.discordId||'').slice(0,40),ph=await thumb(pf.photo),old=pub[me];if(old&&old.n===n&&(old.ph||'')===ph&&old.did===pf.discordId)return;
+ const n=(pf.displayName||pf.discordId||'').slice(0,40),ph=await thumb(pf.avatar||pf.photo),old=pub[me];if(old&&old.n===n&&(old.ph||'')===ph&&old.did===pf.discordId)return;
  const d={n,did:String(pf.discordId||'').slice(0,64),t:F().serverTimestamp()};if(ph)d.ph=ph;try{await F().setDoc(F().doc(db(),'pub',me),d)}catch(e){console.warn('pub',e.code||e)}}
 // владелец/ступень 5 дополняют справочник теми, кто ещё не заходил после обновления
 async function backfill(){const pw=FB().power||{};if(!(pw.owner||(pw.tier||0)>=5))return;try{const s=await F().getDocs(F().collection(db(),'users'));
