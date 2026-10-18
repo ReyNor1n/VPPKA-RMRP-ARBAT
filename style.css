@@ -441,3 +441,13 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .subtabs{display:flex;gap:0;margin:0 0 16px;border-bottom:1px solid var(--ln)}.subtabs a{padding:8px 16px;font:13px Oxanium,monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1px}.subtabs a.on{color:#fff;border-bottom-color:var(--red)}.subtabs a:hover{color:#fff}
 
 .cm-t:hover{color:var(--cyan,#38e1ff)!important}
+/* мини-карточка пользователя в шапке */
+.hd .authlink.in.hcard{display:inline-flex!important;align-items:center;gap:10px;height:auto;max-width:300px;padding:5px 12px 5px 5px;border:1px solid var(--ln);background:linear-gradient(90deg,#141821,#0e1117);clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);text-decoration:none;color:inherit;transition:border-color .2s}
+.hd .authlink.in.hcard:hover{border-color:var(--cy);text-shadow:none}
+.hd .hcard .av{width:40px!important;height:40px!important;border:2px solid var(--red)!important;box-shadow:0 0 8px -3px var(--red)}
+.hd .hcard.gold .av{border-color:var(--gold)!important;box-shadow:0 0 10px -2px var(--gold)}
+.hd .hcard .hc-tx{display:flex!important;flex-direction:column;min-width:0;line-height:1.2}
+.hd .hcard .hc-n{font:600 14px "Exo 2",sans-serif;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd .hcard .hc-p{font:10.5px Oxanium,monospace;color:var(--cy);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
+.hd .hcard.gold .hc-p{color:var(--gold)}
+@media(max-width:860px){.hd .authlink.in.hcard{padding:3px 8px 3px 3px;gap:7px;max-width:150px}.hd .hcard .av{width:32px!important;height:32px!important}.hd .hcard .hc-n{font-size:12px}.hd .hcard .hc-p{display:none}}
