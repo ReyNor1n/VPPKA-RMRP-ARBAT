@@ -6,14 +6,14 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches||w.querySelector('.mjoin'))return;const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',events:'Мероприятия',votes:'Голосования',legal:'Правовая база',contacts:'Контакты'};
-load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=156';
+load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=157';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+S.server;
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
 <div><h4>О партии</h4><a href="#about">Общие сведения</a><a href="#program">Программа</a><a href="#charter">Устав</a><a href="#leadership">Руководство</a><a href="#party">Члены партии</a></div>
 <div><h4>Информация</h4><a href="#news">Новости</a><a href="#legal">Правовая база</a><a href="#contacts">Контакты</a></div>
 <div><h4>Связь</h4>${c.contacts.items.filter(i=>i.url).map(i=>`<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.label)}</a>`).join('')}</div></div>
-<div class="req">${esc(S.name)} · Местонахождение руководящего органа: г. Москва (в рамках игрового проекта) · Устав от ${esc((C.charter.date||'').replace('г. Москва, ',''))} · Программа от ${esc((C.program.date||'').replace('г. Москва, ',''))}<br>© ${new Date().getFullYear()} ${esc(S.short)}. ${esc(S.footer)}</div></div>`;
+<div class="req">${esc(S.name)} · Местонахождение руководящего органа: г. Москва (в рамках игрового проекта) · Устав от ${esc((C.charter.date||'').replace('г. Москва, ',''))} · Программа от ${esc((C.program.date||'').replace('г. Москва, ',''))}<br>© ${new Date().getFullYear()} ${esc(S.short)}. ${esc(S.footer)} · <span id="sitever">Версия сайта</span></div></div>`;
 addEventListener('hashchange',route);route();});
 const MEM0=()=>window.VPPKA_DATA&&window.VPPKA_DATA.members||C.leadership.members;let LP={};
 const ldrPh=m=>{const k=nrm(m.name);if(LP[k])return LP[k];const c=MEM0().find(x=>x.group===PG&&x.photo&&(nrm(x.name)===k||(m.discordId&&x.discordId===m.discordId)));return c?c.photo:m.photo};
@@ -208,3 +208,6 @@ window.VPPKA_MUSIC={
    if(on)w.delete(lr);else w.set(lr,{uid:fb.user.uid,t:F.serverTimestamp()});w.update(nr,{likeCount:F.increment(on?-1:1)});await w.commit()}
   catch(er){L[id]=on;b.classList.toggle('on',on);sp.textContent=n0;console.warn('like',er.code||er)}finally{busy=false}});})();
 ;(function(){let last=null;setInterval(()=>{try{const v=window.VPPKA_ISPM?window.VPPKA_ISPM():false;if(last!==null&&v!==last&&((location.hash.slice(1)||'home').split('/')[0]==='home'))route();last=v}catch(e){}},1500)})();
+
+// публичный номер версии сайта (version.json → label, напр. V2.0)
+fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(j=>{window.VPPKA_VER=j.label||'';const put=()=>{const e=document.getElementById('sitever');if(e&&j.label&&e.textContent!=='Версия сайта '+j.label)e.textContent='Версия сайта '+j.label};put();new MutationObserver(put).observe(document.body,{childList:true,subtree:true})}).catch(()=>{});
