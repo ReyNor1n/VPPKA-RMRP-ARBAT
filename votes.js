@@ -8,7 +8,7 @@ const TYPES={decision:'Решение',candidates:'Кандидаты',amendment
 let V=null,state='',my={},who={},creating=false,uidSeen;
 async function load(){const fb=FB();if(!fb||!fb.user){V=[];state='guest';return}const f=F();
  try{const s=await f.getDocs(f.query(f.collection(db(),'votes'),f.orderBy('createdAt','desc'),f.limit(40)));V=s.docs.map(d=>({id:d.id,...d.data()}));state='ok';
-  my={};await Promise.all(V.map(async v=>{try{const b=await f.getDoc(f.doc(db(),'votes',v.id,'ballots',fb.user.uid));if(b.exists())my[v.id]=b.data().opt}catch(e){}}))}
+  my={};await Promise.all(V.filter(open).map(async v=>{try{const b=await f.getDoc(f.doc(db(),'votes',v.id,'ballots',fb.user.uid));if(b.exists())my[v.id]=b.data().opt}catch(e){}}))}
  catch(e){V=[];state=e.code==='permission-denied'?'denied':'err';console.warn('votes',e.code||e)}}
 const open=v=>!v.closed&&Date.now()<v.deadline;
 function card(v){const o=open(v),t=v.total||0,mine=my[v.id];
@@ -24,11 +24,13 @@ function page(){let b;if(V===null)b='<p class="ev-empty">Загрузка…</p>
  else if(state==='denied')b='<div class="blk"><p class="ev-empty">Голосования доступны только членам партии.</p></div>';else if(state==='err')b='<div class="blk"><p class="ev-empty">Не удалось загрузить голосования.</p></div>';
  else{const a=V.filter(open),c=V.filter(v=>!open(v));b=`${c5()?(creating?form():'<p><button class="btn sm" data-vtnew>+ Новое голосование</button></p>'):''}${a.length?a.map(card).join(''):'<div class="blk"><p class="ev-empty">Сейчас активных голосований нет.</p></div>'}${c.length?`<details class="blk ev-past"><summary>Завершённые (${c.length})</summary>${c.map(card).join('')}</details>`:''}`}
  return `<div class="crumbs"><a href="#home">Главная</a> / Голосования</div><div class="pg"><h1>Голосования</h1><p class="ev-empty">Один член партии — один голос. Итоги видны всем членам партии; кто как голосовал — только руководству (ступень 4+).</p>${b}</div>`}
-const cur=()=>(location.hash.slice(1)||'home').split('/')[0],rr=()=>{if(cur()==='votes')window.route()};
+const cur=()=>(location.hash.slice(1)||'home').split('/')[0],rr=()=>{const k=cur();if(k==='votes'||k==='home')window.route()};
+function side(){if(state!=='ok'||!V)return '';const a=V.filter(open).sort((x,y)=>x.deadline-y.deadline).slice(0,3);
+ return `<div class="blk vt-side"><h2>Активные голосования</h2>${a.length?`<ul class="ev-sl">${a.map(v=>`<li><a href="#votes"><span class="ev-d">до ${esc(fmt(v.deadline))}</span><b>${esc(v.title)}</b><small class="${my[v.id]!==undefined?'vt-yes':'vt-no'}">${my[v.id]!==undefined?'✔ вы проголосовали':'● вы ещё не голосовали'}</small></a></li>`).join('')}</ul>`:'<p class="ev-empty">Активных голосований нет.</p>'}<a class="btn o ev-all" href="#votes">Все голосования</a></div>`}
 async function vote(id,opt){const f=F(),u=FB().user,v=V.find(x=>x.id===id),p=(window.VPPKA_AUTH||{}).profile||{};const b=f.writeBatch(db());
  b.set(f.doc(db(),'votes',id,'ballots',u.uid),{opt,at:f.serverTimestamp(),n:String(p.displayName||'').slice(0,120)});
  b.update(f.doc(db(),'votes',id),new f.FieldPath('counts',String(opt)),f.increment(1),'total',f.increment(1));await b.commit()}
-export function install(){window.VPPKA_VT_PAGE=page;window.VPPKA_VT_PREVIEW=(a,m,w)=>{V=a;state='ok';my=m||{};who=w||{};rr()};
+export function install(){window.VPPKA_VT_PAGE=page;window.VPPKA_VT_SIDE=side;window.VPPKA_VT_PREVIEW=(a,m,w)=>{V=a;state='ok';my=m||{};who=w||{};rr()};
  const re=()=>load().then(rr);setInterval(()=>{const u=FB()&&FB().user?FB().user.uid+':'+tier():'';if(u!==uidSeen){uidSeen=u;V=null;re()}},1500);
  addEventListener('hashchange',()=>{if(cur()==='votes'&&state==='ok')re()});
  document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-vtnew],[data-vtcancel],[data-vtgo],[data-vtwho],[data-vtclose],[data-vtdel]');if(!t)return;ev.preventDefault();const er=t.closest('.vt,form')?.querySelector('.ev-err'),E=e=>{if(er)er.textContent=' '+(e.code==='permission-denied'?'Нет прав':(e.message||e.code))};

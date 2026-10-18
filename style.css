@@ -437,3 +437,4 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .at-bar{height:6px;background:#1a1d24;margin:4px 0 12px}.at-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--red),var(--gold))}
 .at-rl{list-style:none;padding:0!important;margin:0!important}.at-rl li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--ln);padding:6px 0;font-size:13px}.at-rl .y{color:#4cd27a;flex:none}.at-rl .n{color:var(--mut);flex:none}
 @media(max-width:600px){.mark{grid-template-columns:1fr}.at-grid{grid-template-columns:repeat(2,1fr)}}
+.vt-side .vt-yes{color:#4cd27a}.vt-side .vt-no{color:var(--gold)}
