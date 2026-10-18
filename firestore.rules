@@ -486,6 +486,14 @@ service cloud.firestore {
         && request.resource.data.status == 'new' && request.resource.data.t == request.time;
     }
     // avatars/{uid}: полноразмерная аватарка для больших профилей; видят вошедшие, меняет только сам пользователь
+    // фото для раздела «Руководство»: читают все, пишет только сам владелец профиля с ключом (или владелец сайта)
+    match /ldrPhotos/{uid} {
+      allow read: if true;
+      allow write: if signedIn() && request.auth.uid == uid && (isOwner() || myTier() >= 1)
+        && (request.method == 'delete' || (request.resource.data.keys().hasOnly(['d','n'])
+            && request.resource.data.d is string && request.resource.data.d.size() <= 200000
+            && request.resource.data.d.matches('^data:image/jpeg;base64,.*') && reqStr(request.resource.data, 'n', 160)));
+    }
     match /avatars/{uid} {
       allow read: if signedIn();
       allow write: if signedIn() && request.auth.uid == uid
