@@ -225,7 +225,8 @@ service cloud.firestore {
     // ---------- новости ----------
     match /news/{id} {
       function validNews(d) {
-        return d.keys().hasOnly(['title','text','image','photos','videos','date','author','createdAt','updatedAt','pinned'])
+        return d.keys().hasOnly(['title','text','image','photos','videos','date','author','createdAt','updatedAt','pinned','likeCount'])
+          && (!('likeCount' in d) || d.likeCount is int)
           && (!('pinned' in d) || d.pinned is bool)
           && (!('photos' in d) || (d.photos is list && d.photos.size() <= 4))
           && (!('videos' in d) || (d.videos is list && d.videos.size() <= 5))
@@ -238,6 +239,20 @@ service cloud.firestore {
       // новости (с фото и видео): ступень 4+
       allow create, update: if myTier() >= 4 && validNews(request.resource.data);
       allow delete: if myTier() >= 4;
+      // лайк: вошедший меняет только likeCount на ±1 вместе со своим документом likes/{uid}
+      function likePath() { return /databases/$(database)/documents/news/$(id)/likes/$(request.auth.uid); }
+      allow update: if signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount'])
+        && request.resource.data.likeCount is int
+        && ((!exists(likePath()) && existsAfter(likePath()) && request.resource.data.likeCount == resource.data.get('likeCount', 0) + 1)
+            || (exists(likePath()) && !existsAfter(likePath()) && request.resource.data.likeCount == resource.data.get('likeCount', 0) - 1));
+      match /likes/{uid} {
+        allow get: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['uid','t']) && request.resource.data.uid == uid && request.resource.data.t == request.time
+          && getAfter(/databases/$(database)/documents/news/$(id)).data.get('likeCount', 0) == get(/databases/$(database)/documents/news/$(id)).data.get('likeCount', 0) + 1;
+        allow delete: if signedIn() && request.auth.uid == uid
+          && getAfter(/databases/$(database)/documents/news/$(id)).data.get('likeCount', 0) == get(/databases/$(database)/documents/news/$(id)).data.get('likeCount', 0) - 1;
+      }
     }
 
     // ---------- состав / руководство ----------
