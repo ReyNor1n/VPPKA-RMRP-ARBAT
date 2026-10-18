@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=164';
+import { firebaseConfig } from './firebase-config.js?v=165';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -146,11 +146,11 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   const did=profile&&profile.discordId;const mem=did&&((window.VPPKA_DATA||{}).members||[]).find(m=>m.discordId===did);
   const pos=(power.rank>0&&power.roleName)||(mem&&(mem.role||mem.roleName))||(profile&&profile.rank>0&&profile.roleName)||(mem?'Член партии':'');
   const full=(mem&&mem.name)||(profile&&(profile.fio||profile.rpName))||name;const pw=full.trim().split(/\s+/);const sh=pw.length>=2&&/^[А-ЯЁA-Z]/.test(pw[1])?pw[0]+' '+pw.slice(1,3).map(w=>w[0].toUpperCase()+'.').join(''):full;
-  let gold=false;try{gold=!!window.isLdr&&(window.isLdr(full)||(mem&&window.isLdr(mem.name))||(profile&&window.isLdr(profile.displayName)))}catch(e){}link.classList.add('hcard');link.classList.toggle('gold',!!gold);
+  let gold=false;try{gold=!!window.isLdr&&(window.isLdr(full)||(mem&&window.isLdr(mem.name))||(profile&&window.isLdr(profile.displayName)))}catch(e){}link.classList.add('hcard');link.classList.toggle('gold',!!gold);link.classList.forEach(c=>{if(/^t-/.test(c))link.classList.remove(c)});if(gold&&window.LT){const nm=[full,mem&&mem.name,profile&&profile.displayName].find(x=>x&&window.isLdr(x));const t=nm&&window.LT(nm).trim();if(t)link.classList.add(t)}
   link.innerHTML=`<span class="av">${av}</span><span class="hc-tx"><span class="hc-n">${esc(sh)}</span><span class="hc-p">${esc(pos||'Беспартийный')}</span></span>`;
  }
 
- await loadData();route();window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=164').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=164').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=164').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=164').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=164').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=164').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=164').then(m=>m.install()).catch(e=>console.error('chat',e));
+ await loadData();route();window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=165').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=165').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=165').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=165').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=165').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=165').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=165').then(m=>m.install()).catch(e=>console.error('chat',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();

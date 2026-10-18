@@ -504,3 +504,23 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .prof.blk.ldr-card .ldr-badge span{color:var(--tc);border-top-color:color-mix(in srgb,var(--tc) 55%,transparent)}
 .ldr .mcard[class*=" t-"]{box-shadow:inset 0 0 0 2px var(--tc),0 0 14px -6px var(--tc)}
 .ldr .mcard[class*=" t-"] .role{color:var(--tc)}
+
+/* цвета руководства по рангам: кольца аватаров, карточки состава, шапка */
+.ldr-av,.ldr-pc,.hcard{--tc:var(--gold)}
+.t-cc1{--tc:#3d6fe0}.t-cc2{--tc:#5b9bff}.t-cc3{--tc:#9fd0ff}.t-krk1{--tc:#2fa35a}.t-krk2{--tc:#4fd47d}.t-krk3{--tc:#a5f0b9}.t-tech1{--tc:#9a5cf0}.t-tech2{--tc:#b98aff}.t-tech3{--tc:#dcc4ff}.t-loc{--tc:var(--gold)}
+.ldr-av.pm-av,.ldr-av.ch-av{border-color:var(--tc)!important;box-shadow:0 0 0 1px #0007,0 0 12px -3px var(--tc)!important}
+.cm-av.ldr-av{border-color:var(--tc)!important;box-shadow:0 0 8px -2px var(--tc)!important}
+.ml-p.ldr-av img,.ml-p.ldr-av i{border-color:var(--tc)!important;box-shadow:0 0 6px -1px var(--tc)}
+.prof-ph.ldr-av{border-color:var(--tc)!important;box-shadow:0 0 24px color-mix(in srgb,var(--tc) 27%,transparent)!important}
+.ldr-pc .pm-r{color:var(--tc)}
+.pm-card.ldr-pc:hover{border-color:var(--tc);box-shadow:0 0 16px -6px var(--tc)}
+.hd .hcard.gold .av{border-color:var(--tc)!important;box-shadow:0 0 10px -2px var(--tc)}
+.hd .hcard.gold .hc-p{color:var(--tc)}
+
+#sfx-tg{background:none;border:1px solid var(--ln);color:var(--mut);font:11px Oxanium,monospace;padding:2px 8px;margin-left:10px;cursor:pointer;vertical-align:middle}#sfx-tg:hover{color:var(--cy);border-color:var(--cy)}
+/* свечение руководства при наведении — цвет ранга */
+.pm-card.ldr-pc:hover{box-shadow:0 0 18px -4px var(--tc)!important;border-color:var(--tc)!important}
+.pm-card.ldr-pc:hover .pm-av{box-shadow:0 0 0 1px #0007,0 0 18px 0 var(--tc)!important}
+.ldr .mcard[class*=" t-"]:hover{box-shadow:inset 0 0 0 2px var(--tc),0 0 22px -2px var(--tc)}
+.prof.blk.ldr-card:hover .prof-ph.ldr-av{box-shadow:0 0 28px color-mix(in srgb,var(--tc) 55%,transparent)!important}
+.ch-av.ldr-av:hover,.cm-av.ldr-av:hover{box-shadow:0 0 14px 0 var(--tc)!important}
