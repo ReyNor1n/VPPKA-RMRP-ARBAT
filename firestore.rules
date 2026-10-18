@@ -222,6 +222,44 @@ service cloud.firestore {
         && resource.data.status in ['new','rejected','expelled'] && targetTier() == 0;
     }
 
+    // ---------- внутрипартийные голосования ----------
+    match /votes/{id} {
+      function vPath() { return /databases/$(database)/documents/votes/$(id); }
+      function validVote(d) {
+        return d.keys().hasOnly(['title','type','desc','options','deadline','closed','createdBy','createdAt','counts','total'])
+          && reqStr(d, 'title', 200) && d.type in ['decision','candidates','amendment']
+          && optStr(d, 'desc', 4000) && d.options is list && d.options.size() >= 2 && d.options.size() <= 10
+          && d.deadline is int && d.closed is bool && d.counts is map && d.total is int;
+      }
+      allow read: if isOwner() || partyMember() || myTier() >= 1;
+      allow create: if myTier() >= 5 && validVote(request.resource.data)
+        && request.resource.data.total == 0 && request.resource.data.closed == false
+        && request.resource.data.counts.size() == request.resource.data.options.size();
+      // правка/закрытие: ступень 5+, счётчики не трогает
+      allow update: if myTier() >= 5 && validVote(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','desc','deadline','closed']);
+      allow delete: if myTier() >= 5;
+      // голос: член партии, один раз, +1 к одному варианту вместе с бюллетенем ballots/{uid}
+      function bPath() { return /databases/$(database)/documents/votes/$(id)/ballots/$(request.auth.uid); }
+      allow update: if (partyMember() || myTier() >= 1) && resource.data.closed == false && request.time.toMillis() < resource.data.deadline
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['counts','total'])
+        && !exists(bPath()) && existsAfter(bPath())
+        && request.resource.data.total == resource.data.total + 1
+        && request.resource.data.counts.diff(resource.data.counts).affectedKeys() == [string(getAfter(bPath()).data.opt)].toSet()
+        && request.resource.data.counts[string(getAfter(bPath()).data.opt)] == resource.data.counts[string(getAfter(bPath()).data.opt)] + 1;
+      match /ballots/{uid} {
+        allow get: if signedIn() && (request.auth.uid == uid || myTier() >= 4);
+        allow list: if myTier() >= 4;
+        allow create: if signedIn() && request.auth.uid == uid && (partyMember() || myTier() >= 1)
+          && request.resource.data.keys().hasOnly(['opt','at','n'])
+          && request.resource.data.opt is int && request.resource.data.opt >= 0
+          && request.resource.data.opt < get(vPath()).data.options.size()
+          && request.resource.data.at == request.time && optStr(request.resource.data, 'n', 120)
+          && getAfter(vPath()).data.total == get(vPath()).data.total + 1;
+        allow delete: if myTier() >= 5;
+      }
+    }
+
     // ---------- мероприятия: читают все, правит ступень 4+ ----------
     match /events/{id} {
       function validEv(d) {

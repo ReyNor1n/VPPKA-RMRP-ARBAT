@@ -5,8 +5,8 @@ let C,S;const J=()=>`href="${esc(S.joinUrl)}" target="_blank" rel="noopener"`;
 burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('aria-expanded',o);burger.textContent=o?'✕':'☰';};
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches||w.querySelector('.mjoin'))return;const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
-const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',events:'Мероприятия',legal:'Правовая база',contacts:'Контакты'};
-load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=124';
+const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',events:'Мероприятия',votes:'Голосования',legal:'Правовая база',contacts:'Контакты'};
+load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=125';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+S.server;
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
@@ -61,6 +61,7 @@ document.addEventListener('click',async ev=>{if(ev.target.id!=='jsend')return;le
  document.getElementById('jf').innerHTML=`<h2>Заявка отправлена</h2><p class="lead">Спасибо! Ваша заявка на вступление в партию «Коммунисты Арбата» принята и будет рассмотрена. С вами свяжутся через Discord.</p><p><a class="btn o" href="#home">На главную</a></p>`;});
 const P={
 join(){return joinPage()},
+votes(){return window.VPPKA_VT_PAGE?window.VPPKA_VT_PAGE():pg('votes','<h1>Голосования</h1><p>Загрузка…</p>')},
 events(){return window.VPPKA_EV_PAGE?window.VPPKA_EV_PAGE():pg('events','<h1>Мероприятия</h1><p>Загрузка…</p>')},
 member(id,from){const m=MEM().find(x=>x.id===id);if(!m)return `<div class="crumbs"><a href="#home">Главная</a> / <a href="#leadership">Руководство</a></div><div class="pg"><h1>Профиль не найден</h1><a class="btn o" href="#leadership">← К составу</a></div>`;
 const links=[m.discord&&['Discord',m.discord],m.forum&&['Форум',m.forum],m.contact&&['Контакт',m.contact]].filter(Boolean);
