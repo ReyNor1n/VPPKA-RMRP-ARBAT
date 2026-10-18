@@ -439,3 +439,5 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 @media(max-width:600px){.mark{grid-template-columns:1fr}.at-grid{grid-template-columns:repeat(2,1fr)}}
 .vt-side .vt-yes{color:#4cd27a}.vt-side .vt-no{color:var(--gold)}
 .subtabs{display:flex;gap:0;margin:0 0 16px;border-bottom:1px solid var(--ln)}.subtabs a{padding:8px 16px;font:13px Oxanium,monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1px}.subtabs a.on{color:#fff;border-bottom-color:var(--red)}.subtabs a:hover{color:#fff}
+
+.cm-t:hover{color:var(--cyan,#38e1ff)!important}
