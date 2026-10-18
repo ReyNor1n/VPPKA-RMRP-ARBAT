@@ -527,3 +527,17 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 
 body>.amu.def:not([hidden]){display:inline-flex;position:fixed;left:12px;bottom:12px;z-index:60;width:36px;height:36px;align-items:center;justify-content:center;border:1px solid var(--ln);background:#0b0e14d9;color:#fff;font-size:15px;cursor:pointer;opacity:.75}
 @media(max-width:860px){body>.amu.def:not([hidden]){bottom:70px;left:8px}}
+
+.creator-r td{padding-top:6px!important;border:0!important}.creator-b{display:inline-block;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#dcc4ff;background:rgba(154,92,240,.14);border:1px solid #9a5cf0;box-shadow:0 0 10px rgba(154,92,240,.35)}
+
+.prof.ldr-card .prof-r,.prof.ldr-card .tbl td:first-child,.prof.ldr-card .tbl td a{color:var(--tc)!important}
+
+/* кнопка музыки: звезда-осциллограф */
+.amu,h1 .amu,body>.amu.def:not([hidden]){border-radius:50%!important;border:1px solid #9aa1ab!important;background:radial-gradient(circle at 50% 40%,#2b0d0d,#0b0809 72%)!important;box-shadow:inset 0 0 0 2px #000a,inset 0 0 0 3px #c9ced64d,0 0 12px rgba(214,40,40,.4)!important;opacity:.92!important;padding:0;transition:box-shadow .2s,opacity .2s}
+.amu:hover{opacity:1!important;box-shadow:inset 0 0 0 2px #000a,inset 0 0 0 3px #e3e6ea80,0 0 18px rgba(214,40,40,.75)!important}
+.amu svg{width:78%;height:78%;fill:none;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.amu .st{fill:#c81e1e;stroke:#ff7a66;stroke-width:1}.amu .wv{stroke:#ffe9c4;stroke-width:1.5;filter:drop-shadow(0 0 1.5px #ffcf80);animation:amuP 1.6s ease-in-out infinite}.amu .fl,.amu .x{display:none}
+@keyframes amuP{50%{opacity:.55}}
+.amu.off{box-shadow:inset 0 0 0 2px #000a,inset 0 0 0 3px #c9ced62e!important;opacity:.62!important}.amu.off .st{fill:#4a1d1d;stroke:#7d4640}.amu.off .wv{display:none}.amu.off .fl{display:inline;stroke:#8f8f8f;stroke-width:1.4}.amu.off .x{display:inline;stroke:#ff3b30;stroke-width:2.2}
+@media(max-width:600px){h1 .amu{width:30px!important;height:30px!important;margin-left:8px!important;vertical-align:-5px!important}}
+@media(prefers-reduced-motion:reduce){.amu .wv{animation:none}}

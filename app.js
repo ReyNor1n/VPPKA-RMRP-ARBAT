@@ -6,7 +6,7 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches)return;w.querySelectorAll('.mauth').forEach(x=>x.remove());const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);if(!al.classList.contains('in')&&!w.querySelector('.mreg')){const r=document.createElement('a');r.className='mauth mreg';r.href='#register';r.textContent='Регистрация';w.appendChild(r)}}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',events:'Мероприятия',votes:'Голосования',legal:'Правовая база',contacts:'Контакты'};
-load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=170';
+load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=171';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+S.server;
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
@@ -74,10 +74,10 @@ votes(){return window.VPPKA_VT_PAGE?window.VPPKA_VT_PAGE():pg('votes','<h1>Го�
 events(){return window.VPPKA_EV_PAGE?window.VPPKA_EV_PAGE():pg('events','<h1>Мероприятия</h1><p>Загрузка…</p>')},
 member(id,from){const m=MEM().find(x=>x.id===id);if(!m)return `<div class="crumbs"><a href="#home">Главная</a> / <a href="#leadership">Руководство</a></div><div class="pg"><h1>Профиль не найден</h1><a class="btn o" href="#leadership">← К составу</a></div>`;
 const links=[m.discord&&['Discord',m.discord],m.forum&&['Форум',m.forum],m.contact&&['Контакт',m.contact]].filter(Boolean);
-const lk=([l,v])=>/^https?:/.test(v)?`<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>`:esc(v);
+const MT=x=>x.group&&x.group!==PG?window.tierOfRole(x.role)[0]:(x.name&&x.name!=='Вакансия'&&window.isLdr(x.name)?window.ldrTier(x.name)[0]:'');const lk=([l,v])=>/^https?:/.test(v)?`<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>`:esc(v);
 const isP=m.group===PG,fh=from==='home',bk=fh?'home':isP?'party':'leadership';return `<div class="crumbs"><a href="#home">Главная</a> / ${fh?'':`<a href="#${bk}">${isP?PG:'Руководство'}</a> / `}${esc(m.name)}</div><div class="pg"><a class="btn o sm" href="#${bk}">← ${fh?'На главную':isP?'К членам партии':'Назад к составу'}</a>
-<div class="prof blk${window.isLdr(m.name)?' ldr-card '+window.ldrTier(m.name)[0]:''}" style="margin-top:18px">${window.isLdr(m.name)?'<div class="ldr-badge"><img src="img/gerb-red.png" alt="Герб партии"><span>Руководство партии</span></div>':''}<div class="prof-ph${LA(m.name)}${m.photo?'':' noph'}">${m.photo?`<img src="${esc(m.photo)}" alt="${esc(m.name||'')}">`:`<b>${esc(ini(m.name))}</b>`}</div><div><span class="role">// ${esc(m.group||'Состав')}</span><h1 class="prof-n">${(()=>{const pm=(window.VPPKA_PUBMAP&&window.VPPKA_PUBMAP())||{},me=((window.VPPKA_FB||{}).user||{}).uid,u=m.discordId&&Object.keys(pm).find(k=>pm[k].did===m.discordId)||(m.discordId&&me&&((window.VPPKA_AUTH||{}).profile||{}).discordId===m.discordId?me:"");return u?`<a class="prof-nl" href="${u===me?"#account":`#user/${esc(u)}/${esc(m.id)}`}" title="Открыть профиль">${esc(m.name)}</a>`:esc(m.name)})()}</h1><div class="prof-r">${esc(m.role)}</div>
-${m.quote?`<p class="quote">«${esc(m.quote)}»</p>`:''}<table class="tbl" style="margin-top:16px">${MF.filter(([k])=>m[k]).map(([k,l])=>`<tr><td>${l}</td><td>${esc(m[k])}</td></tr>`).join('')}${links.map(x=>`<tr><td>${x[0]}</td><td>${lk(x)}</td></tr>`).join('')}</table></div></div>
+<div class="prof blk${MT(m)?' ldr-card '+MT(m):''}" style="margin-top:18px">${MT(m)?'<div class="ldr-badge"><img src="img/gerb-red.png" alt="Герб партии"><span>Руководство партии</span></div>':''}<div class="prof-ph${MT(m)?' ldr-av '+MT(m):''}${m.photo?'':' noph'}">${m.photo?`<img src="${esc(m.photo)}" alt="${esc(m.name||'')}">`:`<b>${esc(ini(m.name))}</b>`}</div><div><span class="role">// ${esc(m.group||'Состав')}</span><h1 class="prof-n">${(()=>{const pm=(window.VPPKA_PUBMAP&&window.VPPKA_PUBMAP())||{},me=((window.VPPKA_FB||{}).user||{}).uid,u=m.discordId&&Object.keys(pm).find(k=>pm[k].did===m.discordId)||(m.discordId&&me&&((window.VPPKA_AUTH||{}).profile||{}).discordId===m.discordId?me:"");return u?`<a class="prof-nl" href="${u===me?"#account":`#user/${esc(u)}/${esc(m.id)}`}" title="Открыть профиль">${esc(m.name)}</a>`:esc(m.name)})()}</h1><div class="prof-r">${esc(m.role)}</div>
+${m.quote?`<p class="quote">«${esc(m.quote)}»</p>`:''}<table class="tbl" style="margin-top:16px">${MF.filter(([k])=>m[k]).map(([k,l])=>`<tr><td>${l}</td><td>${esc(m[k])}</td></tr>`).join('')}${links.map(x=>`<tr><td>${x[0]}</td><td>${lk(x)}</td></tr>`+(x[0]==='Discord'&&m.discordId==='646280678736003073'?'<tr class="creator-r"><td colspan="2"><span class="creator-b">⚙ Создатель сайта партии</span></td></tr>':'')).join('')}</table></div></div>
 ${m.bio?`<div class="blk"><h2>Биография</h2><p class="lead">${esc(m.bio)}</p></div>`:''}${m.achievements?`<div class="blk"><h2>Достижения и должности</h2><p class="lead">${esc(m.achievements)}</p></div>`:''}</div>`},
 home(){const H=C.home,t=['m1','m4','m5'].map(id=>MEM().find(y=>y.id===id)||{id,name:'Вакансия',role:id==='m1'?'Председатель ЦК':'Заместитель Председателя ЦК'}),qs=[H.trioLeft,'',H.trioRight];return `<div class="pg" style="padding-top:28px">
 <div class="blk intro"><img src="${esc(S.logo)}" alt="Герб партии"><div><h1>${esc(H.trioBottom||S.slogan)}</h1><p>${esc(H.heroText)}</p><a class="btn o" href="#program">Программа партии</a></div></div>
@@ -137,21 +137,32 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
  const rtI=setInterval(()=>{rtStart();if(rt)clearInterval(rtI)},1000);
  chk();setInterval(chk,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});addEventListener('focus',chk)})();
 
-// --- Музыка страниц: маршрут → трек. Добавить новый: 'member/<id>':{src,start,vol}. keep:true — продолжать с места, иначе каждый раз с start ---
+// --- Музыка страниц: маршрут → трек. Добавить новый: 'member/<id>':{src,start,vol} или {list:[...]} для плейлиста. keep:true — продолжать с места, иначе каждый раз с start ---
 window.VPPKA_MUSIC={
  'about':{src:'audio/about.mp3',start:0,vol:0.1,keep:true},          // «О партии»: Интернационал (без слов)
  'member/m4':{src:'audio/bykov.mp3',start:18,vol:0.05},                // Быков В. А.: Аким Апачев — «Лето и арбалеты»
- 'default':{src:'audio/only-we.mp3',start:0,vol:0.01,keep:true}     // фон остальных страниц: «Только мы» (GeoffPlaysGuitar, Эдита Пьеха, Atomic Heart)
+ 'default':{list:[            // фон: каждый визит — следующий трек, старт с припева (start, сек); по окончании — следующий, по кругу. Новый: {src:'audio/<файл>.mp3',start:N},
+   {src:'audio/only-we.mp3',start:32},                 // «Только мы» — GeoffPlaysGuitar, Эдита Пьеха
+   {src:'audio/golden-hoop.mp3',start:37},             // «Golden Hoop» — Neus, Ольга Восконьян, БИО
+   {src:'audio/zvenit-yanvarskaya-vyuga.mp3',start:38},// «Звенит январская вьюга» — Братство Атома, BassnPanda, Квашеная
+   {src:'audio/na-zare.mp3',start:85},                 // «На заре» — Альянс, Братство Атома, BassnPanda
+  ],vol:0.01,keep:true}     // фон остальных страниц: «Только мы» (GeoffPlaysGuitar, Эдита Пьеха, Atomic Heart)
 };
 (function(){const K='vppka-about-mute';const A={};let cur=null;const muted=()=>localStorage.getItem(K+(cur&&cur!=='about'?':'+cur:''))==='1';
  const norm=s=>{s=String(s||'').replace(/^#/,'');return s.startsWith('member/')?s.split('/').slice(0,2).join('/'):s};
  const keyOf=()=>{const h=norm(location.hash);const M=window.VPPKA_MUSIC||{};if(M[h])return h;
   // профиль того же человека под другим id (запись «Члены партии» p_…) — по Discord ID
   if(h.startsWith('member/')){const ms=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[],m=ms.find(x=>'member/'+x.id===h);if(m&&m.discordId){const o=ms.find(x=>x.discordId===m.discordId&&M['member/'+x.id]);if(o)return 'member/'+o.id}}return M.default?'default':null};
- function el(k){const c=window.VPPKA_MUSIC[k];if(!A[k]){const au=new Audio(c.src);au.loop=true;au.preload='none';A[k]=au}A[k].volume=c.vol??0.1;return A[k]}
+ function el(k){const c=window.VPPKA_MUSIC[k];if(!A[k]){const L=(c.list&&c.list.length?c.list:[c.src]).map(t=>typeof t==='string'?{src:t,start:0}:t);
+  // плейлист: каждый визит — следующий трек (индекс в localStorage), трек стартует с припева (start), по окончании — следующий, по кругу
+  let i=0;if(L.length>1){const LK='vppka-bg-i:'+k;i=((+localStorage.getItem(LK))+1)%L.length;if(!(i>=0))i=0;try{localStorage.setItem(LK,i)}catch(e){}}
+  const au=new Audio();au.loop=L.length<2;au.preload='none';
+  const load=n=>{au._i=n;const t=L[n];au.src=t.src;if(t.start){const go=()=>{try{au.currentTime=t.start}catch(e){}};au.addEventListener('loadedmetadata',go,{once:true})}};load(i);
+  if(L.length>1)au.addEventListener('ended',()=>{load((au._i+1)%L.length);au.play().catch(()=>{})});A[k]=au}
+ A[k].volume=c.vol??0.1;return A[k]}
  function btn(){let b=document.getElementById('amu');if(!b){b=document.createElement('button');b.id='amu';b.className='amu';b.onclick=()=>{localStorage.setItem(K+(cur&&cur!=='about'?':'+cur:''),muted()?'0':'1');sync()}}
   const h=cur&&document.querySelector('.pg h1');if(h&&b.parentNode!==h)h.appendChild(b);else if(!h&&!b.parentNode)document.body.appendChild(b);
-  b.hidden=!cur;b.classList.toggle('def',!h);b.textContent=muted()?'🔇':'🔊';b.title=muted()?'Включить музыку':'Выключить музыку';b.setAttribute('aria-label',b.title)}
+  b.hidden=!cur;b.classList.toggle('def',!h);b.innerHTML='<svg viewBox="0 0 32 32" aria-hidden="true"><path class="st" d="M16 2.5l3.6 8.6 9.3.7-7.1 6 2.2 9.1L16 22l-8 4.9 2.2-9.1-7.1-6 9.3-.7z"/><path class="wv" d="M9.5 16h2l1.3-3 2 6.2 1.8-8 1.9 9.4 1.6-4.6h2.4"/><path class="fl" d="M10 16h12"/><path class="x" d="M6 6l20 20"/></svg>';b.classList.toggle('off',muted());b.title=muted()?'Включить музыку':'Выключить музыку';b.setAttribute('aria-label',b.title)}
  function play(){if(!cur)return;const a=el(cur);a.play().catch(()=>{})}
  function enter(k){const c=window.VPPKA_MUSIC[k],a=el(k);if(!c.keep){const go=()=>{try{a.currentTime=c.start||0}catch(e){}};if(a.readyState>=1)go();else a.addEventListener('loadedmetadata',go,{once:true})}}
  function leave(k){const a=A[k];if(!a)return;a.pause();const c=window.VPPKA_MUSIC[k];if(!c.keep){try{a.currentTime=c.start||0}catch(e){}}}

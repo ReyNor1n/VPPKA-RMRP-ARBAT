@@ -224,7 +224,9 @@ async function asgOpen(pid){asgPos=(D().members||[]).find(m=>m.id===pid);if(!can
  o.addEventListener('click',e=>{if(e.target===o)asgClose()});document.getElementById('asg-q').oninput=e=>{document.getElementById('asg-l').innerHTML=asgList(e.target.value)};
  try{if(!asgUsers){let us=[];try{const s=await F().getDocs(F().collection(db(),'users'));us=s.docs.map(d=>({id:d.id,...d.data()})).filter(u=>!window.VPPKA_HIDDEN(u))}catch(e){if(e.code!=='permission-denied')throw e}
   // Только члены партии: принятые заявки (p_*) и действующие обладатели должностей. Просто зарегистрированные не попадают.
-  const seen=new Set(),out=[];for(const m of (D().members||[])){if(window.VPPKA_HIDDEN(m))continue;const isP=String(m.id||'').startsWith('p_');if(!isP&&(!m.name||/^Вакансия/i.test(m.name)))continue;
+  const nz=x=>String(x||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim(),LD=new Set();for(const m of (D().members||[])){if(!String(m.id||'').startsWith('p_')&&m.group!==window.VPPKA_PG&&m.name&&!/^Вакансия/i.test(m.name)){if(m.discordId)LD.add('d:'+m.discordId);LD.add('n:'+nz(m.name))}}
+  // Уже занимающие руководящую должность в список не попадают.
+  const seen=new Set(),out=[];for(const m of (D().members||[])){if(window.VPPKA_HIDDEN(m))continue;if((m.discordId&&LD.has('d:'+m.discordId))||LD.has('n:'+nz(m.name)))continue;const isP=String(m.id||'').startsWith('p_');if(!isP&&(!m.name||/^Вакансия/i.test(m.name)))continue;
    const key=m.discordId?'d:'+m.discordId:'n:'+String(m.name).toLowerCase().trim();if(seen.has(key))continue;seen.add(key);
    const u=m.discordId&&us.find(x=>x.discordId===m.discordId);
    out.push({id:u?u.id:'m:'+m.id,displayName:m.name||(u&&u.displayName)||m.discordId,discordId:m.discordId||'',photo:(u&&u.photo)||m.photo||'',roleName:m.role})}
