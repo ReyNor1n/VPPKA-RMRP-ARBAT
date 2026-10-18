@@ -291,7 +291,8 @@ service cloud.firestore {
     // ---------- новости ----------
     match /news/{id} {
       function validNews(d) {
-        return d.keys().hasOnly(['title','text','image','photos','videos','date','author','createdAt','updatedAt','pinned','likeCount'])
+        return d.keys().hasOnly(['title','text','image','photos','videos','date','author','createdAt','updatedAt','pinned','likeCount','align'])
+          && (!('align' in d) || d.align in ['center'])
           && (!('likeCount' in d) || d.likeCount is int)
           && (!('pinned' in d) || d.pinned is bool)
           && (!('photos' in d) || (d.photos is list && d.photos.size() <= 4))
