@@ -6,7 +6,7 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches)return;w.querySelectorAll('.mauth').forEach(x=>x.remove());const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);if(!al.classList.contains('in')&&!w.querySelector('.mreg')){const r=document.createElement('a');r.className='mauth mreg';r.href='#register';r.textContent='Регистрация';w.appendChild(r)}}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',events:'Мероприятия',votes:'Голосования',legal:'Правовая база',contacts:'Контакты'};
-load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=168';
+load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=169';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+S.server;
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
@@ -140,17 +140,18 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
 // --- Музыка страниц: маршрут → трек. Добавить новый: 'member/<id>':{src,start,vol}. keep:true — продолжать с места, иначе каждый раз с start ---
 window.VPPKA_MUSIC={
  'about':{src:'audio/about.mp3',start:0,vol:0.1,keep:true},          // «О партии»: Интернационал (без слов)
- 'member/m4':{src:'audio/bykov.mp3',start:18,vol:0.05}                 // Быков В. А.: Аким Апачев — «Лето и арбалеты»
+ 'member/m4':{src:'audio/bykov.mp3',start:18,vol:0.05},                // Быков В. А.: Аким Апачев — «Лето и арбалеты»
+ 'default':{src:'audio/only-we.mp3',start:0,vol:0.01,keep:true}     // фон остальных страниц: «Только мы» (GeoffPlaysGuitar, Эдита Пьеха, Atomic Heart)
 };
 (function(){const K='vppka-about-mute';const A={};let cur=null;const muted=()=>localStorage.getItem(K+(cur&&cur!=='about'?':'+cur:''))==='1';
  const norm=s=>{s=String(s||'').replace(/^#/,'');return s.startsWith('member/')?s.split('/').slice(0,2).join('/'):s};
  const keyOf=()=>{const h=norm(location.hash);const M=window.VPPKA_MUSIC||{};if(M[h])return h;
   // профиль того же человека под другим id (запись «Члены партии» p_…) — по Discord ID
-  if(h.startsWith('member/')){const ms=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[],m=ms.find(x=>'member/'+x.id===h);if(m&&m.discordId){const o=ms.find(x=>x.discordId===m.discordId&&M['member/'+x.id]);if(o)return 'member/'+o.id}}return null};
+  if(h.startsWith('member/')){const ms=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[],m=ms.find(x=>'member/'+x.id===h);if(m&&m.discordId){const o=ms.find(x=>x.discordId===m.discordId&&M['member/'+x.id]);if(o)return 'member/'+o.id}}return M.default?'default':null};
  function el(k){const c=window.VPPKA_MUSIC[k];if(!A[k]){const au=new Audio(c.src);au.loop=true;au.preload='none';A[k]=au}A[k].volume=c.vol??0.1;return A[k]}
  function btn(){let b=document.getElementById('amu');if(!b){b=document.createElement('button');b.id='amu';b.className='amu';b.onclick=()=>{localStorage.setItem(K+(cur&&cur!=='about'?':'+cur:''),muted()?'0':'1');sync()}}
   const h=cur&&document.querySelector('.pg h1');if(h&&b.parentNode!==h)h.appendChild(b);else if(!h&&!b.parentNode)document.body.appendChild(b);
-  b.hidden=!cur;b.textContent=muted()?'🔇':'🔊';b.title=muted()?'Включить музыку':'Выключить музыку';b.setAttribute('aria-label',b.title)}
+  b.hidden=!cur;b.classList.toggle('def',!h);b.textContent=muted()?'🔇':'🔊';b.title=muted()?'Включить музыку':'Выключить музыку';b.setAttribute('aria-label',b.title)}
  function play(){if(!cur)return;const a=el(cur);a.play().catch(()=>{})}
  function enter(k){const c=window.VPPKA_MUSIC[k],a=el(k);if(!c.keep){const go=()=>{try{a.currentTime=c.start||0}catch(e){}};if(a.readyState>=1)go();else a.addEventListener('loadedmetadata',go,{once:true})}}
  function leave(k){const a=A[k];if(!a)return;a.pause();const c=window.VPPKA_MUSIC[k];if(!c.keep){try{a.currentTime=c.start||0}catch(e){}}}
