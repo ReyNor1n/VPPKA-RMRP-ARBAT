@@ -385,3 +385,42 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .blk.cm ul.cm-l{padding:0!important;margin:0 0 14px!important}
 .nlike{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 10px;border:1px solid var(--ln);border-radius:14px;background:#0b0d12;color:var(--mut);font:12px Oxanium,monospace;cursor:pointer;transition:.15s}.nlike:hover{border-color:var(--red);color:#fff}.nlike.on{color:#ff4d5e;border-color:#ff2a3a88;background:#ff2a3a18}.nlk-row{margin-top:14px}
 .jcnt{display:block;text-align:right;font:11px Oxanium,monospace;color:var(--mut);margin-top:2px;text-transform:none}
+
+/* ===== Полировка дизайна (18.10.2026): единые отступы, типографика, кнопки, карточки, формы. Цвета прежние. ===== */
+:root{--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s7:32px;--r:4px;--t:.18s ease;--btn-h:38px;--btn-h-sm:30px;--in-h:36px;--card-bg:#0b0e14}
+body{line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,h4{line-height:1.22;letter-spacing:.01em}
+h3{font-size:16px;margin:var(--s5) 0 var(--s3)}
+p{margin:0 0 var(--s3)}
+a{transition:color var(--t),opacity var(--t)}
+/* блоки/карточки */
+.blk{padding:var(--s5) var(--s6);margin:0 0 var(--s5);transition:border-color var(--t)}
+.blk:hover{border-color:#2c3544}
+.blk>h2:first-child,.blk>h2{margin:0 0 var(--s4);font-size:19px;line-height:1.25;letter-spacing:.02em}
+.blk>p:last-child,.blk>ul:last-child,.blk>table:last-child{margin-bottom:0}
+/* кнопки */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--btn-h);padding:0 20px;line-height:1.1;font-size:13px;letter-spacing:.07em;text-decoration:none;vertical-align:middle;transition:filter var(--t),box-shadow var(--t),transform .08s,background-color var(--t),color var(--t);user-select:none}
+.btn.sm{min-height:var(--btn-h-sm);padding:0 12px;font-size:11px}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{filter:brightness(1.25);text-decoration:underline;text-underline-offset:3px}
+.btn:disabled,.btn[disabled],.btn.disabled{opacity:.5;cursor:not-allowed;filter:none!important;box-shadow:none!important;transform:none}
+/* контурная кнопка: рамка повторяет срезанные углы (раньше обводка обрезалась clip-path и «съезжала») */
+.btn.o{outline:0!important;background:var(--cy);position:relative;isolation:isolate}
+.btn.o::before{content:'';position:absolute;inset:1px;z-index:-1;background:var(--card-bg);clip-path:polygon(9.6px 0,100% 0,100% calc(100% - 9.6px),calc(100% - 9.6px) 100%,0 100%,0 9.6px);transition:background-color var(--t)}
+.btn.o:hover{filter:none;box-shadow:none}.btn.o:hover::before{background:#0f2028}
+.btn.o.kp-del,.btn.o[class*=del]{background:var(--red)}.btn.o.kp-del:hover::before{background:#2a0e12}
+.btn.o:disabled::before,.btn.o[disabled]::before{background:var(--card-bg)}
+/* формы */
+.fl{margin:var(--s3) 0}
+.fl input,.kp-f input,.kp-f textarea,.jf textarea,.fl textarea,.ml-bar input{border-radius:var(--r);transition:border-color var(--t),box-shadow var(--t);border:1px solid var(--ln)}
+.fl input:focus,.kp-f input:focus,.kp-f textarea:focus,.jf textarea:focus,.fl textarea:focus,.ml-bar input:focus{outline:0;border-color:var(--cy);box-shadow:0 0 0 2px #38e1ff22}
+.aerr{font-size:13px}
+/* таблицы */
+.tbl td{padding:9px 8px;line-height:1.45}
+/* заголовки секций «// 05 Товарищи» */
+.blk h2::before{opacity:.9;margin-right:6px}
+/* мелочи */
+.cm-b,.pms-b{width:100%}
+img{max-width:100%}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media(max-width:768px){.blk{padding:var(--s4) 14px;margin:0 0 var(--s4)}.blk>h2{font-size:17px;margin-bottom:var(--s3)}.btn{min-height:42px;padding:0 16px}.btn.sm{min-height:36px}.tbl td{padding:7px 4px}h3{margin:var(--s4) 0 var(--s2)}}
