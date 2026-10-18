@@ -461,3 +461,4 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 
 /* карточка руководства — тонкая золотая рамка */
 .prof.blk.ldr-card{clip-path:none!important;border:2px solid var(--gold)!important;box-shadow:0 0 18px -4px rgba(216,180,90,.7),inset 0 0 12px -8px rgba(216,180,90,.5)}
+.prof.blk.ldr-card{background:linear-gradient(135deg,rgba(236,112,160,.12),rgba(236,112,160,.04) 45%,rgba(236,112,160,.10)),var(--p1)!important}
