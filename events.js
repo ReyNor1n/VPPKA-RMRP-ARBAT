@@ -35,7 +35,7 @@ function page(){const adm=can(),u=up(),p=past();
  const body=EV===null?'<p class="ev-empty">Загрузка…</p>':`${adm?(editId!==null?form(editId?EV.find(x=>x.id===editId):null):'<p><button class="btn sm" data-evnew>+ Добавить мероприятие</button></p>'):''}
 <div class="blk"><h2>Ближайшие</h2>${u.length?`<div class="ev-l">${u.map(e=>item(e,adm)).join('')}</div>`:'<p class="ev-empty">Пока нет запланированных мероприятий.</p>'}</div>
 ${p.length?`<details class="blk ev-past"${p.some(e=>e.id===markId)?' open':''}><summary>Прошедшие (${p.length})</summary><div class="ev-l">${p.map(e=>item(e,adm)).join('')}</div></details>`:''}`;
- return `<div class="crumbs"><a href="#home">Главная</a> / Мероприятия</div><div class="pg"><h1>Мероприятия</h1>${body}</div>`}
+ return `<div class="crumbs"><a href="#home">Главная</a> / Мероприятия</div><div class="pg"><h1>Мероприятия</h1>${window.VPPKA_SUBTABS?window.VPPKA_SUBTABS('events'):''}${body}</div>`}
 function side(){const u=up().slice(0,3);return `<div class="blk ev-side"><h2>Ближайшие мероприятия</h2>${EV===null?'<p class="ev-empty">Загрузка…</p>':u.length?`<ul class="ev-sl">${u.map(e=>`<li><a href="#events"><span class="ev-d">${esc(fmt(e.at))}</span><b>${esc(e.title)}</b>${e.place?`<small>📍 ${esc(e.place)}</small>`:''}</a></li>`).join('')}</ul>`:'<p class="ev-empty">Ближайших мероприятий пока нет.</p>'}<a class="btn o ev-all" href="#events">Все мероприятия</a></div>`}
 const cur=()=>(location.hash.slice(1)||'home').split('/')[0];
 const rr=()=>{const k=cur();if(k==='events'||k==='home'||!window.P[k])window.route()};
