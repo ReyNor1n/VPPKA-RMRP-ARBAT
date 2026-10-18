@@ -6,7 +6,7 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches||w.querySelector('.mjoin'))return;const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',events:'Мероприятия',votes:'Голосования',legal:'Правовая база',contacts:'Контакты'};
-load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=126';
+load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=127';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+S.server;
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
@@ -19,7 +19,7 @@ const MEM=()=>window.VPPKA_DATA&&window.VPPKA_DATA.members||C.leadership.members
 const PG=window.VPPKA_PG='Члены партии',LEAD=()=>MEM().filter(m=>m.group!==PG);const nrm=x=>String(x||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();window.isLdr=n=>{n=nrm(n);return !!n&&LEAD().some(m=>nrm(m.name)===n)};const LA=n=>window.isLdr(n)?' ldr-av':'';
 const PARTY=()=>{const ms=MEM(),out=[],seen=new Set();const k=m=>m.discordId?'d'+m.discordId:'n'+String(m.name||'').toLowerCase();
  ms.filter(m=>m.group!==PG&&m.name&&m.name!=='Вакансия').forEach(m=>{seen.add(k(m));out.push({...m,title:m.role})});
- ms.filter(m=>m.group===PG).forEach(m=>{if(seen.has(k(m)))return;seen.add(k(m));out.push({...m,title:m.role||'Член партии'})});return out;};
+ ms.filter(m=>m.group===PG).forEach(m=>{if(seen.has(k(m)))return;seen.add(k(m));out.push({...m,title:m.role||'Член партии'})});return out;};window.VPPKA_PARTY=PARTY;window.VPPKA_AKEY=m=>m.discordId?'d'+m.discordId:'n'+String(m.name||'').toLowerCase();
 const ini=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
 const pav=m=>`<span class="pm-av${LA(m.name)}${m.photo?'':' noph'}">${m.photo?`<img src="${esc(m.photo)}" alt="" loading="lazy">`:`<b>${esc(ini(m.name))}</b>`}</span>`;
 const pcard=m=>`<a class="pm-card" href="#member/${esc(m.id)}" data-q="${esc((m.name+' '+m.title).toLowerCase())}">${pav(m)}<span class="pm-n">${esc(m.name)}</span><span class="pm-r">${esc(m.title)}</span>${m.joined?`<span class="pm-j">с ${esc(m.joined)}</span>`:''}</a>`;

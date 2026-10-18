@@ -276,7 +276,8 @@ service cloud.firestore {
     // ---------- мероприятия: читают все, правит ступень 4+ ----------
     match /events/{id} {
       function validEv(d) {
-        return d.keys().hasOnly(['title','at','place','desc','image','createdBy','updatedAt','discordMessageId'])
+        return d.keys().hasOnly(['title','at','place','desc','image','createdBy','updatedAt','discordMessageId','att'])
+          && (!('att' in d) || (d.att is list && d.att.size() <= 150))
           && reqStr(d, 'title', 200) && d.at is int
           && optStr(d, 'place', 200) && optStr(d, 'desc', 4000) && optStr(d, 'image', 2000)
           && optStr(d, 'createdBy', 128) && optStr(d, 'discordMessageId', 32)
