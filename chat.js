@@ -8,7 +8,7 @@ let rn=[],rnDid='',me=null,isOwn=false,subs=[],msub=null,pub={},chats={},msgs=[]
 const cid=(a,b)=>[a,b].sort().join('_');
 const other=c=>c.participants.find(x=>x!==me);
 const person=(u,c)=>{const p=pub[u];if(p)return {n:p.n||'Пользователь',ph:p.ph};const n=c&&c.names&&c.names[u];return {n:n||'Пользователь',ph:''}};
-const av=(p,cls='')=>`<span class="ch-av ${cls}${p.ph?'':' noph'}">${p.ph?`<img src="${esc(p.ph)}" alt="">`:`<b>${esc(ini(p.n))}</b>`}</span>`;
+const av=(p,cls='')=>`<span class="ch-av ${cls}${window.isLdr&&window.isLdr(p.n)?' ldr-av':''}${p.ph?'':' noph'}">${p.ph?`<img src="${esc(p.ph)}" alt="">`:`<b>${esc(ini(p.n))}</b>`}</span>`;
 function ft(t,full){const d=t?.toDate?.();if(!d)return '';const n=new Date(),hm=d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
  if(d.toDateString()===n.toDateString())return hm;const dm=d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});return full?dm+' '+hm:dm}
 const unreadTotal=()=>Object.values(chats).filter(c=>((c.unread||{})[me]||0)>0).length+(rn.some(x=>!x.read)?1:0);

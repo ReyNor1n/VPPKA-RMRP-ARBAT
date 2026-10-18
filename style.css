@@ -385,3 +385,8 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .blk.cm ul.cm-l{padding:0!important;margin:0 0 14px!important}
 .nlike{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 10px;border:1px solid var(--ln);border-radius:14px;background:#0b0d12;color:var(--mut);font:12px Oxanium,monospace;cursor:pointer;transition:.15s}.nlike:hover{border-color:var(--red);color:#fff}.nlike.on{color:#ff4d5e;border-color:#ff2a3a88;background:#ff2a3a18}.nlk-row{margin-top:14px}
 .jcnt{display:block;text-align:right;font:11px Oxanium,monospace;color:var(--mut);margin-top:2px;text-transform:none}
+/* gold rings for leadership */
+.ldr-av.pm-av,.ldr-av.ch-av{border-color:var(--gold)!important;box-shadow:0 0 0 1px #0007,0 0 12px -3px var(--gold)!important}
+.cm-av.ldr-av{border-color:var(--gold)!important;box-shadow:0 0 8px -2px var(--gold)!important}
+.ml-p.ldr-av img,.ml-p.ldr-av i{border:1.5px solid var(--gold)!important;box-shadow:0 0 6px -1px var(--gold)}
+.prof-ph.ldr-av{border-color:var(--gold)!important;box-shadow:0 0 24px #d8b45a44!important}
