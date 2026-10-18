@@ -455,6 +455,26 @@ service cloud.firestore {
       allow list, write: if false;
     }
     // banners/{uid}: баннер профиля. Либо url (https .mp4/.webm), либо файл частями в chunks/{ver_i}. Видят все, меняет только владелец.
+    // музыка профиля руководства: читают все, пишет сам руководитель (ключ доступа) или владелец
+    match /ldrMusic/{uid} {
+      allow read: if true;
+      allow create, update: if signedIn() && ((request.auth.uid == uid && myTier() >= 1) || isOwner())
+        && request.resource.data.keys().hasOnly(['name','title','t','url','ver','n','mime','size'])
+        && reqStr(request.resource.data, 'name', 160) && optStr(request.resource.data, 'title', 100)
+        && (!('url' in request.resource.data) || (request.resource.data.url is string && request.resource.data.url.size() <= 600 && request.resource.data.url.matches('^https://[^ ]+$')))
+        && (!('n' in request.resource.data) || (request.resource.data.n is int && request.resource.data.n >= 1 && request.resource.data.n <= 12))
+        && (!('mime' in request.resource.data) || request.resource.data.mime in ['audio/mpeg','audio/ogg'])
+        && (!('size' in request.resource.data) || (request.resource.data.size is int && request.resource.data.size <= 5242880))
+        && (!('ver' in request.resource.data) || (request.resource.data.ver is string && request.resource.data.ver.size() <= 20));
+      allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
+      match /chunks/{cid} {
+        allow read: if true;
+        allow create, update: if signedIn() && ((request.auth.uid == uid && myTier() >= 1) || isOwner())
+          && cid.matches('^[0-9]{1,20}_([0-9]|1[0-1])$')
+          && request.resource.data.keys().hasOnly(['d']) && request.resource.data.d is string && request.resource.data.d.size() <= 600000;
+        allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
+      }
+    }
     match /banners/{uid} {
       allow read: if true;
       allow create, update: if signedIn() && request.auth.uid == uid && request.auth.token.email is string

@@ -456,3 +456,5 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .blk.ncenter{text-align:center}.blk.ncenter h1:after,.blk.ncenter .nh{margin-left:auto;margin-right:auto}.blk.ncenter .nphotos{justify-content:center}.blk.ncenter .nphotos a{margin-left:auto;margin-right:auto}.blk.ncenter .nlk-row{justify-content:center}
 .blk.ncenter h1:after{left:50%;transform:translateX(-50%)}
 .about-one .about-2{margin-bottom:20px}.about-one .about-2>.blk{margin-bottom:0}
+
+.pmus-t{font:12px Oxanium,monospace;color:var(--gold);letter-spacing:.05em;margin:-6px 0 12px}

@@ -6,7 +6,7 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches||w.querySelector('.mjoin'))return;const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',events:'Мероприятия',votes:'Голосования',legal:'Правовая база',contacts:'Контакты'};
-load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=149';
+load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=150';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+S.server;
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
@@ -135,7 +135,7 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
 // --- Музыка страниц: маршрут → трек. Добавить новый: 'member/<id>':{src,start,vol}. keep:true — продолжать с места, иначе каждый раз с start ---
 window.VPPKA_MUSIC={
  'about':{src:'audio/about.mp3',start:0,vol:0.1,keep:true},          // «О партии»: Интернационал (без слов)
- 'member/m4':{src:'audio/bykov.mp3',start:18,vol:0.1}                 // Быков В. А.: Аким Апачев — «Лето и арбалеты»
+ 'member/m4':{src:'audio/bykov.mp3',start:18,vol:0.05}                 // Быков В. А.: Аким Апачев — «Лето и арбалеты»
 };
 (function(){const K='vppka-about-mute';const A={};let cur=null;const muted=()=>localStorage.getItem(K+(cur&&cur!=='about'?':'+cur:''))==='1';
  const norm=s=>{s=String(s||'').replace(/^#/,'');return s.startsWith('member/')?s.split('/').slice(0,2).join('/'):s};
@@ -155,7 +155,7 @@ window.VPPKA_MUSIC={
   if(cur&&cur!==k)leave(cur);const a=el(k);if(!c.keep){try{a.currentTime=c.start||0}catch(x){}}cur=k;a.play().then(()=>{if(!c.keep&&a.currentTime<(c.start||0)-1)a.currentTime=c.start||0}).catch(()=>{})},true);
  const kick=()=>{if(cur&&!muted()&&!document.hidden&&(!A[cur]||A[cur].paused))play()};['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,kick,{passive:true}));
  addEventListener('hashchange',()=>setTimeout(sync,0));document.addEventListener('visibilitychange',sync);new MutationObserver(()=>{if(cur){const b=document.getElementById('amu'),h=document.querySelector('.pg h1');if(h&&(!b||b.parentNode!==h))btn()}else if(!cur&&window.VPPKA_DATA&&location.hash.startsWith('#member/')&&keyOf())sync()}).observe(document.body,{childList:true,subtree:true});
- if(document.readyState==='loading')addEventListener('DOMContentLoaded',sync);else sync();window.VPPKA_ABOUT_AUDIO=()=>A.about;window.VPPKA_PAGE_AUDIO=()=>cur&&A[cur]})();
+ if(document.readyState==='loading')addEventListener('DOMContentLoaded',sync);else sync();window.VPPKA_MUSIC_SYNC=sync;window.VPPKA_ABOUT_AUDIO=()=>A.about;window.VPPKA_PAGE_AUDIO=()=>cur&&A[cur]})();
 
 // --- Баннер профиля: файл (видео/картинка/GIF, частями в Firestore banners/{uid}/chunks) или прямая ссылка ---
 (function(){let B=null,started=false,lastMsg='';const RX=/^https:\/\/[^\s]+\.(mp4|webm)([?#].*)?$/i,MAXB=8*1048576,CH=900000,blobs={};
