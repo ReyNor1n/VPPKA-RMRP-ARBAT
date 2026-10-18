@@ -222,6 +222,20 @@ service cloud.firestore {
         && resource.data.status in ['new','rejected','expelled'] && targetTier() == 0;
     }
 
+    // ---------- мероприятия: читают все, правит ступень 4+ ----------
+    match /events/{id} {
+      function validEv(d) {
+        return d.keys().hasOnly(['title','at','place','desc','image','createdBy','updatedAt','discordMessageId'])
+          && reqStr(d, 'title', 200) && d.at is int
+          && optStr(d, 'place', 200) && optStr(d, 'desc', 4000) && optStr(d, 'image', 2000)
+          && optStr(d, 'createdBy', 128) && optStr(d, 'discordMessageId', 32)
+          && (!('updatedAt' in d) || d.updatedAt is int);
+      }
+      allow read: if true;
+      allow create, update: if myTier() >= 4 && validEv(request.resource.data);
+      allow delete: if myTier() >= 4;
+    }
+
     // ---------- новости ----------
     match /news/{id} {
       function validNews(d) {

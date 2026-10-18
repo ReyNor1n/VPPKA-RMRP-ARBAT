@@ -390,3 +390,24 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .cm-av.ldr-av{border-color:var(--gold)!important;box-shadow:0 0 8px -2px var(--gold)!important}
 .ml-p.ldr-av img,.ml-p.ldr-av i{border:1.5px solid var(--gold)!important;box-shadow:0 0 6px -1px var(--gold)}
 .prof-ph.ldr-av{border-color:var(--gold)!important;box-shadow:0 0 24px #d8b45a44!important}
+/* кнопка «Все члены партии»: ровная рамка */
+.cm .cm-b{outline:0!important;clip-path:none!important;border:1px solid var(--cy);position:relative;margin:0!important;width:100%;box-sizing:border-box}.cm .cm-b:before,.cm .cm-b:after{content:"";position:absolute;width:8px;height:8px;border:2px solid var(--cy)}.cm .cm-b:before{left:-3px;top:-3px;border-right:0;border-bottom:0}.cm .cm-b:after{right:-3px;bottom:-3px;border-left:0;border-top:0}
+/* уведомление о новости — в правом нижнем углу */
+.ntoast{top:auto!important;left:auto!important;right:16px!important;bottom:16px!important;transform:none!important;max-width:340px!important;border-radius:0;background:#14070ae8;border:1px solid var(--red);border-left:3px solid var(--red);font-size:13px;padding:10px 36px 10px 14px}
+@media(max-width:860px){.ntoast{left:auto!important;right:8px!important;bottom:8px!important;max-width:calc(100vw - 90px)!important;padding:8px 32px 8px 10px;font-size:12px}.ntoast a{-webkit-line-clamp:1}}
+/* мероприятия */
+.ev-l{display:flex;flex-direction:column;gap:10px}
+.ev-it{display:flex;gap:14px;background:#0a0c11;border:1px solid var(--ln);border-left:3px solid var(--red);padding:12px 14px}
+.ev-img{width:120px;height:80px;object-fit:cover;flex:none;border:1px solid var(--ln)}
+.ev-b{min-width:0;flex:1}.ev-b h3{margin:2px 0 4px;font-size:17px}.ev-b p{margin:6px 0 0;font-size:14px;color:var(--tx)}
+.ev-d{font:12px Oxanium,monospace;color:var(--cy);letter-spacing:.06em}.ev-d small{color:var(--mut)}
+.ev-p{font-size:13px;color:var(--mut)}
+.ev-adm{margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ev-err{color:#ff6b74;font-size:13px}
+.ev-past summary{cursor:pointer;font:14px Oxanium,monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}.ev-past .ev-l{margin-top:12px;opacity:.75}
+.ev-empty{color:var(--mut);font-size:14px}
+.ev-form label{display:block;margin-bottom:10px;font-size:13px;color:var(--mut)}.ev-form input,.ev-form textarea{display:block;width:100%;box-sizing:border-box;margin-top:4px;background:#0a0c11;border:1px solid var(--ln);color:var(--tx);padding:8px 10px;font:14px "Exo 2",sans-serif}
+.ev-sl{list-style:none;margin:0 0 12px!important;padding:0!important}.ev-sl li{border-bottom:1px solid var(--ln)}.ev-sl li:last-child{border:0}
+.ev-sl a{display:flex;flex-direction:column;padding:7px 0;color:inherit}.ev-sl a:hover b{color:var(--red)}.ev-sl b{font-size:14px;font-weight:600}.ev-sl small{font-size:12px;color:var(--mut)}
+.ev-all{display:block;text-align:center;outline:0!important;clip-path:none!important;border:1px solid var(--cy)}
+@media(max-width:600px){.ev-it{flex-direction:column}.ev-img{width:100%;height:140px}}
+.nav a{white-space:nowrap;padding:14px 10px}@media(min-width:861px){.nav .w{flex-wrap:nowrap;justify-content:space-between}}
