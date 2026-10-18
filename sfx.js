@@ -1,4 +1,4 @@
-// Звуки интерфейса (WebAudio, без файлов) в стиле Atomic Heart: робо-щелчок при наведении, ретро-футуристичный перезвон при открытии.
+// Звуки интерфейса (WebAudio, без файлов) в стиле Atomic Heart: робо-щелчок при наведении, механический клац + пневмо-шипение при открытии.
 (()=>{const K='vppka_sfx_off';let off=localStorage.getItem(K)==='1',ctx=null,armed=false,lastH=0,lastO=0;const VOL=0.06;
  const touch=matchMedia('(hover:none),(pointer:coarse)').matches;
  const ac=()=>{if(!ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;ctx=new C()}if(ctx.state==='suspended')ctx.resume();return ctx};
@@ -16,7 +16,21 @@
   for(const [type,det] of [['sawtooth',-7],['triangle',6],['sine',0]]){const x=c.createOscillator();x.type=type;x.frequency.value=f;x.detune.value=det;
    const vib=c.createOscillator(),vg=c.createGain();vib.frequency.value=5.5;vg.gain.value=4;vib.connect(vg).connect(x.detune);vib.start(t);vib.stop(t+dur+0.05);
    const xg=c.createGain();xg.gain.value=type==='sine'?0.6:0.35;x.connect(xg).connect(lp);x.start(t);x.stop(t+dur+0.05)}}
- function chime(){const c=ok();if(!c)return;const t=c.currentTime+0.005,o=out(c);[[659.25,0],[987.77,0.07],[1318.5,0.14]].forEach(([f,dt],i)=>note(c,o,f,t+dt,i===2?0.38:0.2,VOL*(i===2?0.55:0.45)))}
+ // «открытие»: щелчок защёлки/реле + мягкое пневматическое шипение (фильтрованный шум), без нот
+ function nbuf(c,sec){const b=c.createBuffer(1,Math.floor(c.sampleRate*sec),c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b}
+ function chime(){const c=ok();if(!c)return;const t=c.currentTime+0.005,V=VOL*0.75;
+  // клац: низкий глухой удар + металлический призвук
+  const th=c.createOscillator(),tg=c.createGain();th.type='sine';th.frequency.setValueAtTime(190,t);th.frequency.exponentialRampToValueAtTime(70,t+0.06);
+  tg.gain.setValueAtTime(V*1.1,t);tg.gain.exponentialRampToValueAtTime(0.0001,t+0.07);th.connect(tg).connect(c.destination);th.start(t);th.stop(t+0.08);
+  const k=c.createBufferSource();k.buffer=nbuf(c,0.025);const kb=c.createBiquadFilter();kb.type='bandpass';kb.frequency.value=2200;kb.Q.value=6;const kg=c.createGain();
+  kg.gain.setValueAtTime(V*0.9,t);kg.gain.exponentialRampToValueAtTime(0.0001,t+0.025);k.connect(kb).connect(kg).connect(c.destination);k.start(t);
+  // второй, тише — «дожим» реле
+  const k2=c.createBufferSource();k2.buffer=nbuf(c,0.02);const kb2=c.createBiquadFilter();kb2.type='bandpass';kb2.frequency.value=3200;kb2.Q.value=8;const kg2=c.createGain();
+  kg2.gain.setValueAtTime(V*0.45,t+0.035);kg2.gain.exponentialRampToValueAtTime(0.0001,t+0.055);k2.connect(kb2).connect(kg2).connect(c.destination);k2.start(t+0.035);
+  // шипение пневматики ~0.3 с: шум через полосовой фильтр, полоса уезжает вниз
+  const h=c.createBufferSource();h.buffer=nbuf(c,0.36);const hb=c.createBiquadFilter();hb.type='bandpass';hb.Q.value=1.2;hb.frequency.setValueAtTime(5200,t+0.04);hb.frequency.exponentialRampToValueAtTime(1800,t+0.36);
+  const hl=c.createBiquadFilter();hl.type='highpass';hl.frequency.value=900;const hg=c.createGain();hg.gain.setValueAtTime(0.0001,t+0.04);hg.gain.exponentialRampToValueAtTime(V*0.55,t+0.07);hg.gain.exponentialRampToValueAtTime(0.0001,t+0.36);
+  h.connect(hb).connect(hl).connect(hg).connect(c.destination);h.start(t+0.04);h.stop(t+0.4)}
  const hover=()=>{const n=performance.now();if(n-lastH<90)return;lastH=n;click()};
  const open=()=>{const n=performance.now();if(n-lastO<180)return;lastO=n;chime()};
  window.VPPKA_SFX={hover,open};
