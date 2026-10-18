@@ -386,37 +386,37 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .blk.cm ul.cm-l{padding:0!important;margin:0 0 14px!important}
 .nlike{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 10px;border:1px solid var(--ln);border-radius:14px;background:#0b0d12;color:var(--mut);font:12px Oxanium,monospace;cursor:pointer;transition:.15s}.nlike:hover{border-color:var(--red);color:#fff}.nlike.on{color:#ff4d5e;border-color:#ff2a3a88;background:#ff2a3a18}.nlk-row{margin-top:14px}
 .jcnt{display:block;text-align:right;font:11px Oxanium,monospace;color:var(--mut);margin-top:2px;text-transform:none}
-/* ===== STRICT OFFICIAL THEME ===== */
-:root{--bg:#090708;--p1:#120d0e;--p2:#1a1213;--tx:#e9e2d6;--mut:#a39a8c;--ln:#3a2c22;--red:#c8102e;--cy:#c9a455;--gold:#c9a455;--gold2:#8a6d33;--cut:none}
-body{background-color:var(--bg);background-image:radial-gradient(ellipse at top,#c8102e14,transparent 60%),repeating-linear-gradient(45deg,#c9a45506 0 1px,transparent 1px 14px)}
-body:after{background:none}
-.blk:after,.card:after{background:none}
-h1,h2,h3{font-family:"Oswald","Russo One",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:#f4ecdc}
-a:hover{color:#fff;text-shadow:none;text-decoration:underline;text-decoration-color:var(--gold)}
-.util{font-family:"Oswald",sans-serif;letter-spacing:.14em;background:#0d090a;border-bottom:1px solid var(--gold2)}
-.hd{background:linear-gradient(180deg,#1c1012,#0f0a0b);border-bottom:3px double var(--gold2)}
-.hd img{filter:drop-shadow(0 2px 6px #000)}
-.hd .os{font-family:"Oswald",sans-serif;color:var(--gold);letter-spacing:.3em}.hd .os:before{content:"★ "}
-.hd .nm{font:700 30px/1.15 "PT Serif",serif;text-transform:uppercase;letter-spacing:.06em;color:#f4ecdc;text-shadow:0 2px 0 #000}
-.hd .nm span{font-family:"Oswald",sans-serif;color:var(--gold)}
-.btn{clip-path:none;border-radius:0;background:linear-gradient(180deg,#d4153a,#9e0c24);border:1px solid #e3b862;box-shadow:inset 0 1px 0 #ffffff22,0 2px 0 #000;font-family:"Oswald",sans-serif;font-weight:500;letter-spacing:.14em}
-.btn:hover{filter:brightness(1.1);box-shadow:inset 0 1px 0 #ffffff33,0 0 0 1px var(--gold)}
-.btn.o{background:transparent;outline:0;border:1px solid var(--gold);color:var(--gold)!important}.btn.o:hover{background:#c9a4551a}
-.nav{background:linear-gradient(180deg,#140d0e,#0d090a);border-block:1px solid var(--gold2);backdrop-filter:none}
-.nav a{font-family:"Oswald",sans-serif;letter-spacing:.12em;border-right:1px solid #2a1f19;border-bottom:3px solid transparent}
-.nav a:before{content:"";display:none}
-.nav a:hover{color:var(--gold);text-shadow:none;text-decoration:none}.nav a.on{color:#fff;border-bottom-color:var(--red);box-shadow:none;background:#c8102e1a}
-.blk{clip-path:none;border-radius:0;border:1px solid var(--ln);border-top:3px solid var(--red);background:linear-gradient(180deg,#1b1314,#110c0d);box-shadow:0 0 0 1px #000,inset 0 0 0 4px #110c0d,inset 0 0 0 5px #c9a45522,0 8px 18px -10px #000}
-.blk:before{left:50%;top:-11px;transform:translateX(-50%);width:auto;height:auto;background:var(--bg);box-shadow:none;content:"★";color:var(--gold);font-size:13px;line-height:1;padding:3px 10px;border:1px solid var(--gold2)}
-.blk h2{font-size:19px;padding-bottom:10px;border-bottom:1px solid var(--ln);position:relative}
-.blk h2:after{content:"";position:absolute;left:0;bottom:-1px;width:64px;height:2px;background:var(--gold)}
-.blk h2:before{content:counter(b,upper-roman) ". ";font:600 15px "PT Serif",serif;color:var(--gold)}
-.card{clip-path:none;border-radius:0;background:linear-gradient(180deg,#160f10,#0e0a0b);border:1px solid var(--ln);box-shadow:inset 0 0 0 3px #0e0a0b,inset 0 0 0 4px #c9a4551a}
-.card:hover{border-color:var(--gold2);box-shadow:inset 0 0 0 3px #0e0a0b,inset 0 0 0 4px #c9a45555}
-.intro{background:radial-gradient(circle at 12% 50%,#c8102e26,transparent 50%),linear-gradient(180deg,#1b1314,#110c0d)}
-.tbl td{border-bottom:1px solid var(--ln)}.tbl td:first-child{color:var(--gold);font-family:"Oswald",sans-serif;letter-spacing:.08em}
-.doc .hdr{border-bottom:3px double var(--gold2)}.doc .hdr h1{font-family:"PT Serif",serif;text-shadow:none}
-.banner{border:1px solid var(--gold2);box-shadow:0 0 0 3px #0e0a0b,0 0 0 4px var(--ln)}
-input,select,textarea{border-radius:0!important}
-footer{border-top:3px double var(--gold2);background:#0b0809}
-@media(max-width:860px){.hd .nm{font-size:19px;letter-spacing:.03em}.hd .nm span{display:none}}
+/* ===== ATOMIC (retro-futurism) THEME ===== */
+:root{--bg:#1b1d20;--p1:#25282c;--p2:#2e3237;--tx:#ece6d8;--mut:#a9adb3;--ln:#4a5058;--red:#d22a24;--cy:#e9d9b0;--gold:#d9b46a;--cut:none;--chrome:linear-gradient(180deg,#f4f5f6 0%,#b9bec4 45%,#7d838a 52%,#c9cdd2 100%)}
+body{background-color:var(--bg);background-image:radial-gradient(ellipse at 50% -10%,#d22a2422,transparent 55%),radial-gradient(#ffffff0a 1px,transparent 1.5px);background-size:auto,18px 18px}
+body:after,.blk:after,.card:after{background:none}
+h1,h2,h3{font-family:"Oswald",sans-serif;font-weight:500;text-transform:uppercase;letter-spacing:.12em;color:#f6f0e2}
+a{color:#f0c987}a:hover{color:#fff;text-shadow:none}
+.util{background:#111214;border-bottom:1px solid #000;font-family:"Oswald",sans-serif;letter-spacing:.18em}
+.hd{background:linear-gradient(180deg,#f3ecdc,#ddd2bb);border-bottom:6px solid var(--red);box-shadow:inset 0 -10px 0 -4px #b9bec4,0 6px 14px #0008}
+.hd img{filter:drop-shadow(0 3px 3px #0006)}
+.hd .os{font-family:"Oswald",sans-serif;color:var(--red);letter-spacing:.35em}.hd .os:before{content:"☢ "}
+.hd .nm{font:600 34px/1.05 "Oswald",sans-serif;text-transform:uppercase;letter-spacing:.14em;color:#23262a;text-shadow:0 1px 0 #fff}
+.hd .nm span{font-family:"Oswald";color:#6b6256;letter-spacing:.2em}
+.hd .authlink,.hd .rt a{color:#23262a!important}
+.btn{clip-path:none;border-radius:999px;background:radial-gradient(ellipse at 50% 0,#ff6b5c,#d22a24 55%,#8f1410);border:2px solid #c9cdd2;box-shadow:inset 0 2px 1px #ffffff66,inset 0 -3px 4px #0005,0 3px 0 #555b62,0 5px 10px #0008;font:500 14px "Oswald",sans-serif;letter-spacing:.14em;padding:10px 26px}
+.btn:hover{filter:brightness(1.1);box-shadow:inset 0 2px 1px #ffffff88,0 3px 0 #555b62,0 0 14px #d22a2488}
+.btn.o{background:var(--chrome);color:#23262a!important;outline:0}.btn.o:hover{filter:brightness(1.08)}
+.nav{background:linear-gradient(180deg,#3a3f45,#24272b);border:0;border-bottom:2px solid #000;box-shadow:inset 0 1px 0 #ffffff22;backdrop-filter:none}
+.nav a{font:500 14px "Oswald",sans-serif;letter-spacing:.12em;color:#d6d9dd;border-radius:0}
+.nav a:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#555;margin-right:7px;vertical-align:middle;box-shadow:inset 0 1px 1px #000}
+.nav a:hover{color:#fff;text-shadow:none}.nav a.on{color:#fff;border-bottom-color:var(--red);box-shadow:none}.nav a.on:before{background:#ff3b30;box-shadow:0 0 6px #ff3b30}
+.blk{clip-path:none;border-radius:18px;background:linear-gradient(180deg,#30343a,#22252a);border:3px solid transparent;background-clip:padding-box;box-shadow:0 0 0 3px #9aa0a7,0 0 0 4px #000,inset 0 1px 0 #ffffff1a,0 10px 22px #000a;padding-top:34px}
+.blk:before{left:0;right:0;top:0;width:auto;height:14px;border-radius:15px 15px 0 0;background:repeating-linear-gradient(90deg,#00000055 0 3px,transparent 3px 9px),linear-gradient(180deg,#c9cdd2,#80868d);box-shadow:none}
+.blk h2{font-size:19px;padding:6px 18px 6px 34px;display:inline-block;border-radius:999px;background:linear-gradient(180deg,#f3ecdc,#d8ccb1);color:#23262a;box-shadow:inset 0 -2px 0 #0003,0 2px 4px #0006;position:relative}
+.blk h2:before{content:"";position:absolute;left:12px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a7a,#d22a24 60%,#7a100c)}
+.card{clip-path:none;border-radius:12px;background:linear-gradient(180deg,#2a2e33,#1c1f23);border:1px solid #5a6068;box-shadow:inset 0 1px 0 #ffffff14,0 3px 8px #0008;position:relative}
+.card:hover{border-color:#c9cdd2;box-shadow:inset 0 1px 0 #ffffff22,0 0 0 2px #d22a2466}
+.card .ph,.card .ph img{border-radius:8px}
+.intro{background:radial-gradient(circle at 12% 50%,#d22a2433,transparent 45%),linear-gradient(180deg,#33373d,#22252a)}
+.intro img{filter:drop-shadow(0 6px 10px #000a)}
+.tbl td:first-child{color:var(--gold);font-family:"Oswald";letter-spacing:.1em}
+.banner{border-radius:12px;border:3px solid #9aa0a7}
+input,select,textarea{border-radius:8px!important}
+footer{background:linear-gradient(180deg,#2a2d31,#141517);border-top:6px solid var(--red);box-shadow:inset 0 3px 0 #9aa0a7}
+@media(max-width:860px){.hd .nm{font-size:20px;letter-spacing:.06em}.hd .nm span{display:none}.burger{color:#23262a;border-color:#23262a}.blk{border-radius:14px}}
