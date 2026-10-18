@@ -418,3 +418,4 @@ a:hover{color:#fff;text-shadow:none;text-decoration:underline;text-decoration-co
 input,select,textarea{border-radius:0!important}
 footer{border-top:3px double var(--gold2);background:#090a0e}
 @media(max-width:860px){.hd .nm{font-size:19px;letter-spacing:.03em}.hd .nm span{display:none}}
+.blk:before{display:none}
