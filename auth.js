@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=100';
+import { firebaseConfig } from './firebase-config.js?v=101';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -77,10 +77,11 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  if(location.hostname==='localhost'&&/[?&]emu\b/.test(location.search)){A.connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true});F.connectFirestoreEmulator(db,'127.0.0.1',8080);}
  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest&&e.target.closest('.auth')){const b=document.querySelector('.auth .btn');b&&b.click();}});
  const fixU=u=>typeof u==='string'?u.replace(/^(?:https?:\/\/[^\/]+)?\/(?:vppka|VPPKA-RMRP-ARBAT)\/(?=img\/)/i,''):u;const fixD=o=>{if(o.image)o.image=fixU(o.image);if(o.photo)o.photo=fixU(o.photo);if(Array.isArray(o.photos))o.photos=o.photos.map(fixU);return o};
- async function loadData(){try{const [n,m]=await Promise.all([F.getDocs(F.collection(db,'news')),F.getDocs(F.collection(db,'members'))]);const D={};
-  if(!n.empty)D.news=n.docs.map(d=>fixD({...d.data(),id:d.id}));if(!m.empty)D.members=m.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||['p_Xglv_ypsOH3s7mW2UTXD','m11'].includes(x.id)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
-  window.VPPKA_DATA=(D.news||D.members)?D:null;}catch(e){console.warn('Firestore данные недоступны, используется content.json',e)}}
- window.VPPKA_RELOAD=async()=>{await loadData();route();};
+ // одна подписка вместо getDocs+onSnapshot: первый снимок используется как начальная загрузка (экономия чтений)
+ let liveOn=false,liveRes=null;
+ async function loadData(){if(liveOn){return}liveOn=true;await new Promise(res=>{liveRes=res;setTimeout(res,8000);liveSubs()});}
+ const toD=()=>{const D={...(window.VPPKA_DATA||{})};if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||['p_Xglv_ypsOH3s7mW2UTXD','m11'].includes(x.id)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));window.VPPKA_DATA=(D.news||D.members)?D:null};
+ window.VPPKA_RELOAD=async()=>{await loadData();toD();route();};
  let liveN=null,liveM=null,livePend=false,liveNew=new Set();
  const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
  const liveApply=()=>{if(!liveN&&!liveM)return;if(busy()){livePend=true;return}livePend=false;const D={...(window.VPPKA_DATA||{})};
@@ -88,9 +89,10 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   window.VPPKA_DATA=(D.news||D.members)?D:null;const y=scrollY;route();scrollTo(0,y);
   liveNew.forEach(id=>document.querySelectorAll('a[href="#news/'+id+'"]').forEach(a=>{const it=a.closest('.it,.card,div');it&&it.classList.add('fresh')}));liveNew.clear();};
  document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
- function liveStart(){let fn=true,fm=true;
-  F.onSnapshot(F.collection(db,'news'),s=>{if(fn){fn=false;liveN=s;return}s.docChanges().forEach(c=>{if(c.type==='added')liveNew.add(c.doc.id)});liveN=s;liveApply()},e=>console.warn('live news',e));
-  F.onSnapshot(F.collection(db,'members'),s=>{if(fm){fm=false;liveM=s;return}liveM=s;liveApply()},e=>console.warn('live members',e));}
+ function liveSubs(){let fn=true,fm=true;const ready=()=>{if(!fn&&!fm&&liveRes){toD();const r=liveRes;liveRes=null;r()}};
+  F.onSnapshot(F.collection(db,'news'),s=>{if(fn){fn=false;liveN=s;ready();return}s.docChanges().forEach(c=>{if(c.type==='added')liveNew.add(c.doc.id)});liveN=s;liveApply()},e=>{console.warn('live news',e);fn=false;ready()});
+  F.onSnapshot(F.collection(db,'members'),s=>{if(fm){fm=false;liveM=s;ready();return}liveM=s;liveApply()},e=>{console.warn('live members',e);fm=false;ready()});}
+ function liveStart(){}
  window.VPPKA_AUTH={get user(){return user},get profile(){return profile},get power(){return power},async submitApplication(answers){const d={answers,status:'new',createdAt:F.serverTimestamp()};if(user){d.uid=user.uid;if(profile&&profile.discordId)d.discordId=profile.discordId;}await F.addDoc(F.collection(db,'applications'),d);}};
  window.VPPKA_FB={get F(){return F},get db(){return db},get user(){return user},get power(){return power}};
  async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
@@ -123,7 +125,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   link.innerHTML=`<span class="av">${av}</span><span class="avtx"><span class="avname">${esc(name)}</span>${pos?`<span class="avpos">${esc(pos)}</span>`:''}</span>`;
  }
 
- await loadData();route();liveStart();import('./panel.js?v=100').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=100').then(m=>m.install()).catch(e=>console.error('notif',e));import('./chat.js?v=100').then(m=>m.install()).catch(e=>console.error('chat',e));
+ await loadData();route();liveStart();import('./panel.js?v=101').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=101').then(m=>m.install()).catch(e=>console.error('notif',e));import('./chat.js?v=101').then(m=>m.install()).catch(e=>console.error('chat',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();
