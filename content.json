@@ -514,17 +514,12 @@
   ]
  },
  "contacts": {
-  "text": "Связь с партией — через Discord и форум RMRP. Ссылки укажите в админ-панели.",
+  "text": "Связь с партией — через Discord.",
   "items": [
    {
     "label": "Discord",
     "value": "Спец. связь партии",
     "url": "https://discord.gg/Wt6XFqVhY"
-   },
-   {
-    "label": "Форум RMRP",
-    "value": "....",
-    "url": ""
    }
   ]
  }

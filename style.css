@@ -483,3 +483,5 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .phbtn{outline:0!important;clip-path:none!important;border:1px solid var(--cy)!important;box-sizing:border-box;display:inline-flex;align-items:center;margin:0 10px 0 0!important}
 .phrow .phname{vertical-align:middle}
 .dh-img{display:block;margin:8px 0 4px;max-width:100%}.dh-img img{display:block;max-width:100%;height:auto;border:1px solid var(--ln);border-radius:4px}.dhint .dh-sm{font-size:11.5px;opacity:.8}
+
+@media(max-width:860px){.ntoast{left:0!important;right:0!important;bottom:0!important;top:auto!important;max-width:none!important;width:auto!important;border-left:0!important;border-right:0!important;border-bottom:0!important;padding:10px 40px calc(10px + env(safe-area-inset-bottom)) 14px!important;box-shadow:0 -6px 18px #0009!important}}
