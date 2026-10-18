@@ -388,8 +388,6 @@ h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:c
 .jcnt{display:block;text-align:right;font:11px Oxanium,monospace;color:var(--mut);margin-top:2px;text-transform:none}
 /* ===== STRICT OFFICIAL THEME ===== */
 :root{--bg:#07080b;--p1:#0e1117;--p2:#141821;--tx:#dfe6ee;--mut:#8792a2;--ln:#232a36;--red:#ff2a3a;--cy:#38e1ff;--gold:#d8b45a;--gold2:#8a7038;--cut:none}
-body{background-color:var(--bg);background-image:radial-gradient(ellipse at top,#ff2a3a14,transparent 60%),repeating-linear-gradient(45deg,#d8b45a06 0 1px,transparent 1px 14px)}
-body:after{background:none}
 .blk:after,.card:after{background:none}
 h1,h2,h3{font-family:"Oswald","Russo One",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:#ffffff}
 a:hover{color:#fff;text-shadow:none;text-decoration:underline;text-decoration-color:var(--gold)}
