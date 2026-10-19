@@ -186,6 +186,7 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .asg-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.asg-h span{font:600 12px Oxanium,monospace;color:#ff4a4a;letter-spacing:.12em}.asg-h h3{margin:4px 0 12px}
 .asg-x{background:none;border:1px solid #333;color:#ddd;width:36px;height:36px;cursor:pointer}
 .asg-q{width:100%;padding:10px 12px;background:#07080b;border:1px solid #2a2d36;color:#eee;margin-bottom:10px;box-sizing:border-box}
+.asg-tog{display:flex;gap:8px;align-items:center;margin:0 0 10px;color:#9aa0ab;font-size:13px;cursor:pointer}.asg-tog input{accent-color:#ff4a4a}
 .asg-l{overflow:auto;display:flex;flex-direction:column;gap:6px}
 .asg-it{display:flex;gap:12px;align-items:center;text-align:left;background:#11141b;border:1px solid #232733;color:#eee;padding:8px 10px;cursor:pointer}.asg-it:hover{border-color:#ff4a4a}
 .asg-av{flex:0 0 42px;height:42px;border-radius:50%;overflow:hidden;background:#222;display:flex;align-items:center;justify-content:center;font-weight:600}.asg-av img{width:100%;height:100%;object-fit:cover}
