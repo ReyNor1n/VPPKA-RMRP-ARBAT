@@ -1,7 +1,9 @@
 // Мероприятия: чтение всем, правка — ступень 4+
 const FB=()=>window.VPPKA_FB,F=()=>FB().F,db=()=>FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const can=()=>{const p=(FB()&&FB().power)||{};return (p.rank||0)>=1000||(p.tier||0)>=4};
+const can=()=>{const p=(FB()&&FB().power)||{};return (p.rank||0)>=1000||!!p.owner||(p.tier||0)>=4};
+const ended=e=>!!(e&&e.status==='ended');
+const canEnd=e=>{const p=(FB()&&FB().power)||{};if(!e)return false;if((p.rank||0)>=1000||!!p.owner||(p.tier||0)>=4)return true;const u=FB()&&FB().user;return !!(e.createdBy&&u&&e.createdBy===u.uid)};
 const TZ='Europe/Volgograd';
 const fmt=ms=>new Date(ms).toLocaleString('ru-RU',{timeZone:TZ,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','');
 const toLocal=ms=>new Date(ms+3*3600e3).toISOString().slice(0,16);
@@ -11,7 +13,7 @@ const pastOrNow=e=>e.at<=Date.now()+3*3600e3;
 const AK=m=>window.VPPKA_AKEY(m),PL=()=>(window.VPPKA_PARTY?window.VPPKA_PARTY():[]);
 const ini=n=>String(n||'').split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
 function people(){const seen=new Set(),out=[];for(const m of PL().slice().sort((a,b)=>(Number(b.rank)||0)-(Number(a.rank)||0))){const k=AK(m);if(seen.has(k))continue;seen.add(k);out.push(m)}return out}
-function attLine(e,adm){const a=e.att||[];if(markId===e.id&&adm){const P=people(),set=new Set(a);return `<div class="at-mk" data-atev="${esc(e.id)}"><div class="at-mh"><span>Отмечено: <b class="at-cnt">${P.filter(m=>set.has(AK(m))).length}</b> из ${P.length}</span><button class="btn sm o" type="button" data-atall>Отметить всех</button></div><div class="mark">${P.map(m=>`<label class="${set.has(AK(m))?'on':''}"><input type="checkbox" value="${esc(AK(m))}"${set.has(AK(m))?' checked':''}><span class="cmav${window.isLdr&&window.isLdr(m.name)?' g':''}">${m.photo?`<img src="${esc(m.photo)}" alt="${esc(m.name||'')}">`:esc(ini(m.name))}</span>${esc(m.name)}</label>`).join('')}</div><button class="btn sm" type="button" data-atsave>Сохранить отметки</button> <button class="btn sm o" type="button" data-atcancel>Отмена</button><span class="ev-err"></span></div>`}
+function attLine(e,adm){if(ended(e)){const n=(e.att||[]).length;return n?`<div class="at-ln">👥 Присутствовало: <b>${n}</b></div>`:''}const a=e.att||[];if(markId===e.id&&adm){const P=people(),set=new Set(a);return `<div class="at-mk" data-atev="${esc(e.id)}"><div class="at-mh"><span>Отмечено: <b class="at-cnt">${P.filter(m=>set.has(AK(m))).length}</b> из ${P.length}</span><button class="btn sm o" type="button" data-atall>Отметить всех</button></div><div class="mark">${P.map(m=>`<label class="${set.has(AK(m))?'on':''}"><input type="checkbox" value="${esc(AK(m))}"${set.has(AK(m))?' checked':''}><span class="cmav${window.isLdr&&window.isLdr(m.name)?' g':''}">${m.photo?`<img src="${esc(m.photo)}" alt="${esc(m.name||'')}">`:esc(ini(m.name))}</span>${esc(m.name)}</label>`).join('')}</div><button class="btn sm" type="button" data-atsave>Сохранить отметки</button> <button class="btn sm o" type="button" data-atcancel>Отмена</button><span class="ev-err"></span></div>`}
  return `<div class="at-ln">👥 Присутствовало: <b>${a.length}</b>${adm?` <button class="btn sm o" data-atmark="${esc(e.id)}">Отметить посещаемость</button>`:''}</div>`}
 function activity(m){const k=AK(m),n=Date.now();const jm=String(m.joined||'').match(/(\d{2})\.(\d{2})\.(\d{4})/),j0=jm?Date.UTC(+jm[3],jm[2]-1,+jm[1])-3*3600e3:0;
  const past=(EV||[]).filter(e=>e.at<=n&&e.at>=j0).sort((a,b)=>b.at-a.at),was=past.filter(e=>(e.att||[]).includes(k)),pc=past.length?Math.round(was.length*100/past.length):0;
@@ -23,8 +25,11 @@ async function actFill(){const [k,id]=(location.hash.slice(1)||'').split('/');if
  if(actBusy)return;actBusy=true;try{await load();const m=PL().find(x=>x.id===id)||((window.VPPKA_DATA&&window.VPPKA_DATA.members)||[]).find(x=>x.id===id);if(!m||app.querySelector('.act')||!app.contains(prof))return;const d=document.createElement('div');d.innerHTML=activity(m);prof.after(d.firstChild)}finally{actBusy=false}}
 async function load(force){if(EV&&!force)return EV;if(loading&&!force)return loading;
  const f=F();loading=f.getDocs(f.query(f.collection(db(),'events'),f.orderBy('at','desc'),f.limit(60))).then(s=>{EV=s.docs.map(d=>({id:d.id,...d.data()}));return EV}).catch(e=>{console.warn('events',e.code||e);EV=EV||[];return EV}).finally(()=>{loading=null});return loading}
-const up=()=>{const n=Date.now()-3*3600e3;return (EV||[]).filter(e=>e.at>=n).sort((a,b)=>a.at-b.at)},past=()=>{const n=Date.now()-3*3600e3;return (EV||[]).filter(e=>e.at<n)};
-const item=(e,adm)=>`<div class="ev-it" data-ev="${esc(e.id)}">${e.image?`<img class="ev-img" src="${esc(e.image)}" alt="${esc(e.title||'')}" loading="lazy">`:''}<div class="ev-b"><div class="ev-d">${esc(fmt(e.at))} <small>UTC+3</small></div><h3>${esc(e.title)}</h3>${e.place?`<div class="ev-p">📍 ${esc(e.place)}</div>`:''}${e.desc?`<p>${esc(e.desc).replace(/\n/g,'<br>')}</p>`:''}${pastOrNow(e)?attLine(e,adm):''}${adm?`<div class="ev-adm"><button class="btn sm o" data-eved="${esc(e.id)}">Изменить</button> <button class="btn sm o ev-del" data-evdel="${esc(e.id)}">Удалить</button></div>`:''}</div></div>`;
+const up=()=>{const n=Date.now()-3*3600e3;return (EV||[]).filter(e=>!ended(e)&&e.at>=n).sort((a,b)=>a.at-b.at)},past=()=>{const n=Date.now()-3*3600e3;return (EV||[]).filter(e=>ended(e)||e.at<n)};
+const item=(e,adm)=>{const mine=canEnd(e),off=ended(e),acts=[];if(adm){acts.push(`<button class="btn sm o" data-eved="${esc(e.id)}">Изменить</button>`);acts.push(`<button class="btn sm o ev-del" data-evdel="${esc(e.id)}">Удалить</button>`)}
+ if(mine&&!off)acts.push(`<button type="button" class="btn sm o" data-evend="${esc(e.id)}">Завершить мероприятие</button>`);
+ if(mine&&off)acts.push(`<button type="button" class="btn sm o" data-evresume="${esc(e.id)}">Возобновить</button>`);
+ return `<div class="ev-it${off?' ended':''}" data-ev="${esc(e.id)}">${e.image?`<img class="ev-img" src="${esc(e.image)}" alt="${esc(e.title||'')}" loading="lazy">`:''}<div class="ev-b"><div class="ev-d">${esc(fmt(e.at))} <small>UTC+3</small></div><h3>${esc(e.title)}${off?' <span class="ev-end">Завершено</span>':''}</h3>${e.place?`<div class="ev-p">📍 ${esc(e.place)}</div>`:''}${e.desc?`<p>${esc(e.desc).replace(/\n/g,'<br>')}</p>`:''}${off||pastOrNow(e)?attLine(e,adm&&!off):''}${acts.length?`<div class="ev-adm">${acts.join(' ')}</div>`:''}</div></div>`};
 function form(e){e=e||{};return `<form class="blk ev-form" id="evForm"><h2>${e.id?'Изменить':'Новое'} мероприятие</h2>
 <label>Название<input name="title" maxlength="200" required value="${esc(e.title)}"></label>
 <label>Дата и время (UTC+3)<input name="at" type="datetime-local" required value="${e.at?toLocal(e.at):''}"></label>
@@ -43,16 +48,24 @@ const rr=()=>{const k=cur();if(k==='events'||k==='home'||!window.P[k])window.rou
 async function save(fd){const f=F(),at=fromLocal(fd.get('at')),title=String(fd.get('title')||'').trim();if(!title||!isFinite(at))throw new Error('Укажите название и дату');
  const d={title:title.slice(0,200),at:Math.round(at),updatedAt:Date.now()};for(const k of['place','desc','image']){const v=String(fd.get(k)||'').trim();if(v)d[k]=v.slice(0,k==='desc'?4000:k==='image'?2000:200)}
  if(d.image&&!/^https?:\/\//.test(d.image))throw new Error('Ссылка на изображение должна начинаться с http');
- if(editId){const old=EV.find(x=>x.id===editId)||{};if(old.createdBy)d.createdBy=old.createdBy;if(old.discordMessageId)d.discordMessageId=old.discordMessageId;if(old.att)d.att=old.att;await f.setDoc(f.doc(db(),'events',editId),d)}else{d.createdBy=FB().user.uid;await f.addDoc(f.collection(db(),'events'),d)}}
+ if(editId){const old=EV.find(x=>x.id===editId)||{};if(old.createdBy)d.createdBy=old.createdBy;if(old.discordMessageId)d.discordMessageId=old.discordMessageId;if(old.att)d.att=old.att;if(old.status==='ended'){d.status='ended';if(old.endedBy)d.endedBy=old.endedBy;if(old.endedAt)d.endedAt=old.endedAt}await f.setDoc(f.doc(db(),'events',editId),d)}else{d.createdBy=FB().user.uid;await f.addDoc(f.collection(db(),'events'),d)}}
 export function install(){const ap=document.getElementById('app');let at_;new MutationObserver(()=>{clearTimeout(at_);at_=setTimeout(actFill,200)}).observe(ap,{childList:true});setInterval(actFill,3000);window.VPPKA_ACT_PREVIEW=a=>{EV=a;actPv=true;const o=document.querySelector('.act');if(o)o.remove();actFill()};
  document.addEventListener('change',ev=>{const w=ev.target.closest('.at-mk');if(!w||ev.target.type!=='checkbox')return;ev.target.closest('label').classList.toggle('on',ev.target.checked);w.querySelector('.at-cnt').textContent=w.querySelectorAll('input:checked').length});
  document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-atmark],[data-atall],[data-atsave],[data-atcancel]');if(!t||!can())return;ev.preventDefault();const w=t.closest('.at-mk');
-  if(t.dataset.atmark){markId=t.dataset.atmark;window.route();return}if(t.dataset.atcancel!==undefined){markId=null;window.route();return}
+  if(t.dataset.atmark){const evn=(EV||[]).find(x=>x.id===t.dataset.atmark);if(ended(evn))return;markId=t.dataset.atmark;window.route();return}if(t.dataset.atcancel!==undefined){markId=null;window.route();return}
   if(t.dataset.atall!==undefined){const bs=[...w.querySelectorAll('input')],all=bs.every(b=>b.checked);bs.forEach(b=>{b.checked=!all;b.closest('label').classList.toggle('on',!all)});w.querySelector('.at-cnt').textContent=w.querySelectorAll('input:checked').length;return}
   if(t.dataset.atsave!==undefined){t.disabled=true;const att=[...w.querySelectorAll('input:checked')].map(b=>b.value).slice(0,150);try{await F().updateDoc(F().doc(db(),'events',w.dataset.atev),{att});markId=null;await load(true);window.route()}catch(e){t.disabled=false;w.querySelector('.ev-err').textContent=' '+(e.code==='permission-denied'?'Нет прав (ступень 4+)':(e.message||e.code))}}});
 window.VPPKA_EV_PAGE=page;window.VPPKA_EV_PREVIEW=(a,mk)=>{EV=a;if(mk!==undefined)markId=mk;rr()};window.VPPKA_EV_SIDE=side;load().then(rr);
  let last=can();setInterval(()=>{const c=can();if(c!==last){last=c;if(cur()==='events')window.route()}},2000);
- document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-evnew],[data-eved],[data-evdel],[data-evcancel]');if(!t||!can())return;ev.preventDefault();
+ document.addEventListener('click',async ev=>{const t=ev.target.closest('[data-evnew],[data-eved],[data-evdel],[data-evcancel],[data-evend],[data-evresume]');if(!t)return;
+  const eid=t.dataset.evend||t.dataset.evresume||t.dataset.eved||t.dataset.evdel,e=(EV||[]).find(x=>x.id===eid);
+  if(t.dataset.evend||t.dataset.evresume){if(!canEnd(e))return;ev.preventDefault();const f=F();
+   if(t.dataset.evend){if(ended(e)||!confirm(`Завершить мероприятие «${e.title}»?\n\nОно останется в списке и перейдёт в прошедшие. Отметки посещаемости закроются.`))return;
+    try{await f.updateDoc(f.doc(db(),'events',e.id),{status:'ended',endedAt:f.serverTimestamp(),endedBy:FB().user.uid});if(markId===e.id)markId=null;await load(true);window.route()}catch(err){alert('Ошибка: '+(err.code==='permission-denied'?'нет прав (опубликуйте новые правила базы).':(err.code||err.message)))}}
+   else{if(!ended(e)||!confirm(`Возобновить мероприятие «${e.title}»?`))return;const del=f.deleteField();
+    try{await f.updateDoc(f.doc(db(),'events',e.id),{status:del,endedAt:del,endedBy:del});await load(true);window.route()}catch(err){alert('Ошибка: '+(err.code==='permission-denied'?'нет прав (опубликуйте новые правила базы).':(err.code||err.message)))}}
+   return}
+  if(!can())return;ev.preventDefault();
   if(t.dataset.evnew!==undefined){editId='';window.route();return}
   if(t.dataset.evcancel!==undefined){editId=null;window.route();return}
   if(t.dataset.eved){editId=t.dataset.eved;window.route();return}

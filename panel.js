@@ -38,7 +38,7 @@ function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m
  <div class="kp-w"><p class="aerr" id="pmsg"></p><button class="btn" id="pm-save">${m.id?'Сохранить':'Добавить в состав'}</button>${editMem?' <button class="btn o" id="pm-cancel">Отмена</button>':''}</div></div></details>
  ${D().members?(()=>{const row=x=>`<div class="kl-r${/^вакансия$/i.test(String(x.name).trim())?' kl-v':''}"><span class="kl-n"><b>${esc(x.name)}</b> <small>${esc(x.role)}</small></span><span class="kl-b">ур. ${x.rank??0} · ст. ${mt(x)}</span><span class="kl-a">${isCh(x)?`<button class="kl-i" data-me="${esc(x.id)}" title="Изменить">✎</button>`:`<button class="kl-i" data-mu="${esc(x.id)}" title="Повысить">▲</button><button class="kl-i" data-md="${esc(x.id)}" title="Понизить">▼</button><button class="kl-i" data-me="${esc(x.id)}" title="Изменить">✎</button><button class="kl-i kl-x" data-mx="${esc(x.id)}" title="Удалить">🗑</button>`}</span></div>`;
  const isV=x=>/^вакансия$/i.test(String(x.name).trim()),L=low.filter(x=>!isV(x)&&(x.rank??0)>0),V=low.filter(isV),M=low.filter(x=>!isV(x)&&!((x.rank??0)>0));
- const row2=x=>row(x).replace(coreSeat(x.id)&&!isSuper()?'<button class="kl-i kl-x" data-mx="'+esc(x.id)+'" title="Удалить">🗑</button>':'','');
+ const row2=x=>{let h=row(x);if((coreSeat(x.id)&&!isSuper())||occupiedSeat(x))h=h.replace('<button class="kl-i kl-x" data-mx="'+esc(x.id)+'" title="Удалить">🗑</button>','');return h};
  return `<h3>Руководство (доступные вам)</h3>${(rank()>=90||(FB().user&&(FB().user.email||'').includes('arseniynit')||(FB().power||{}).owner))?'<button class="btn sm o" id="add-vac">+ Добавить вакансию</button> ':''}<div class="kl">${L.map(row2).join('')||(V.length||M.length?'':'<div class="kl-r">Нет участников ниже вашего уровня.</div>')}</div>${V.length?`<details class="kl-g"><summary>Вакансии (${V.length})</summary><div class="kl">${V.map(row2).join('')}</div></details>`:''}${M.length?`<details class="kl-g"><summary>Члены партии и кандидаты (${M.length})</summary><div class="kl">${M.map(row2).join('')}</div></details>`:''}`})():'<p class="amut">Состав пока берётся из content.json; после переноса в базу его можно будет править здесь.</p>'}</div>`;}
 
 window.VPPKA_APPS_RESET=()=>{apps=null};window.VPPKA_ROSTER_SYNC=()=>rosterSync();
@@ -210,9 +210,9 @@ document.addEventListener('click',async e=>{const ok=e.target.closest('[data-aqo
    window.VPPKA_APPS_RESET&&window.VPPKA_APPS_RESET();if(m)m.textContent=(ok?'Принят(а): ':'Отказано: ')+n;rosterSync().catch(x=>console.warn('roster',x.code||x))}
   catch(x){(ok||no).disabled=false;if(m)m.textContent='Ошибка: '+(x.code==='permission-denied'?'нет прав.':(x.code||x.message))}return}
  if(op){location.hash='#apps';let i=0;const t=setInterval(()=>{const el=document.getElementById('app-'+op.dataset.aqopen);if(el||++i>40){clearInterval(t);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('aq-hl');setTimeout(()=>el.classList.remove('aq-hl'),2500)}}},150)}});
-export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace(/(<div class="blk"><h2>Документы<\/h2>[\s\S]*?<\/ul><\/div>)/,'$1<div id="hnote">'+hnHtml()+'</div>')};if(/^#?(home)?$/.test(location.hash))window.route();P.party=()=>{const h0=op().replace(/(<a class="pm-card[^"]*" href="#member\/([^"]*)"[^>]*>[\s\S]*?)<\/a>/g,(s,body,id)=>body+rkBtn(xMem().find(x=>x.id===id))+'</a>');const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"]*)"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const pw=FB().power||{},ab=[(pw.rank>0)&&'<a class="btn sm o" href="#apps">Заявки в партию</a>',(pw.members||rank()>=1000)&&'<a class="btn sm o" href="#members">Участники партии</a>'].filter(Boolean).join(' ');const hx=ab?h.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="adm-bar">'+ab+'</div>'):h;const g=appBlock()+guestBlock();return g?hx.replace(/<\/div>(\s*)$/,g+'</div>$1'):hx};const on=P.news,ol=P.leadership;installAssign();
+export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return seatBtns(oh(...a).replace(/(<div class="blk"><h2>Документы<\/h2>[\s\S]*?<\/ul><\/div>)/,'$1<div id="hnote">'+hnHtml()+'</div>'))};if(/^#?(home)?$/.test(location.hash))window.route();P.party=()=>{const h0=op().replace(/(<a class="pm-card[^"]*" href="#member\/([^"]*)"[^>]*>[\s\S]*?)<\/a>/g,(s,body,id)=>body+rkBtn(xMem().find(x=>x.id===id))+'</a>');const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"]*)"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const pw=FB().power||{},ab=[(pw.rank>0)&&'<a class="btn sm o" href="#apps">Заявки в партию</a>',(pw.members||rank()>=1000)&&'<a class="btn sm o" href="#members">Участники партии</a>'].filter(Boolean).join(' ');const hx=ab?h.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="adm-bar">'+ab+'</div>'):h;const g=appBlock()+guestBlock();return g?hx.replace(/<\/div>(\s*)$/,g+'</div>$1'):hx};const on=P.news,ol=P.leadership;installAssign();
  P.news=id=>{const h=on(id);return id===undefined&&tier()>=4?h.replace(/<\/div>$/,newsPanel()+'</div>'):h};
- P.leadership=()=>{let h=ol();const extra=(tier()>=4||chair()||isSuper()?memPanel():'')+postPanel();return extra?h.replace(/<\/div>$/,extra+'</div>'):h};
+ P.leadership=()=>{let h=seatBtns(ol());const extra=(tier()>=4||chair()||isSuper()?memPanel():'')+postPanel();return extra?h.replace(/<\/div>$/,extra+'</div>'):h};
  P.apps=appsPage;P.members=membersPage;const omb=P.member;P.member=(id,from)=>{const h=omb(id,from),b=rkBtn(xMem().find(x=>x.id===id));return b?h.replace('</table>','</table><div class="rk-row">'+b+'</div>'):h};
  document.addEventListener('change',async ev=>{if(ev.target.id==='pn-f'){const prev=document.getElementById('pn-preview');if(!prev)return;prev.innerHTML='';const files=[...ev.target.files].slice(0,4);for(const f of files){try{const u=await smallJpeg(f);const img=document.createElement('img');img.src=u;img.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #333';prev.appendChild(img);}catch(e){}}if(files.length){const ta=document.getElementById('pn-x');if(ta&&!/\[фото:\d+\]/i.test(ta.value)){for(let i=1;i<=files.length;i++)ta.value+='\n\n[фото:'+i+']';}}}});
 document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;const d=b.dataset,id=b.id,f=F();
@@ -235,8 +235,10 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    editNews=null;await done('Сохранено.');}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}
-  if(d.mx&&confirm('Удалить участника из состава?')){const m=(D().members||[]).find(x=>x.id===d.mx);if(!m)return;
+  if(d.mx){const m=(D().members||[]).find(x=>x.id===d.mx);if(!m)return;
    if(coreSeat(m.id)&&!isSuper())return msg('Должности председателя и его заместителей может удалить только владелец сайта.');
+   if(occupiedSeat(m))return msg('Занятое место нельзя удалить. Снимите человека с должности — место останется вакантным.');
+   if(!confirm(isVacName(m.name)?`Удалить вакансию «${m.role||m.name}»?\n\nМесто исчезнет из состава.`:'Удалить участника из состава?'))return;
    if(String(m.id).startsWith('p_')||m.group==='Члены партии')await deletePartyCard(m);
    else{await f.deleteDoc(f.doc(db(),'members',m.id));if(isLdrPost(m)){try{await writeLdrSeats((D().members||[]).filter(x=>x.id!==m.id))}catch(e){console.warn('ldrSeats',e.code||e)}}}
    await done('Удалено.');}
@@ -273,6 +275,8 @@ const seatDid=id=>String((((D().members)||[]).find(x=>x.id===id)||{}).discordId|
 const isPostAdmin=()=>{if(isSuper())return true;const did=myDidA();return !!did&&['m1','m4','m5'].some(s=>seatDid(s)===did)};
 const isChairP=()=>isSuper()||(!!myDidA()&&seatDid('m1')===myDidA());
 const isLdrPost=m=>!!m&&m.group!=='Члены партии'&&!String(m.id||'').startsWith('p_');
+function isVacName(name){return /^вакансия$/i.test(String(name||'').trim())}
+function occupiedSeat(m){return isLdrPost(m)&&!!String(m.name||'').trim()&&!isVacName(m.name)}
 const isTechPost=m=>!!m&&(m.id==='m11'||m.role==='Начальник технического отдела');
 const coreSeat=id=>id==='m1'||id==='m4'||id==='m5';
 // Места замов (m4, m5) переназначает только председатель (m1) или владелец. m1/m4/m5 не удаляет никто, кроме владельца.
@@ -338,25 +342,43 @@ async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if
   alert(`«${nm}» назначен(а): ${p.role}.`+(noteErr?' Уведомление или список должностей не записались ('+noteErr+') — опубликуйте firestore.rules.':'')+(mt(p)?` Ступень ключа по должности: ${mt(p)} — выдайте или обновите ключ, если нужно.`:''))}
  catch(e){const el=document.getElementById('asg-e');if(el)el.textContent='Ошибка: '+(e.code==='permission-denied'?'недостаточно прав':(e.message||e.code))}}
 function postPanel(){if(!(isPostAdmin()||tier()>=5||chair()))return '';const ms=(D().members||[]).filter(canTouch);
- return `<div class="kpanel kpm"><div class="kp-h"><span>// ДОЛЖНОСТИ</span><h2>Назначения и вакансии</h2></div><div class="kp-f"><p class="amut">Назначить члена партии на руководящую должность, добавить вакансию или удалить её. Другие места этого человека остаются. Удаление снимает только эту должность — человек получит уведомление.</p>
+ return `<div class="kpanel kpm"><div class="kp-h"><span>// ДОЛЖНОСТИ</span><h2>Назначения и вакансии</h2></div><div class="kp-f"><p class="amut">Назначить члена партии на руководящую должность или снять человека с занятого места: место остаётся, другие должности этого человека сохраняются. Удалить можно только пустую вакансию.</p>
  <label class="fl">Новая вакансия — название должности<input id="vac-role" maxlength="120" placeholder="Например: Член ЦК (выборный)"></label>
  <label class="fl">Орган<select id="vac-group"><option>Центральный Комитет</option><option>Контрольно-ревизионная комиссия</option><option>Отделения</option><option>Технический отдел</option></select></label>
  <p class="aerr" id="vac-msg"></p><button class="btn" id="vac-add">Добавить вакансию</button></div>
- ${ms.map(m=>`<div class="kl-r${/^вакансия$/i.test(String(m.name))?' kl-v':''}"><span class="kl-n"><b>${esc(m.name)}</b> <small>${esc(m.role)}</small> <small>${esc(m.group||'')}</small></span><span class="kl-a"><button class="btn sm" data-asgopen="${esc(m.id)}">Назначить</button>${isSuper()||!coreSeat(m.id)?` <button class="btn sm o" data-postdel="${esc(m.id)}">Удалить</button>`:''}</span></div>`).join('')}</div>`}
+ ${ms.map(m=>{const vac=isVacName(m.name),del=vac&&(isSuper()||!coreSeat(m.id))?` <button class="btn sm o" data-postdel="${esc(m.id)}">Удалить</button>`:'',off=!vac?` <button type="button" class="btn sm danger" data-unseat="${esc(m.id)}">Снять с должности</button>`:'';
+  return `<div class="kl-r${vac?' kl-v':''}"><span class="kl-n"><b>${esc(m.name)}</b> <small>${esc(m.role)}</small> <small>${esc(m.group||'')}</small></span><span class="kl-a"><button class="btn sm" data-asgopen="${esc(m.id)}">Назначить</button>${off}${del}</span></div>`}).join('')}</div>`}
 async function addVacancy(){const role=(document.getElementById('vac-role').value||'').trim().replace(/\s+/g,' ');const group=document.getElementById('vac-group').value;const el=document.getElementById('vac-msg');
  if(!role){el.textContent='Укажите название должности.';return}if(role==='Начальник технического отдела'){el.textContent='Эту должность может занять только владелец сайта.';return}
  const orders=(D().members||[]).map(m=>Number(m.order)).filter(n=>Number.isFinite(n));const order=Math.round((orders.length?Math.max(...orders):0)+1);
  const f=F();await f.addDoc(f.collection(db(),'members'),{name:'Вакансия',role:role.slice(0,120),group,bio:'Должность вакантна.',rank:0,tier:0,order,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});
  el.textContent='Вакансия добавлена.';await window.VPPKA_RELOAD()}
 async function deletePost(id){const m=(D().members||[]).find(x=>x.id===id);if(!m||!canTouch(m))return;if(coreSeat(id)&&!isSuper())return;
- const busy=m.name&&!/^Вакансия/i.test(m.name);
- if(!confirm(busy?`Удалить должность «${m.role}»? ${m.name} будет снят с должности и получит уведомление.`:`Удалить вакансию «${m.role}»?`))return;
- const f=F();let noteErr='';if(busy&&/^\d{15,21}$/.test(String(m.discordId||''))){const who=whoLabel();try{await seatNote(m,'recall',`Вас сняли с должности «${m.role}». Решение: ${who}.`)}catch(e){noteErr=e.code||e.message}rankNote(m.discordId,'down',`Вы сняты с должности «${m.role}». Решение: ${who}.`);window.VPPKA_RH&&window.VPPKA_RH(m.discordId,'down',m.role,'Должность удалена',m.name,'').catch(()=>{})}
+ if(occupiedSeat(m))return msg('Занятую должность нельзя удалить. Снимите человека с должности — место останется вакантным.');
+ if(!confirm(`Удалить вакансию «${m.role}»?`))return;
+ const f=F();let noteErr='';
  await f.deleteDoc(f.doc(db(),'members',id));
  try{await writeLdrSeats((D().members||[]).filter(x=>x.id!==id))}catch(e){noteErr=noteErr||(e.code||e.message);console.warn('ldrSeats',e.code||e)}
  await window.VPPKA_RELOAD();alert(noteErr?'Должность удалена. Список должностей или уведомление не записались ('+noteErr+').':'Должность удалена.')}
+function seatBtns(html){return String(html||'').replace(/<a class="card mcard[\s\S]*?<\/a>/g,a=>{const hm=a.match(/href="#member\/([^"/]+)/);if(!hm)return a;let id=hm[1];try{id=decodeURIComponent(id)}catch(e){}
+ const m=(D().members||[]).find(x=>x.id===id);if(!occupiedSeat(m)||!canAssign(m))return a;
+ return `<div class="ldr-seat">${a}<button type="button" class="btn sm danger unseat" data-unseat="${esc(id)}">Снять с должности</button></div>`})}
+let unseatBusy=false;
+async function unseat(id){if(unseatBusy)return;const m=(D().members||[]).find(x=>x.id===id);
+ if(!occupiedSeat(m)||!canAssign(m))return msg('Эту должность снять нельзя.');
+ const role=m.role||'должность',who=whoLabel();
+ if(!confirm(`Снять «${m.name}» с должности «${role}»?\n\nМесто снова станет вакантным. Другие должности этого человека сохраняются.`))return;
+ unseatBusy=true;const f=F();let noteErr='';
+ try{if(/^\d{15,21}$/.test(String(m.discordId||''))){try{await seatNote(m,'recall',`Вас сняли с должности «${role}». Решение: ${who}.`)}catch(e){noteErr=e.code||e.message;console.warn('seatNote',noteErr)}
+  rankNote(m.discordId,'down',`Вы сняты с должности «${role}». Решение: ${who}.`);window.VPPKA_RH&&window.VPPKA_RH(m.discordId,'down',role,'Снят(а) с должности',m.name,'').catch(()=>{})}
+  await f.setDoc(f.doc(db(),'members',m.id),{...pick(m,KEEP),name:'Вакансия',bio:'Должность вакантна.',updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});
+  try{await writeLdrSeats((D().members||[]).map(x=>x.id===m.id?{...x,name:'Вакансия',discordId:''}:x))}catch(e){noteErr=noteErr||(e.code||e.message);console.warn('ldrSeats',e.code||e)}
+  if(window.VPPKA_RELOAD)await window.VPPKA_RELOAD();msg(`«${m.name}» снят(а) с должности «${role}».`+(noteErr?' Уведомление или список должностей не записались ('+noteErr+') — опубликуйте firestore.rules.':''))}
+ catch(e){msg('Не удалось снять: '+(e.code==='permission-denied'?'нет прав (опубликуйте новые правила базы).':(e.code||e.message)))}
+ finally{unseatBusy=false}}
 function installAssign(){const P=window.P,om=P.member;
  P.member=(id,fr)=>{const h=om(id,fr),m=(D().members||[]).find(x=>x.id===id);return canAssign(m)?h.replace(/<\/div>$/,`<div class="asg-bar"><button class="btn" data-asgopen="${esc(id)}">Назначить</button><small class="amut">${m.discordId?'Сейчас: '+esc(m.name):'Должность вакантна'}</small></div></div>`):h};
+ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-unseat]');if(!b)return;e.preventDefault();e.stopPropagation();unseat(b.dataset.unseat)},true);
  document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.asgopen){e.preventDefault();asgOpen(b.dataset.asgopen)}else if(b.id==='asg-x')asgClose();else if(b.dataset.asg)asgDo(b.dataset.asg);else if(b.id==='vac-add')addVacancy().catch(err=>{const el=document.getElementById('vac-msg');if(el)el.textContent='Ошибка: '+(err.code==='permission-denied'?'недостаточно прав':(err.message||err.code))});else if(b.dataset.postdel)deletePost(b.dataset.postdel).catch(err=>alert('Ошибка: '+(err.code==='permission-denied'?'недостаточно прав':(err.message||err.code))))});
  addEventListener('keydown',e=>{if(e.key==='Escape')asgClose()});}
 

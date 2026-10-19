@@ -340,15 +340,41 @@ service cloud.firestore {
     // ---------- мероприятия: читают все, правит ступень 4+ ----------
     match /events/{id} {
       function validEv(d) {
-        return d.keys().hasOnly(['title','at','place','desc','image','createdBy','updatedAt','discordMessageId','att'])
+        return d.keys().hasOnly(['title','at','place','desc','image','createdBy','updatedAt','discordMessageId','att','status','endedAt','endedBy'])
           && (!('att' in d) || (d.att is list && d.att.size() <= 150))
+          && (!('status' in d) || d.status == 'ended')
+          && (!('endedBy' in d) || (d.endedBy is string && d.endedBy.size() > 0 && d.endedBy.size() <= 128))
+          && (!('endedAt' in d) || d.endedAt is timestamp)
           && reqStr(d, 'title', 200) && d.at is int
           && optStr(d, 'place', 200) && optStr(d, 'desc', 4000) && optStr(d, 'image', 2000)
           && optStr(d, 'createdBy', 128) && optStr(d, 'discordMessageId', 32)
           && (!('updatedAt' in d) || d.updatedAt is int);
       }
+      function evActor() {
+        return isOwner() || myTier() >= 4
+          || (signedIn() && resource.data.get('createdBy', '') == request.auth.uid);
+      }
+      function endOk() {
+        return evActor()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','endedAt','endedBy'])
+          && request.resource.data.status == 'ended'
+          && request.resource.data.endedBy == request.auth.uid
+          && request.resource.data.endedAt == request.time;
+      }
+      function resumeOk() {
+        return evActor()
+          && resource.data.get('status', '') == 'ended'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','endedAt','endedBy'])
+          && !('status' in request.resource.data)
+          && !('endedAt' in request.resource.data)
+          && !('endedBy' in request.resource.data);
+      }
       allow read: if true;
-      allow create, update: if myTier() >= 4 && validEv(request.resource.data);
+      allow create: if myTier() >= 4 && validEv(request.resource.data);
+      allow update: if (myTier() >= 4 && validEv(request.resource.data)
+          && !(resource.data.get('status', '') == 'ended'
+               && request.resource.data.diff(resource.data).affectedKeys().hasAny(['att'])))
+        || endOk() || resumeOk();
       allow delete: if myTier() >= 4;
     }
 
@@ -488,7 +514,10 @@ service cloud.firestore {
             && validMember(request.resource.data)))
         || seatAssignOk());
       // m1, m4 и m5 не удаляет никто, кроме владельца (ему это даёт общее правило isSuper).
+      // Занятое руководящее место не удаляется: его освобождают, имя становится «Вакансия». Карточки «Члены партии» удаляются как раньше.
       allow delete: if !techSeat() && !(id in ['m1', 'm4', 'm5']) && resource.data.get('rank', 0) < 100
+        && (id.matches('^p_.*') || resource.data.get('group', '') == 'Члены партии'
+            || (resource.data.get('name', '') is string && resource.data.get('name', '').lower() == 'вакансия'))
         && ((myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100))
             || (rankAdmin() && !id.matches('^p_.*') && resource.data.get('group', '') != 'Члены партии'));
     }
