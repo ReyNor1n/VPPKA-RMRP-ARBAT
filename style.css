@@ -174,6 +174,12 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 @media(min-width:769px) and (max-width:1100px){.authlink .avpos{max-width:200px;font-size:10px}.authlink .avname{max-width:200px}.authlink.in{margin-right:6px}}
 @media(max-width:768px){.authlink.in .avtx{display:none}}
 .asg-bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:22px 0 6px}
+.btn.danger{background:transparent;color:var(--red)!important;outline:1px solid var(--red);outline-offset:-1px}
+.btn.danger:hover{background:#ff2a3a22;box-shadow:0 0 18px #ff2a3a88;filter:none;text-shadow:none}
+.ldr-seat{display:flex;flex-direction:column;align-items:stretch;min-width:0;height:100%}
+.ldr-seat>.card{flex:1 1 auto}
+.ldr-seat>.unseat{align-self:flex-end;margin-top:8px;position:relative;z-index:3;max-width:100%;white-space:normal;line-height:1.25;text-align:center}
+.ev-end{display:inline-block;margin-left:8px;padding:1px 7px;border:1px solid var(--gold);color:var(--gold);font:11px Oxanium,monospace;letter-spacing:.06em;text-transform:uppercase;vertical-align:1px}
 .asg-lock{overflow:hidden}
 .asg-ov{position:fixed;inset:0;z-index:1000;background:rgba(3,4,7,.78);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px}
 .asg-box{width:min(560px,100%);max-height:86vh;display:flex;flex-direction:column;background:#0d0f14;border:1px solid rgba(255,60,60,.45);box-shadow:0 0 40px rgba(255,40,40,.18);padding:18px}
