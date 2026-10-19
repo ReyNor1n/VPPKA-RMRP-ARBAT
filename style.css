@@ -602,3 +602,13 @@ body:has(.ntoast) #installBtn{bottom:calc(84px + env(safe-area-inset-bottom))}bo
 #dcl-st{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:9999;background:#1d1f2b;border:1px solid #5865F2;color:#fff;padding:12px 18px;font-size:14px;max-width:min(92vw,520px);box-shadow:0 6px 24px #0008}#dcl-st.bad{border-color:#d33}
 html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
 .btn.dcl-btn *{pointer-events:none}
+
+/* Личный кабинет в виде карточки профиля (без герба) */
+.acc-wrap .acc-h2{display:flex;align-items:center;justify-content:space-between}
+.acc-bnw{margin:6px 0 18px}.acc-bnw .phead-bn{max-height:260px}
+.acc-card{margin-top:0}
+.acc-card .prof-ph img{width:100%;height:100%;object-fit:cover;display:block}
+.acc-priv{margin:14px 0 0;font-size:12px;color:var(--mut,#8a93a3)}
+.gold-card .acc-priv{color:#ecdcff;text-shadow:0 1px 2px #000}
+@media(max-width:860px){.acc-bnw .phead-bn{max-height:170px;min-height:110px}}
+.auth.acc-wrap{max-width:none!important;width:auto!important;margin:0!important;padding:0!important}
