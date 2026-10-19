@@ -22,6 +22,8 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  <label class="fl">Дата *<input id="pn-d" type="date" value="${esc(n.date||today())}"></label>
  <label class="fl">Текст *<textarea id="pn-x" rows="6" maxlength="20000">${esc(n.text)}</textarea></label>
  <label class="fl">Фото (до 4 шт., уменьшаются автоматически)<input id="pn-f" type="file" accept="image/*" multiple></label>
+<div id="pn-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;"></div>
+<small class="amut">Фото сразу появятся ниже. В тексте можно вставить [фото:1], [фото:2] и т.д. на отдельной строке.</small>
  ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
 
@@ -207,13 +209,16 @@ export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(..
  P.news=id=>{const h=on(id);return id===undefined&&tier()>=4?h.replace(/<\/div>$/,newsPanel()+'</div>'):h};
  P.leadership=()=>{const h=ol();return tier()>=4||chair()?h.replace(/<\/div>$/,memPanel()+'</div>'):h};
  P.apps=appsPage;P.members=membersPage;const omb=P.member;P.member=(id,from)=>{const h=omb(id,from),b=rkBtn(xMem().find(x=>x.id===id));return b?h.replace('</table>','</table><div class="rk-row">'+b+'</div>'):h};
- document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;const d=b.dataset,id=b.id,f=F();
+ document.addEventListener('change',async ev=>{if(ev.target.id==='pn-f'){const prev=document.getElementById('pn-preview');if(!prev)return;prev.innerHTML='';const files=[...ev.target.files].slice(0,4);for(const f of files){try{const u=await smallJpeg(f);const img=document.createElement('img');img.src=u;img.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #333';prev.appendChild(img);}catch(e){}}if(files.length){const ta=document.getElementById('pn-x');if(ta&&!/\[фото:\d+\]/i.test(ta.value)){for(let i=1;i<=files.length;i++)ta.value+='\n\n[фото:'+i+']';}}}});
+document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;const d=b.dataset,id=b.id,f=F();
   const done=async t=>{await window.VPPKA_RELOAD();msg(t)};
   try{
   if(id==='pn-cancel'){editNews=null;window.route();}
   if(d.ne){editNews=(D().news||[]).find(x=>x.id===d.ne);window.route();}
   if(d.nd&&confirm('Удалить новость?')){await f.deleteDoc(f.doc(db(),'news',d.nd));await done('Новость удалена.');}
   if(id==='pn-save'){const o=editNews||{};const n={title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
+// auto-insert unused photo tags if none present
+if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');if(fl&&fl.files.length){for(let i=1;i<=fl.files.length;i++)n.text+='\n\n[фото:'+i+']';}}
    if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');b.disabled=true;const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
    if(ph.length+fl.length>4){b.disabled=false;return msg('Не больше 4 фото в новости.');}for(const f of fl)ph.push(await smallJpeg(f));
    const legacy=ph.filter(u=>!String(u).startsWith('data:'));ph=ph.filter(u=>String(u).startsWith('data:'));if(legacy[0])n.image=legacy[0];if(ph.length)n.photos=ph;
