@@ -561,6 +561,17 @@ service cloud.firestore {
     match /mem/{uid} { allow get: if signedIn() && request.auth.uid == uid; allow list, write: if false; }
     // verifyCodes: только admin SDK (бот); правила users проверяют наличие через exists()
     match /verifyCodes/{id} { allow read, write: if false; }
+    // oauthReq: вход через Discord. Браузер кладёт одноразовый код OAuth2 в документ со случайным ID (40 hex),
+    // бот обменивает его и пишет результат (custom token) в тот же документ. Список запрещён — читать можно только зная ID.
+    match /oauthReq/{id} {
+      allow create: if id.matches('^[0-9a-f]{40}$')
+        && request.resource.data.keys().hasOnly(['code','redirect','status','t'])
+        && request.resource.data.code is string && request.resource.data.code.size() <= 100
+        && request.resource.data.redirect in ['https://vppka-arbat-rmrp.ru/']
+        && request.resource.data.status == 'new' && request.resource.data.t == request.time;
+      allow get, delete: if id.matches('^[0-9a-f]{40}$');
+      allow list, update: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
