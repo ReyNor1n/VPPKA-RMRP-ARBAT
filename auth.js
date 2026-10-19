@@ -7,8 +7,8 @@ if(ready){init().catch(e=>console.error('Firebase',e));}
 async function init(){
  // Скрытые от других аккаунты (владелец пока не показывается на сайте)
 const HID=['646280678736003073','t3t4KPD2bDasFw1gPLWAA0W8jCL2'];window.VPPKA_HIDDEN=x=>!!x&&(HID.includes(String(x.discordId||''))||HID.includes(String(x.uid||''))||HID.includes(String(x.id||'')));
-// Скрытый аккаунт не попадает в списки людей, но каждое его руководящее место (m11, m18, …) остаётся на странице «Руководство».
-window.VPPKA_SHOWMEM=x=>{if(!x||!window.VPPKA_HIDDEN(x))return !!x;if(['p_Xglv_ypsOH3s7mW2UTXD','m11'].includes(x.id))return true;const id=String(x.id||'');return /^m\d+$/.test(id)||(!id.startsWith('p_')&&!!x.group&&x.group!=='Члены партии')};
+// Скрытый аккаунт не попадает в рядовые списки. Любое его руководящее место (группа не «Члены партии»: m11, m18 и остальные) остаётся видимым.
+window.VPPKA_SHOWMEM=x=>!!x&&(!window.VPPKA_HIDDEN(x)||x.group!=='Члены партии'||x.id==='p_Xglv_ypsOH3s7mW2UTXD');
 let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  const crumbs=t=>`<div class="crumbs"><a href="#home">Главная</a> / ${t}</div>`;
  const ERR={'auth/invalid-credential':'Неверный Discord или пароль.','auth/wrong-password':'Неверный пароль.','auth/user-not-found':'Пользователь с таким Discord не зарегистрирован.','auth/email-already-in-use':'Этот Discord уже зарегистрирован. Войдите.','auth/weak-password':'Пароль слишком простой (минимум 6 символов).','auth/too-many-requests':'Слишком много попыток. Попробуйте позже.','auth/network-request-failed':'Нет соединения с сервером.','permission-denied':'Нет доступа к профилю.'};

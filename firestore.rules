@@ -58,8 +58,12 @@ service cloud.firestore {
     // ---------- звания членов партии: менять могут только Председатель ЦК (m1), его заместители (m4, m5) и владелец сайта ----------
     // кто есть кто — по документам мест руководства (members/m1, m4, m5), а не по данным клиента
     function rkList() { return ['Кандидат','Член партии','Активист','Старший член партии','Ветеран партии','Почётный член партии']; }
-    function seatDid(s) { return get(/databases/$(database)/documents/members/$(s)).data.get('discordId', ''); }
+    function seatDoc(s) { return /databases/$(database)/documents/members/$(s); }
+    // Нет документа места — пустой Discord, а не ошибка всего правила.
+    function seatDid(s) { return exists(seatDoc(s)) ? get(seatDoc(s)).data.get('discordId', '') : ''; }
     function rkAdminDids() { return ['646280678736003073', seatDid('m1'), seatDid('m4'), seatDid('m5')]; }
+    // Председатель ЦК — тот, кто сейчас сидит на m1. Замы свои и чужие места m4/m5 не переназначают.
+    function chairNow() { return isSuper() || (myVDid() != '' && myVDid() == seatDid('m1')); }
     function myVDid() {
       let up = /databases/$(database)/documents/users/$(request.auth.uid);
       return signedIn() && request.auth.token.email is string && exists(up)
@@ -67,7 +71,8 @@ service cloud.firestore {
         ? get(up).data.discordId : '';
     }
     function rankAdmin() { return isOwner() || (myVDid() != '' && myVDid() in rkAdminDids()); }
-    // Discord ID всех, кто сейчас занимает места руководства: config/ldrSeats.dids (пишет бот/админ-скрипт, клиентам запись запрещена)
+    // Discord ID всех, кто сейчас занимает места руководства: config/ldrSeats.dids.
+    // Список целиком переписывают те, кто назначает (rankAdmin), после назначения или снятия.
     function ldrSeatsPath() { return /databases/$(database)/documents/config/ldrSeats; }
     // цель — рядовой член партии: не распорядитель званий и не обладатель места руководства; нет списка мест → запрет
     function rkTargetOk(did) {
@@ -144,9 +149,18 @@ service cloud.firestore {
       allow delete: if myRank() >= 100 && resource.data.rank < myRank();
     }
 
-    // ---------- служебное: только из консоли ----------
+    // ---------- служебное: owners и вебхуки только из консоли; список должностей пишут назначающие ----------
     match /config/{d} {
-      allow get: if (signedIn() && d == 'owners') || (d == 'discord' && myTier() >= 4);
+      allow get: if (signedIn() && d == 'owners') || (d == 'discord' && myTier() >= 4) || (d == 'ldrSeats' && rankAdmin());
+      // Список Discord тех, кто занимает руководящие места. Пишут те же, кто назначает: целиком поле dids.
+      function didsOk() {
+        return request.resource.data.dids is list && request.resource.data.dids.size() <= 80
+          && (request.resource.data.dids.size() == 0 || (request.resource.data.dids[0] is string && request.resource.data.dids[0].size() <= 32));
+      }
+      allow create: if d == 'ldrSeats' && rankAdmin()
+        && request.resource.data.keys().hasOnly(['dids']) && didsOk();
+      allow update: if d == 'ldrSeats' && rankAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['dids']) && didsOk();
       allow write: if d == 'discord' && isOwner()
         && request.resource.data.keys().hasOnly(['webhook','appsWebhook','roleIds'])
         && (!('webhook' in request.resource.data) || request.resource.data.webhook.matches('^https://(discord|discordapp)[.]com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+$'))
@@ -437,8 +451,16 @@ service cloud.firestore {
       function sameSeat(k) { return request.resource.data.get(k, null) == resource.data.get(k, null); }
       // Назначение на уже существующую руководящую должность без смены роли, ранга и ступени.
       // Могут: председатель ЦК (m1), его заместители (m4, m5), начальник техотдела и владелец (rankAdmin).
+      function deputySeat() { return id == 'm4' || id == 'm5'; }
+      // Смена человека на месте зама — только председатель (m1) или владелец.
+      function deputyReassign() {
+        return deputySeat() && !chairNow()
+          && (request.resource.data.get('discordId', '') != resource.data.get('discordId', '')
+              || request.resource.data.get('name', '') != resource.data.get('name', ''));
+      }
       function seatAssignOk() {
         return rankAdmin() && validMember(request.resource.data) && !techSeat() && !techRoleNew()
+          && (!deputySeat() || chairNow())
           && !id.matches('^p_.*')
           && resource.data.get('group', '') != 'Члены партии'
           && resource.data.get('rank', 0) < 100
@@ -446,7 +468,7 @@ service cloud.firestore {
           && sameSeat('role') && sameSeat('group') && sameSeat('rank') && sameSeat('tier')
           && sameSeat('order') && sameSeat('reportsTo') && sameSeat('duties');
       }
-      allow update: if !techSeat() && !techRoleNew() && (assignOk() && (resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100)
+      allow update: if !techSeat() && !techRoleNew() && !deputyReassign() && (assignOk() && (resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100)
         && tierEdit(request.resource.data) && rkKeep()
         // смена звания: только поле role (+ updatedBy/updatedAt), значение из списка званий, не у распорядителей
         || (rankAdmin() && id.matches('^p_.*')
@@ -465,23 +487,37 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photo','updatedBy','updatedAt'])
             && validMember(request.resource.data)))
         || seatAssignOk());
-      allow delete: if !techSeat() && resource.data.get('rank', 0) < 100
+      // m1, m4 и m5 не удаляет никто, кроме владельца (ему это даёт общее правило isSuper).
+      allow delete: if !techSeat() && !(id in ['m1', 'm4', 'm5']) && resource.data.get('rank', 0) < 100
         && ((myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100))
             || (rankAdmin() && !id.matches('^p_.*') && resource.data.get('group', '') != 'Члены партии'));
     }
     // Замок от второй карточки члена партии с тем же ФИО. Создаётся вместе с members/p_* одной пачкой.
+    // Правка и удаление уже существующей карточки замок не требуют: старые карточки его не имеют.
     match /memClaim/{key} {
+      function claimCard(mid) { return /databases/$(database)/documents/members/$(mid); }
+      function claimShape() {
+        return (myTier() >= 4 || rankAdmin())
+          && key == request.resource.data.name
+          && request.resource.data.keys().hasOnly(['name','memberId','by'])
+          && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+          && request.resource.data.memberId is string && request.resource.data.memberId.matches('^p_[A-Za-z0-9_-]{8,128}$')
+          && request.resource.data.by == request.auth.uid
+          && existsAfter(claimCard(request.resource.data.memberId))
+          && getAfter(claimCard(request.resource.data.memberId)).data.name == request.resource.data.name
+          && getAfter(claimCard(request.resource.data.memberId)).data.group == 'Члены партии';
+      }
+      // Чужой живой замок не переписываем. Можно обновить свой или занять ФИО, если прежняя карточка уже удалена.
+      function claimFree() {
+        return resource.data.memberId == request.resource.data.memberId
+          || !exists(claimCard(resource.data.memberId))
+          || get(claimCard(resource.data.memberId)).data.get('group', '') != 'Члены партии'
+          || get(claimCard(resource.data.memberId)).data.get('name', '') != resource.data.get('name', '');
+      }
       allow get: if signedIn();
       allow list: if isSuper() || myTier() >= 4 || rankAdmin();
-      allow create: if (myTier() >= 4 || rankAdmin())
-        && key == request.resource.data.name
-        && request.resource.data.keys().hasOnly(['name','memberId','by'])
-        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
-        && request.resource.data.memberId is string && request.resource.data.memberId.matches('^p_[A-Za-z0-9_-]{8,128}$')
-        && request.resource.data.by == request.auth.uid
-        && existsAfter(/databases/$(database)/documents/members/$(request.resource.data.memberId))
-        && getAfter(/databases/$(database)/documents/members/$(request.resource.data.memberId)).data.name == request.resource.data.name
-        && getAfter(/databases/$(database)/documents/members/$(request.resource.data.memberId)).data.group == 'Члены партии';
+      allow create: if claimShape();
+      allow update: if claimShape() && claimFree();
       allow delete: if isSuper() || myTier() >= 4 || rankAdmin();
     }
 
