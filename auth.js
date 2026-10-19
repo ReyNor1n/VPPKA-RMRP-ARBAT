@@ -61,12 +61,12 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   const PB=window.VPPKA_PB||{},tc=lead&&PB.MT?PB.MT(lead):'',gold=p.discordId==='646280678736003073';
   const nm=(lead&&lead.name)||fio||p.displayName||'Без имени',ph=(lead&&lead.photo)||p.photo||p.avatar||'';
   const pos=power.rank>0?`<b>${esc(power.roleName)}</b>`:lead?esc(lead.role):(p.keyHash?'<span style="color:var(--red)">ключ аннулирован или недействителен</span>':'член сайта, без ключа');
-  const rows=[['ФИО',fio],['Дата рождения',birth],['Номер паспорта',pass],['Дата вступления',joined]].map(([k,v])=>row(k,v)).join('')+`<tr><td>Должность</td><td>${pos}</td></tr>`+(lead&&lead.group&&lead.group!==PB.PG?row('Партийный орган',lead.group):'')+(lead&&lead.reportsTo?row('Подчиняется',lead.reportsTo):'')
+  const rows=[['ФИО',fio],['Дата рождения',birth],['Номер паспорта',pass],['Дата вступления',joined]].map(([k,v])=>row(k,v)).join('')
    +(p.discordId?`<tr><td>Discord</td><td>${/^https?:/.test(p.discordLink||'')?`<a href="${esc(p.discordLink)}" target="_blank" rel="noopener">${esc(p.discordLink)}</a>`:esc(p.discordLink||p.discordId)}</td></tr>`:'')+(gold?'<tr class="creator-r"><td colspan="2"><span class="creator-b">⚙ Создатель сайта партии</span></td></tr>':'');
   return `${crumbs('Личный кабинет')}<div class="pg"><div class="auth acc-wrap"><h2 class="acc-h2">Личный кабинет<button class="acc-gear" onclick="VPPKA_SETOPEN()" aria-label="Настройки" title="Настройки">⚙</button></h2>
   <div class="acc-bnw"><div id="vb-prev" class="phead-bn"></div></div>
   <div class="prof blk acc-card${tc?' ldr-card '+tc:''}${gold?' gold-card':''}"><div class="prof-ph${tc?' ldr-av '+tc:''}${ph?'':' noph'}">${ph?`<img src="${esc(ph)}" alt="${esc(nm)}">`:`<b>${esc(nm.split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase())}</b>`}</div><div><span class="role">// ${esc((lead&&lead.group)||'Личный кабинет')}</span><h1 class="prof-n">${esc(nm)}</h1><div class="prof-r">${esc((lead&&lead.role)||(power.rank>0?power.roleName:'Беспартийный'))}</div>
-  <table class="tbl" style="margin-top:16px">${rows}</table>${lead&&PB.DB?PB.DB(lead):''}<p class="acc-priv">🔒 Дата рождения и паспорт видны только вам и членам Партии.</p></div></div>
+  <table class="tbl" style="margin-top:16px">${rows}</table><p class="acc-priv">🔒 Дата рождения и паспорт видны только вам и членам Партии.</p></div></div>
   ${set}<p style="margin-top:20px"><button class="btn o" id="a-out">Выйти</button></p></div></div>`};
  P.user=(uid,mid)=>{if(user&&uid===user.uid){location.replace('#account');return P.account()}
   const ms=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[],pb=((window.VPPKA_PUBMAP&&window.VPPKA_PUBMAP())||{})[uid];
