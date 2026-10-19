@@ -6,7 +6,7 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches)return;w.querySelectorAll('.mauth').forEach(x=>x.remove());const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);if(!al.classList.contains('in')&&!w.querySelector('.mreg')){const r=document.createElement('a');r.className='mauth mreg';r.href='#register';r.textContent='Регистрация';w.appendChild(r)}}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',events:'Мероприятия',votes:'Голосования',legal:'Правовая база',contacts:'Контакты'};
-load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=176';
+load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});document.title=S.short+' — '+S.name;logo.src='img/gerb-red.png?v=177';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+S.server;
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
@@ -155,7 +155,12 @@ window.VPPKA_MUSIC={
    {src:'audio/na-zare.mp3',start:85},                 // «На заре» — Альянс, Братство Атома, BassnPanda
   ],vol:0.01,keep:true}     // фон остальных страниц: «Только мы» (GeoffPlaysGuitar, Эдита Пьеха, Atomic Heart)
 };
-(function(){const K='vppka-about-mute';const A={};let cur=null;const muted=()=>localStorage.getItem(K+(cur&&cur!=='about'?':'+cur:''))==='1';
+(function(){const K='vppka-about-mute',GK='vppka-music-mute';const A={};let cur=null;
+ // единый выключатель музыки на весь сайт (раньше — отдельно на каждый трек); перенос прежнего выбора фона
+ if(localStorage.getItem(GK)===null){const o=localStorage.getItem(K+':default');if(o!==null)localStorage.setItem(GK,o)}
+ const muted=()=>localStorage.getItem(GK)==='1';
+ // кнопка видна только на главной, в «О партии» и в профиле Быкова (музыка играет и на других страницах — выключается отсюда)
+ const showBtn=()=>{const h=norm(location.hash);return h===''||h==='home'||h==='about'||cur==='member/m4'};
  const norm=s=>{s=String(s||'').replace(/^#/,'');return s.startsWith('member/')?s.split('/').slice(0,2).join('/'):s};
  const keyOf=()=>{const h=norm(location.hash);const M=window.VPPKA_MUSIC||{};if(M[h])return h;
   // профиль того же человека под другим id (запись «Члены партии» p_…) — по Discord ID
@@ -167,9 +172,9 @@ window.VPPKA_MUSIC={
   const load=n=>{au._i=n;const t=L[n];au.src=t.src;if(t.start){const go=()=>{try{au.currentTime=t.start}catch(e){}};au.addEventListener('loadedmetadata',go,{once:true})}};load(i);
   if(L.length>1)au.addEventListener('ended',()=>{load((au._i+1)%L.length);au.play().catch(()=>{})});A[k]=au}
  A[k].volume=c.vol??0.1;return A[k]}
- function btn(){let b=document.getElementById('amu');if(!b){b=document.createElement('button');b.id='amu';b.className='amu';b.onclick=()=>{localStorage.setItem(K+(cur&&cur!=='about'?':'+cur:''),muted()?'0':'1');sync()}}
+ function btn(){let b=document.getElementById('amu');if(!b){b=document.createElement('button');b.id='amu';b.className='amu';b.onclick=()=>{localStorage.setItem(GK,muted()?'0':'1');sync()}}
   const h=cur&&document.querySelector('.pg h1');if(h&&b.parentNode!==h)h.appendChild(b);else if(!h&&!b.parentNode)document.body.appendChild(b);
-  b.hidden=!cur;b.classList.toggle('def',!h);b.innerHTML='<svg viewBox="0 0 32 32" aria-hidden="true"><path class="st" d="M16 2.5l3.6 8.6 9.3.7-7.1 6 2.2 9.1L16 22l-8 4.9 2.2-9.1-7.1-6 9.3-.7z"/><path class="wv" d="M9.5 16h2l1.3-3 2 6.2 1.8-8 1.9 9.4 1.6-4.6h2.4"/><path class="fl" d="M10 16h12"/><path class="x" d="M6 6l20 20"/></svg>';b.classList.toggle('off',muted());b.title=muted()?'Включить музыку':'Выключить музыку';b.setAttribute('aria-label',b.title)}
+  b.hidden=!cur||!showBtn();b.classList.toggle('def',!h);b.innerHTML='<svg viewBox="0 0 32 32" aria-hidden="true"><path class="st" d="M16 2.5l3.6 8.6 9.3.7-7.1 6 2.2 9.1L16 22l-8 4.9 2.2-9.1-7.1-6 9.3-.7z"/><path class="wv" d="M9.5 16h2l1.3-3 2 6.2 1.8-8 1.9 9.4 1.6-4.6h2.4"/><path class="fl" d="M10 16h12"/><path class="x" d="M6 6l20 20"/></svg>';b.classList.toggle('off',muted());b.title=muted()?'Включить музыку':'Выключить музыку';b.setAttribute('aria-label',b.title)}
  function play(){if(!cur)return;const a=el(cur);a.play().catch(()=>{})}
  function enter(k){const c=window.VPPKA_MUSIC[k],a=el(k);if(!c.keep){const go=()=>{try{a.currentTime=c.start||0}catch(e){}};if(a.readyState>=1)go();else a.addEventListener('loadedmetadata',go,{once:true})}}
  function leave(k){const a=A[k];if(!a)return;a.pause();const c=window.VPPKA_MUSIC[k];if(!c.keep){try{a.currentTime=c.start||0}catch(e){}}}
@@ -178,7 +183,7 @@ window.VPPKA_MUSIC={
  document.addEventListener('click',e=>{const l=e.target.closest&&e.target.closest('a[href^="#"]');if(!l)return;const k=norm(l.getAttribute('href')),c=(window.VPPKA_MUSIC||{})[k];if(!c||localStorage.getItem(K+(k!=='about'?':'+k:''))==='1')return;
   if(cur&&cur!==k)leave(cur);const a=el(k);if(!c.keep){try{a.currentTime=c.start||0}catch(x){}}cur=k;a.play().then(()=>{if(!c.keep&&a.currentTime<(c.start||0)-1)a.currentTime=c.start||0}).catch(()=>{})},true);
  const kick=()=>{if(cur&&!muted()&&!document.hidden&&(!A[cur]||A[cur].paused))play()};['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,kick,{passive:true}));
- addEventListener('hashchange',()=>setTimeout(sync,0));document.addEventListener('visibilitychange',sync);new MutationObserver(()=>{if(cur){const b=document.getElementById('amu'),h=document.querySelector('.pg h1');if(h&&(!b||b.parentNode!==h))btn()}else if(!cur&&window.VPPKA_DATA&&location.hash.startsWith('#member/')&&keyOf())sync()}).observe(document.body,{childList:true,subtree:true});
+ addEventListener('hashchange',()=>setTimeout(sync,0));document.addEventListener('visibilitychange',sync);addEventListener('storage',e=>{if(e.key===GK)sync()});new MutationObserver(()=>{if(cur){const b=document.getElementById('amu'),h=document.querySelector('.pg h1');if(h&&(!b||b.parentNode!==h))btn()}else if(!cur&&window.VPPKA_DATA&&location.hash.startsWith('#member/')&&keyOf())sync()}).observe(document.body,{childList:true,subtree:true});
  if(document.readyState==='loading')addEventListener('DOMContentLoaded',sync);else sync();window.VPPKA_MUSIC_SYNC=sync;window.VPPKA_ABOUT_AUDIO=()=>A.about;window.VPPKA_PAGE_AUDIO=()=>cur&&A[cur]})();
 
 // --- Баннер профиля: файл (видео/картинка/GIF, частями в Firestore banners/{uid}/chunks) или прямая ссылка ---
