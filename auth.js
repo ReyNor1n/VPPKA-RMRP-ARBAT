@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=187';
+import { firebaseConfig } from './firebase-config.js?v=188';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -151,7 +151,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   F.onSnapshot(F.collection(db,'members'),s=>{if(fm){fm=false;liveM=s;ready();return}liveM=s;liveApply()},e=>{console.warn('live members',e);fm=false;ready()});}
  function liveStart(){}
  window.VPPKA_AUTH={get user(){return user},get profile(){return profile},get power(){return power},async submitApplication(answers){if(!user)throw new Error('Чтобы подать заявку, войдите или зарегистрируйтесь на сайте.');const ref=F.doc(db,'applications',user.uid);
-  let ex=null;try{ex=await F.getDoc(ref)}catch(e){}if(ex&&ex.exists()){const st=ex.data().status;if(st==='rejected')await F.deleteDoc(ref);else throw new Error(st==='new'?'Ваша заявка уже подана и ждёт рассмотрения.':'Заявка уже рассмотрена.')}
+  let ex=null;try{ex=await F.getDoc(ref)}catch(e){}if(ex&&ex.exists()){const st=ex.data().status;if(st==='rejected'||st==='expelled')await F.deleteDoc(ref);else throw new Error(st==='new'?'Ваша заявка уже подана и ждёт рассмотрения.':'Заявка уже рассмотрена.')}
   const d={answers,status:'new',createdAt:F.serverTimestamp(),uid:user.uid};if(profile&&profile.discordId)d.discordId=profile.discordId;await F.setDoc(ref,d);}};
  window.VPPKA_FB={get F(){return F},get db(){return db},get user(){return user},get power(){return power}};
  window.VPPKA_SUPER=()=>!!(power&&power.owner);
@@ -189,7 +189,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  }
 
  async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=187').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=187').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=187').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=187').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=187').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=187').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=187').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=187').then(m=>m.install()).catch(e=>console.error('admin',e));
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=188').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=188').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=188').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=188').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=188').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=188').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=188').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=188').then(m=>m.install()).catch(e=>console.error('admin',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();

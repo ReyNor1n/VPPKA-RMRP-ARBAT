@@ -290,7 +290,16 @@ async function createPartyCard(id,data){const f=F(),key=claimKey(data.name);if(!
 // У старых карточек замка нет: тогда удаляется только members, и пачка не падает.
 async function deletePartyCard(m){const f=F(),id=m.id,key=claimKey(m.name);const b=f.writeBatch(db());b.delete(f.doc(db(),'members',id));
  if(key){const c=await f.getDoc(f.doc(db(),'memClaim',key));if(c.exists()&&c.data()&&c.data().memberId===id)b.delete(c.ref)}
- await b.commit()}
+ await b.commit();await archiveApps(m)}
+// Карточку удалили — принятые заявки этого человека переводим в «expelled» (архив), иначе Discord-бот и сайт
+// считают его членом партии, а rosterSync пересоздаёт карточку. Если у него осталась другая карточка или место — не трогаем.
+async function archiveApps(m){try{const f=F(),d=db(),did=String(m&&m.discordId||''),id=String(m&&m.id||''),me=FB().user&&FB().user.uid;if(!me||!id)return 0;
+ if(did&&(D().members||[]).some(x=>x.id!==id&&x.name&&!isVacName(x.name)&&String(x.discordId||'')===did))return 0;
+ const refs=new Map();if(/^\d{15,21}$/.test(did)){const q=await f.getDocs(f.query(f.collection(d,'applications'),f.where('discordId','==',did)));q.docs.forEach(x=>refs.set(x.id,x))}
+ if(id.startsWith('p_')){try{const s=await f.getDoc(f.doc(d,'applications',id.slice(2)));if(s.exists())refs.set(s.id,s)}catch(e){}}
+ let n=0;for(const s of refs.values()){if(!['accepted','member'].includes((s.data()||{}).status))continue;try{await f.updateDoc(s.ref,{status:'expelled',expelledBy:me,expelledAt:f.serverTimestamp()});n++}catch(e){console.warn('archiveApps',s.id,e.code||e)}}return n}
+ catch(e){console.warn('archiveApps',e.code||e);return 0}}
+window.VPPKA_ARCHIVE_APPS=archiveApps;
 // Правка уже существующей карточки замок не создаёт. Если замок был и ФИО сменилось — переносим его, чтобы старое имя снова можно было принять.
 async function savePartyEdit(o,data){const f=F();const oldKey=claimKey(o.name),leaving=data.group!=='Члены партии',newKey=leaving?'':claimKey(data.name);
  if(oldKey&&(leaving||(newKey&&oldKey!==newKey))){const cref=f.doc(db(),'memClaim',oldKey);const c=await f.getDoc(cref);
