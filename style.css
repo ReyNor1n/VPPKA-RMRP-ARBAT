@@ -573,3 +573,23 @@ body:has(.ntoast) #installBtn{bottom:calc(84px + env(safe-area-inset-bottom))}bo
 .gold-card .tbl td:first-child,.gold-card .prof-r,.gold-card .tbl td a,.gold-card .role,.gold-card .ldr-badge span{color:#ecdcff!important;text-shadow:0 0 6px #2a0d55,0 1px 2px #000}
 .gold-card .tbl td{border-color:rgba(40,25,5,.45)!important}
 @media(max-width:860px){.prof.blk.ldr-card.gold-card{background:linear-gradient(180deg,rgba(14,10,4,.25) 0%,rgba(14,10,4,.62) 45%,rgba(14,10,4,.72) 100%),linear-gradient(135deg,#8a6414 0%,#c9971f 18%,#f3d36b 34%,#b8851a 50%,#e8bf4a 66%,#8f6512 84%,#c49326 100%)!important}}
+
+/* звание члена партии: кнопка и выбор */
+.rk-row{margin-top:12px}
+.rk-btn{display:inline-flex;align-items:center;gap:7px;margin-top:8px;padding:5px 10px;font:600 11px Oxanium,monospace;letter-spacing:.1em;text-transform:uppercase;color:#ffcf80;border:1px solid #c9971f88;background:linear-gradient(180deg,#2a1d0a,#140e06);cursor:pointer;box-shadow:inset 0 1px 0 #ffffff12;transition:box-shadow .2s,border-color .2s;max-width:100%}
+.rk-btn:hover,.rk-btn:focus-visible{border-color:#f3d36b;box-shadow:0 0 12px #e8bf4a55,inset 0 1px 0 #ffffff18;outline:none}
+.rk-btn svg{width:12px;height:12px;flex:none;fill:#e21d1d;stroke:#ff8a7a;stroke-width:.6}.rk-btn b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rk-btn i{font-style:normal;opacity:.7}
+.pm-card .rk-btn{align-self:flex-start}
+.rk-ov{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;background:#04050899;backdrop-filter:blur(3px);animation:dutyF .18s ease-out}
+.rk-box{position:relative;width:min(460px,100%);max-height:88vh;overflow:auto;padding:20px 22px 16px;background:linear-gradient(180deg,#16110a,#0b0a0f);border:1px solid #c9971faa;box-shadow:0 0 0 1px #000,0 0 28px #e8bf4a33;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));animation:dutyU .22s ease-out}
+.rk-box:before{content:"";position:absolute;left:0;top:0;width:90px;height:2px;background:#e8bf4a;box-shadow:0 0 8px #e8bf4a}
+.rk-hd{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.rk-hd span{font:600 11px Oxanium,monospace;letter-spacing:.14em;color:#e8bf4a}.rk-hd h3{margin:4px 0 2px;font-size:18px;color:#fff}.rk-hd small{color:#9aa1ab;font-size:12px}
+.rk-x{flex:none;width:34px;height:34px;border:1px solid #ffffff2e;background:#0007;color:#fff;cursor:pointer}.rk-x:hover{border-color:#e8bf4a;color:#e8bf4a}
+.rk-l{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.rk-it{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;background:#ffffff07;border:1px solid #ffffff14;color:#e6e8ec;font:500 14px 'Exo 2',sans-serif;text-align:left;cursor:pointer;transition:background .15s,border-color .15s}
+.rk-it:hover:not([disabled]),.rk-it.sel{background:#e8bf4a1a;border-color:#e8bf4a99}
+.rk-it.cur{opacity:.75;cursor:default;border-color:#c9971f66;background:#c9971f14}
+.rk-n{flex:none;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font:600 11px Oxanium,monospace;color:#140e06;background:linear-gradient(135deg,#f3d36b,#b8851a);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.rk-t{flex:1}.rk-it em{font:600 10px Oxanium,monospace;letter-spacing:.1em;text-transform:uppercase;font-style:normal;color:#9aa1ab}.rk-it em.up{color:#4fd47d}.rk-it em.dn{color:#ff6b5a}
+.rk-cf{margin-top:12px;padding-top:12px;border-top:1px solid #ffffff14}.rk-q{margin:0 0 8px;color:#e6e8ec}.rk-q small{color:#9aa1ab}
+.rk-why{width:100%;box-sizing:border-box;padding:8px 10px;background:#0009;border:1px solid #ffffff22;color:#fff;font:14px 'Exo 2',sans-serif}.rk-bt{display:flex;gap:8px;margin-top:10px}

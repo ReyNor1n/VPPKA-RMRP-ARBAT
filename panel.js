@@ -113,7 +113,38 @@ const myDidP=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');
 const actorName=()=>{const did=myDidP(),me=(D().members||[]).find(x=>did&&x.discordId===did&&!String(x.id).startsWith('p_'))||(D().members||[]).find(x=>did&&x.discordId===did);const role=(me&&me.role)||(FB().power||{}).roleName||'';const nm=(me&&me.name)||((window.VPPKA_AUTH||{}).profile||{}).displayName||'';return [role,nm].filter(Boolean).join(' ')};
 async function rankNote(did,kind,text){did=String(did||'');if(!did||did===myDidP())return;const f=F();try{await f.addDoc(f.collection(db(),'rankNotes'),{did,kind,text:String(text).slice(0,300),by:FB().user.uid,byName:actorName().slice(0,160),at:f.serverTimestamp(),read:false})}catch(e){console.warn('rankNote',e.code||e)}}
 window.VPPKA_RANKNOTE=rankNote;window.VPPKA_ACTOR=actorName;
-const canP=m=>!!m&&tier()>=4&&PR.includes(String(m.role||''))&&String(m.id||'').startsWith('p_')&&!OWNER_IDS.includes(m.id)&&mt(m)<tier()&&m.name&&m.name!=='Вакансия'&&!(m.discordId&&m.discordId===((window.VPPKA_AUTH||{}).profile||{}).discordId);
+// ---------- звание члена партии: кнопка + выбор (только Председатель ЦК, его заместители и владелец сайта) ----------
+const RK_OWNER_DID='646280678736003073',RK_SEATS=['m1','m4','m5'];
+const rkAdminDids=()=>[RK_OWNER_DID,...RK_SEATS.map(s=>String(((xMem().find(x=>x.id===s))||{}).discordId||'')).filter(Boolean)];
+const rkAdmin=()=>{const u=(FB()||{}).user,did=myDidP();return !!u&&!!did&&rkAdminDids().includes(did)};
+// обладатели мест руководства (не «Члены партии», не вакансия) — по Discord ID и по ФИО
+const rkNz=x=>String(x||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+const rkLdr=m=>xMem().some(x=>!String(x.id||'').startsWith('p_')&&x.group&&x.group!==window.VPPKA_PG&&x.name&&!/^Вакансия/i.test(x.name)&&((m.discordId&&x.discordId&&String(x.discordId)===String(m.discordId))||rkNz(x.name)===rkNz(m.name)));
+// кнопка звания — только у рядовых членов партии (не у руководства и не у распорядителей званий)
+const rkTarget=m=>!!m&&String(m.id||'').startsWith('p_')&&PR.includes(String(m.role||''))&&m.name&&m.name!=='Вакансия'&&!window.VPPKA_HIDDEN(m)&&!(m.discordId&&rkAdminDids().includes(String(m.discordId)))&&!rkLdr(m);
+const rkBtn=m=>rkAdmin()&&rkTarget(m)?`<span class="rk-btn" role="button" tabindex="0" data-rk="${esc(m.id)}" title="Изменить звание"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6l1.6 3.6 3.9.4-2.9 2.6.8 3.9L8 10.1 4.6 12.1l.8-3.9L2.5 5.6l3.9-.4z"/></svg><b>${esc(m.role)}</b><i>▾</i></span>`:'';
+window.VPPKA_RKBTN=rkBtn;
+function rkClose(){const o=document.getElementById('rk-ov');if(o){o.remove();document.body.classList.remove('asg-lock')}}
+function rkOpen(id){const m=xMem().find(x=>x.id===id);if(!rkAdmin()||!rkTarget(m))return;rkClose();const cur=PR.indexOf(String(m.role));
+ const o=document.createElement('div');o.id='rk-ov';o.className='rk-ov';
+ o.innerHTML=`<div class="rk-box" role="dialog" aria-modal="true"><div class="rk-hd"><div><span>// ЗВАНИЕ</span><h3>${esc(m.name)}</h3><small>Сейчас: ${esc(m.role)}</small></div><button class="rk-x" aria-label="Закрыть">✕</button></div>
+ <ol class="rk-l">${PR.map((r,i)=>i).reverse().map(i=>`<li><button class="rk-it${i===cur?' cur':''}" data-rki="${i}" ${i===cur?'disabled':''}><span class="rk-n">${i+1}</span><span class="rk-t">${esc(PR[i])}</span>${i===cur?'<em>текущее</em>':i>cur?'<em class="up">▲ повысить</em>':'<em class="dn">▼ понизить</em>'}</button></li>`).join('')}</ol>
+ <div class="rk-cf" hidden><p class="rk-q"></p><input class="rk-why" maxlength="300" placeholder="Причина (необязательно)"><div class="rk-bt"><button class="btn sm rk-ok">Подтвердить</button><button class="btn sm o rk-no">Отмена</button></div><p class="aerr rk-e"></p></div></div>`;
+ let pick=-1;const cf=o.querySelector('.rk-cf');
+ o.addEventListener('click',async e=>{if(e.target===o||e.target.closest('.rk-x'))return rkClose();const it=e.target.closest('[data-rki]');
+  if(it){pick=+it.dataset.rki;o.querySelectorAll('.rk-it').forEach(b=>b.classList.toggle('sel',b===it));cf.hidden=false;cf.querySelector('.rk-q').innerHTML=`${pick>cur?'Повысить':'Понизить'} до звания <b>${esc(PR[pick])}</b>?<br><small>${esc(PR[cur])} → ${esc(PR[pick])}</small>`;cf.querySelector('.rk-why').focus();return}
+  if(e.target.closest('.rk-no')){pick=-1;cf.hidden=true;o.querySelectorAll('.rk-it').forEach(b=>b.classList.remove('sel'));return}
+  if(e.target.closest('.rk-ok')&&pick>=0){const bt=e.target.closest('.rk-ok');bt.disabled=true;try{await rkSet(m,cur,pick,cf.querySelector('.rk-why').value.trim());rkClose()}catch(er){bt.disabled=false;cf.querySelector('.rk-e').textContent='Не удалось: '+(er.code==='permission-denied'?'нет прав (правила базы).':(er.code||er.message))}}});
+ document.body.appendChild(o);document.body.classList.add('asg-lock');o.querySelector('.rk-x').focus()}
+async function rkSet(m,cur,nr,why){if(nr===cur||nr<0||nr>=PR.length)return;const f=F(),d=db(),aid=m.id.slice(2),me=FB().user.uid,dir=nr>cur?1:-1;
+ const ar=f.doc(d,'applications',aid);let a={};try{const as=await f.getDoc(ar);if(as.exists()){a=as.data();await f.updateDoc(ar,{partyRank:nr,partyRole:PR[nr],rankedBy:me,rankedAt:f.serverTimestamp()})}}catch(e){if(e.code!=='permission-denied')throw e;console.warn('application',e.code)}
+ await f.updateDoc(f.doc(d,'members',m.id),{role:PR[nr],updatedBy:me,updatedAt:f.serverTimestamp()});
+ const did=a.discordId||m.discordId;await rankNote(did,dir>0?'up':'down',`Вы ${dir>0?'повышены':'понижены'}: ${PR[cur]} → ${PR[nr]}`);
+ window.VPPKA_RH&&window.VPPKA_RH(did,dir>0?'up':'down',PR[cur],PR[nr],m.name,why).catch(e=>console.warn('rankHist',e.code||e));
+ msg(`${m.name}: ${PR[nr]}.`);window.VPPKA_RELOAD&&await window.VPPKA_RELOAD()}
+(function(){const hit=e=>{const b=e.target.closest&&e.target.closest('[data-rk]');if(!b)return;e.preventDefault();e.stopPropagation();rkOpen(b.dataset.rk)};
+ document.addEventListener('click',hit,true);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('rk-ov'))rkClose();else if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-rk]'))hit(e)},true);addEventListener('hashchange',rkClose)})();
+const canP=m=>!!m&&rkAdmin()&&rkTarget(m)&&PR.includes(String(m.role||''))&&String(m.id||'').startsWith('p_')&&!OWNER_IDS.includes(m.id)&&mt(m)<tier()&&m.name&&m.name!=='Вакансия'&&!(m.discordId&&m.discordId===((window.VPPKA_AUTH||{}).profile||{}).discordId);
 const pIdx=m=>{const i=PR.indexOf(String(m.role||''));return i<0?0:i};
 const xMenu=m=>{const p=canP(m),x=canX(m),i=pIdx(m),st='event.preventDefault();event.stopPropagation();';if(!p&&!x)return '';
  return `<div class="g-mn"><button class="g-dots" aria-label="Действия" aria-haspopup="true" onclick="VPPKA_GMENU(event,this)">⋮</button><div class="g-dd" hidden role="menu">${p&&i<PR.length-1?`<button role="menuitem" onclick="${st}VPPKA_PROMO('${esc(m.id)}',1)">▲ Повысить → ${esc(PR[i+1])}</button>`:''}${p&&i>0?`<button role="menuitem" onclick="${st}VPPKA_PROMO('${esc(m.id)}',-1)">▼ Понизить → ${esc(PR[i-1])}</button>`:''}${x?`<button role="menuitem" class="g-dd-del" onclick="${st}VPPKA_EXPEL('${esc(m.id)}')">Уволить</button>`:''}</div></div>`};
@@ -172,10 +203,10 @@ document.addEventListener('click',async e=>{const ok=e.target.closest('[data-aqo
    window.VPPKA_APPS_RESET&&window.VPPKA_APPS_RESET();if(m)m.textContent=(ok?'Принят(а): ':'Отказано: ')+n;rosterSync().catch(x=>console.warn('roster',x.code||x))}
   catch(x){(ok||no).disabled=false;if(m)m.textContent='Ошибка: '+(x.code==='permission-denied'?'нет прав.':(x.code||x.message))}return}
  if(op){location.hash='#apps';let i=0;const t=setInterval(()=>{const el=document.getElementById('app-'+op.dataset.aqopen);if(el||++i>40){clearInterval(t);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('aq-hl');setTimeout(()=>el.classList.remove('aq-hl'),2500)}}},150)}});
-export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace(/(<div class="blk"><h2>Документы<\/h2>[\s\S]*?<\/ul><\/div>)/,'$1<div id="hnote">'+hnHtml()+'</div>')};if(/^#?(home)?$/.test(location.hash))window.route();P.party=()=>{const h0=op();const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"]*)"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const pw=FB().power||{},ab=[(pw.rank>0)&&'<a class="btn sm o" href="#apps">Заявки в партию</a>',(pw.members||rank()>=1000)&&'<a class="btn sm o" href="#members">Участники партии</a>'].filter(Boolean).join(' ');const hx=ab?h.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="adm-bar">'+ab+'</div>'):h;const g=appBlock()+guestBlock();return g?hx.replace(/<\/div>(\s*)$/,g+'</div>$1'):hx};const on=P.news,ol=P.leadership;installAssign();
+export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace(/(<div class="blk"><h2>Документы<\/h2>[\s\S]*?<\/ul><\/div>)/,'$1<div id="hnote">'+hnHtml()+'</div>')};if(/^#?(home)?$/.test(location.hash))window.route();P.party=()=>{const h0=op().replace(/(<a class="pm-card[^"]*" href="#member\/([^"]*)"[^>]*>[\s\S]*?)<\/a>/g,(s,body,id)=>body+rkBtn(xMem().find(x=>x.id===id))+'</a>');const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"]*)"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const pw=FB().power||{},ab=[(pw.rank>0)&&'<a class="btn sm o" href="#apps">Заявки в партию</a>',(pw.members||rank()>=1000)&&'<a class="btn sm o" href="#members">Участники партии</a>'].filter(Boolean).join(' ');const hx=ab?h.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="adm-bar">'+ab+'</div>'):h;const g=appBlock()+guestBlock();return g?hx.replace(/<\/div>(\s*)$/,g+'</div>$1'):hx};const on=P.news,ol=P.leadership;installAssign();
  P.news=id=>{const h=on(id);return id===undefined&&tier()>=4?h.replace(/<\/div>$/,newsPanel()+'</div>'):h};
  P.leadership=()=>{const h=ol();return tier()>=4||chair()?h.replace(/<\/div>$/,memPanel()+'</div>'):h};
- P.apps=appsPage;P.members=membersPage;
+ P.apps=appsPage;P.members=membersPage;const omb=P.member;P.member=(id,from)=>{const h=omb(id,from),b=rkBtn(xMem().find(x=>x.id===id));return b?h.replace('</table>','</table><div class="rk-row">'+b+'</div>'):h};
  document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;const d=b.dataset,id=b.id,f=F();
   const done=async t=>{await window.VPPKA_RELOAD();msg(t)};
   try{

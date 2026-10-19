@@ -52,6 +52,25 @@ service cloud.firestore {
     function myRank() { return !signedIn() ? 0 : (isOwner() ? 1000 : keyRank()); }
     // аккаунт подтверждён: профиль users/{uid} существует (создать его можно только с кодом от бота в ЛС Discord)
     function verified() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    // ---------- звания членов партии: менять могут только Председатель ЦК (m1), его заместители (m4, m5) и владелец сайта ----------
+    // кто есть кто — по документам мест руководства (members/m1, m4, m5), а не по данным клиента
+    function rkList() { return ['Кандидат','Член партии','Активист','Старший член партии','Ветеран партии','Почётный член партии']; }
+    function seatDid(s) { return get(/databases/$(database)/documents/members/$(s)).data.get('discordId', ''); }
+    function rkAdminDids() { return ['646280678736003073', seatDid('m1'), seatDid('m4'), seatDid('m5')]; }
+    function myVDid() {
+      let up = /databases/$(database)/documents/users/$(request.auth.uid);
+      return signedIn() && request.auth.token.email is string && exists(up)
+          && request.auth.token.email == get(up).data.get('discordId', '') + '@vppka.local'
+        ? get(up).data.discordId : '';
+    }
+    function rankAdmin() { return isOwner() || (myVDid() != '' && myVDid() in rkAdminDids()); }
+    // Discord ID всех, кто сейчас занимает места руководства: config/ldrSeats.dids (пишет бот/админ-скрипт, клиентам запись запрещена)
+    function ldrSeatsPath() { return /databases/$(database)/documents/config/ldrSeats; }
+    // цель — рядовой член партии: не распорядитель званий и не обладатель места руководства; нет списка мест → запрет
+    function rkTargetOk(did) {
+      return exists(ldrSeatsPath())
+        && (did == '' || (!(did in rkAdminDids()) && !(did in get(ldrSeatsPath()).data.get('dids', []))));
+    }
 
     // необязательное строковое поле не длиннее max
     function optStr(d, k, max) { return !(k in d) || (d[k] is string && d[k].size() <= max); }
@@ -197,14 +216,14 @@ service cloud.firestore {
           && optStr(request.resource.data, 'reviewerRole', 60)
           && optStr(request.resource.data, 'rejectReason', 500);
       }
-      // повысить/понизить принятого члена партии: ступень 4+, и ступень цели ниже своей
+      // повысить/понизить принятого члена партии: только Председатель ЦК, его заместители и владелец сайта
       function rankOk() {
         return aChanged().hasOnly(['partyRank','partyRole','rankedBy','rankedAt'])
-          && myTier() >= 4 && targetTier() < myTier()
+          && rankAdmin() && rkTargetOk(resource.data.get('discordId', ''))
           && resource.data.status in ['accepted','member']
           && request.resource.data.get('partyRank', 0) is int
-          && request.resource.data.get('partyRank', 0) >= 0 && request.resource.data.get('partyRank', 0) <= 20
-          && optStr(request.resource.data, 'partyRole', 60)
+          && request.resource.data.get('partyRank', 0) >= 0 && request.resource.data.get('partyRank', 0) <= 5
+          && request.resource.data.get('partyRole', '') == rkList()[request.resource.data.get('partyRank', 0)]
           && request.resource.data.rankedBy == request.auth.uid
           && request.resource.data.rankedAt == request.time;
       }
@@ -227,7 +246,7 @@ service cloud.firestore {
     // ---------- история званий: видят члены партии, пишет ступень 4+ ----------
     match /rankHist/{id} {
       allow read: if isOwner() || partyMember() || myTier() >= 1;
-      allow create: if myTier() >= 4
+      allow create: if (myTier() >= 4 || rankAdmin())
         && request.resource.data.keys().hasOnly(['did','kind','from','to','name','reason','by','byName','at'])
         && reqStr(request.resource.data, 'did', 64) && request.resource.data.kind in ['up','down','assign']
         && optStr(request.resource.data, 'from', 80) && optStr(request.resource.data, 'to', 80)
@@ -351,8 +370,17 @@ service cloud.firestore {
       allow create: if tierEdit(request.resource.data);
       // назначение человека на должность (смена discordId): только владелец и ступень 5
       function assignOk() { return request.resource.data.get('discordId', '') == resource.data.get('discordId', '') || myTier() >= 5; }
+      // звание (role) записи «Члены партии» (p_*) — только распорядители званий
+      function rkKeep() { return !id.matches('^p_.*') || request.resource.data.get('role', '') == resource.data.get('role', '') || rankAdmin(); }
       allow update: if assignOk() && (resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100)
-        && tierEdit(request.resource.data)
+        && tierEdit(request.resource.data) && rkKeep()
+        // смена звания: только поле role (+ updatedBy/updatedAt), значение из списка званий, не у распорядителей
+        || (rankAdmin() && id.matches('^p_.*')
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role','updatedBy','updatedAt'])
+            && resource.data.get('role', '') in rkList() && request.resource.data.get('role', '') in rkList()
+            && rkTargetOk(resource.data.get('discordId', ''))
+            && request.resource.data.get('updatedBy', '') == request.auth.uid
+            && validMember(request.resource.data))
         // председатель: только правка полей, ранг менять нельзя, удалять нельзя
         || (resource.data.rank == 100 && canChair()
             && validMember(request.resource.data) && request.resource.data.rank == resource.data.rank
@@ -395,7 +423,7 @@ service cloud.firestore {
       allow read: if verified() && request.auth.token.email is string && resource.data.did == myDid();
       allow update: if verified() && request.auth.token.email is string && resource.data.did == myDid()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) && request.resource.data.read == true;
-      allow create: if signedIn() && myTier() >= 4
+      allow create: if signedIn() && (myTier() >= 4 || rankAdmin())
         && request.resource.data.keys().hasOnly(['did','kind','text','by','byName','at','read'])
         && request.resource.data.did is string && request.resource.data.did.size() > 0 && request.resource.data.did.size() <= 64
         && request.resource.data.did != myDid()
