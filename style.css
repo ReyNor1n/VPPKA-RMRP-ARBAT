@@ -217,7 +217,11 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 .nb-tabs button.on{color:#fff;box-shadow:inset 0 -2px 0 var(--red,#e32b2b)}.nb-tabs b{background:var(--red,#e32b2b);color:#fff;border-radius:8px;padding:0 5px;font-size:10px}
 .nb-it{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);color:#ddd;text-decoration:none}.nb-it:hover{background:rgba(255,255,255,.04)}.nb-it.new{background:rgba(227,43,43,.08)}
 .nb-tx{display:flex;flex-direction:column;gap:2px;min-width:0}.nb-tx b{font-weight:600;font-size:13px}.nb-tx small{color:#888;font-size:11px}
-.nb-tg{flex:0 0 auto;align-self:flex-start;font:600 10px Oxanium,sans-serif;text-transform:uppercase;padding:2px 6px;border:1px solid currentColor;color:#aaa}.nb-news{color:#d6b25e}.nb-convocation{color:#e32b2b}
+.nb-tg{flex:0 0 auto;align-self:flex-start;font:600 10px Oxanium,sans-serif;text-transform:uppercase;padding:2px 6px;border:1px solid currentColor;color:#aaa}.nb-news{color:#d6b25e}.nb-convocation{color:#e32b2b}.nb-appoint{color:#7dcea0}.nb-recall{color:#e59866}
+.adm-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.adm-tabs button{padding:8px 10px;background:#12141a;border:1px solid rgba(255,255,255,.16);color:#ddd;cursor:pointer;font:600 12px Oxanium,sans-serif}.adm-tabs button.on{border-color:var(--gold,#e6b450);color:#fff}
+.adm-json{width:100%;min-height:200px;box-sizing:border-box;font:12px/1.45 ui-monospace,monospace;background:#07080b;color:#eee;border:1px solid rgba(255,255,255,.16);padding:10px}
+.adm-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);flex-wrap:wrap}.adm-row b{word-break:break-word}
+@media(max-width:700px){.adm-tabs button{flex:1 1 42%}}
 .nb-av{flex:0 0 36px;width:36px;height:36px;border-radius:50%;overflow:hidden;background:#222;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600}.nb-av img{width:100%;height:100%;object-fit:cover}
 .nb-e{padding:16px;color:#888;font-size:13px;margin:0}
 .nb-f{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.08)}.nb-f summary{cursor:pointer;color:#d6b25e;font-size:12px}.nb-f select,.nb-f input,.nb-f textarea{display:block;width:100%;margin:6px 0;padding:7px;background:#07080b;border:1px solid rgba(255,255,255,.15);color:#eee;box-sizing:border-box}

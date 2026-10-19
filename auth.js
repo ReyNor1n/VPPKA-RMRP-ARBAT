@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=183';
+import { firebaseConfig } from './firebase-config.js?v=184';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -7,6 +7,8 @@ if(ready){init().catch(e=>console.error('Firebase',e));}
 async function init(){
  // Скрытые от других аккаунты (владелец пока не показывается на сайте)
 const HID=['646280678736003073','t3t4KPD2bDasFw1gPLWAA0W8jCL2'];window.VPPKA_HIDDEN=x=>!!x&&(HID.includes(String(x.discordId||''))||HID.includes(String(x.uid||''))||HID.includes(String(x.id||'')));
+// Скрытый аккаунт не попадает в рядовые списки. Любое его руководящее место (группа не «Члены партии»: m11, m18 и остальные) остаётся видимым.
+window.VPPKA_SHOWMEM=x=>!!x&&(!window.VPPKA_HIDDEN(x)||x.group!=='Члены партии'||x.id==='p_Xglv_ypsOH3s7mW2UTXD');
 let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  const crumbs=t=>`<div class="crumbs"><a href="#home">Главная</a> / ${t}</div>`;
  const ERR={'auth/invalid-credential':'Неверный Discord или пароль.','auth/wrong-password':'Неверный пароль.','auth/user-not-found':'Пользователь с таким Discord не зарегистрирован.','auth/email-already-in-use':'Этот Discord уже зарегистрирован. Войдите.','auth/weak-password':'Пароль слишком простой (минимум 6 символов).','auth/too-many-requests':'Слишком много попыток. Попробуйте позже.','auth/network-request-failed':'Нет соединения с сервером.','permission-denied':'Нет доступа к профилю.'};
@@ -50,7 +52,9 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  // полноразмерная аватарка для больших профилей: avatars/{uid} = avatar||photo (до 800px)
  async function syncAv(){try{const d=profile&&(profile.avatar||profile.photo);if(d)await F.setDoc(F.doc(db,'avatars',user.uid),{d});else await F.deleteDoc(F.doc(db,'avatars',user.uid))}catch(e){console.warn('avatars',e.code||e)}}
  P.account=()=>{if(!user)return P.login();const p=profile||{};if(!myApp)loadMyApp();const ap=myApp||{},ans=ap.answers||{};
-  const mem=((window.VPPKA_DATA&&window.VPPKA_DATA.members)||[]).filter(m=>m.discordId&&m.discordId===p.discordId);const lead=mem.find(m=>!String(m.id).startsWith('p_'))||mem[0];
+  const mem=((window.VPPKA_DATA&&window.VPPKA_DATA.members)||[]).filter(m=>m.discordId&&m.discordId===p.discordId);
+  const seats=(window.VPPKA_SEATS?window.VPPKA_SEATS(p.discordId):mem.filter(m=>!String(m.id).startsWith('p_')&&m.group!=='Члены партии'&&m.name&&m.name!=='Вакансия'));
+  const lead=seats[0]||mem.slice().sort((a,b)=>(Number(b.rank)||0)-(Number(a.rank)||0))[0];
   if(!privT){privT=1;F.getDoc(F.doc(db,'users',user.uid,'priv','p')).then(x=>{priv=x.exists()?x.data():{};if(location.hash==='#account')window.route()}).catch(()=>{priv={}})}const pv=priv||{};const fio=p.fio||ans.fio||'',birth=pv.birth||p.birth||ans.birth||'',pass=pv.passport||p.passport||ans.passport||'';
   const joined=(['accepted','member'].includes(ap.status)&&fmtD(ap.reviewedAt))||(lead&&lead.joined)||(power.rank>0?fmtD(p.createdAt):'')||'';
   const NA='<span class="amut">не указано</span>',row=(k,v)=>`<tr><td>${k}</td><td>${v?esc(v):NA}</td></tr>`;
@@ -60,22 +64,24 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   <div class="set-s"><h4 class="phc-h">Данные аккаунта</h4><table class="tbl"><tr><td>Discord</td><td>${/^https?:/.test(p.discordLink||'')?`<a href="${esc(p.discordLink)}" target="_blank" rel="noopener">${esc(p.discordLink)}</a>`:esc(p.discordLink||p.discordId||'')}</td></tr><tr><td>Discord ID</td><td>${esc(p.discordId||'')}</td></tr></table>${(user&&(user.providerData||[]).some(x=>x.providerId==='password'))?`<details class="acc-pw"><summary>Сменить пароль</summary>${field('pw-c','Текущий пароль','password')}${field('pw-n','Новый пароль (мин. 6 символов)','password')}${field('pw-n2','Повторите новый пароль','password')}<p class="aerr" id="pw-e"></p><button class="btn sm" id="pw-go">Сменить пароль</button></details>`:''}<details class="acc-pw"><summary>Ключ доступа</summary>${field('k-in','Ключ, выданный руководством','password')}<p class="aerr" id="a-e"></p><div class="phc-btns"><button class="btn sm" id="k-go">Применить ключ</button>${p.keyHash?'<button class="btn sm o" id="k-rm">Снять ключ</button>':''}</div></details></div></div></div>`;
   const PB=window.VPPKA_PB||{},tc=lead&&PB.MT?PB.MT(lead):'',gold=p.discordId==='646280678736003073';
   const nm=(lead&&lead.name)||fio||p.displayName||'Без имени',ph=(lead&&lead.photo)||p.photo||p.avatar||'';
-  const pos=power.rank>0?`<b>${esc(power.roleName)}</b>`:lead?esc(lead.role):(p.keyHash?'<span style="color:var(--red)">ключ аннулирован или недействителен</span>':'член сайта, без ключа');
+  const seatLine=seats.map(s=>s.role).filter(Boolean).join(' · ');
+  const pos=seatLine?esc(seatLine):(power.rank>0?`<b>${esc(power.roleName)}</b>`:lead?esc(lead.role):(p.keyHash?'<span style="color:var(--red)">ключ аннулирован или недействителен</span>':'член сайта, без ключа'));
   const rows=[['ФИО',fio],['Дата рождения',birth],['Номер паспорта',pass],['Дата вступления',joined]].map(([k,v])=>row(k,v)).join('')
    +(p.discordId?`<tr><td>Discord</td><td>${/^https?:/.test(p.discordLink||'')?`<a href="${esc(p.discordLink)}" target="_blank" rel="noopener">${esc(p.discordLink)}</a>`:esc(p.discordLink||p.discordId)}</td></tr>`:'')+(gold?'<tr class="creator-r"><td colspan="2"><span class="creator-b">⚙ Создатель сайта партии</span></td></tr>':'');
   return `${crumbs('Личный кабинет')}<div class="pg"><div class="auth acc-wrap"><h2 class="acc-h2">Личный кабинет<button class="acc-gear" onclick="VPPKA_SETOPEN()" aria-label="Настройки" title="Настройки">⚙</button></h2>
   <div class="acc-bnw"><div id="vb-prev" class="phead-bn"></div></div>
-  <div class="prof blk acc-card${tc?' ldr-card '+tc:''}${gold?' gold-card':''}"><div class="prof-ph${tc?' ldr-av '+tc:''}${ph?'':' noph'}">${ph?`<img src="${esc(ph)}" alt="${esc(nm)}">`:`<b>${esc(nm.split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase())}</b>`}</div><div><span class="role">// ${esc((lead&&lead.group)||'Личный кабинет')}</span><h1 class="prof-n">${esc(nm)}</h1>
+  <div class="prof blk acc-card${tc?' ldr-card '+tc:''}${gold?' gold-card':''}"><div class="prof-ph${tc?' ldr-av '+tc:''}${ph?'':' noph'}">${ph?`<img src="${esc(ph)}" alt="${esc(nm)}">`:`<b>${esc(nm.split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase())}</b>`}</div><div><span class="role">// ${esc((lead&&lead.group)||'Личный кабинет')}</span><h1 class="prof-n">${esc(nm)}</h1><div class="prof-r">${pos}</div>
   <table class="tbl" style="margin-top:16px">${rows}</table><p class="acc-priv">🔒 Дата рождения и паспорт видны только вам и членам Партии.</p></div></div>
   ${set}<p style="margin-top:20px"><button class="btn o" id="a-out">Выйти</button></p></div></div>`};
  P.user=(uid,mid)=>{if(user&&uid===user.uid){location.replace('#account');return P.account()}
   const ms=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[],pb=((window.VPPKA_PUBMAP&&window.VPPKA_PUBMAP())||{})[uid];
-  const m=ms.find(x=>x.id===mid)||(pb&&pb.did&&ms.find(x=>x.discordId===pb.did));
+  const seats=pb&&pb.did?(window.VPPKA_SEATS?window.VPPKA_SEATS(pb.did):ms.filter(x=>x.discordId===pb.did&&!String(x.id).startsWith('p_')&&x.group!=='Члены партии')):[];
+  const m=ms.find(x=>x.id===mid)||seats[0]||(pb&&pb.did&&ms.slice().filter(x=>x.discordId===pb.did).sort((a,b)=>(Number(b.rank)||0)-(Number(a.rank)||0))[0]);
   if(!m&&!pb)return box('Профиль',user?'<h2>Профиль</h2><p>Загрузка… или профиль не найден.</p>':'<h2>Профиль</h2><p>Профили участников видны после входа.</p>');
   if(user&&AV[uid]===undefined){AV[uid]=null;F.getDoc(F.doc(db,'avatars',uid)).then(x=>{AV[uid]=x.exists()?x.data().d:'';if(location.hash.startsWith('#user/'))window.route()}).catch(()=>{AV[uid]=''})}
   if(user&&PV[uid]===undefined){PV[uid]=null;F.getDoc(F.doc(db,'users',uid,'priv','p')).then(x=>{PV[uid]=x.exists()?x.data():{};if(location.hash.startsWith('#user/'))window.route()}).catch(()=>{PV[uid]=false})}const pr=PV[uid];
   const av=AV[uid]||(m&&m.photo)||(pb&&pb.ph)||'',NA='<span class="amut">не указано</span>',row=(k,v)=>`<tr><td>${k}</td><td>${v?esc(v):NA}</td></tr>`;
-  return box('Профиль',`<h2 class="acc-h2">Профиль</h2><div class="phead${av?'':' noav'}"><div id="vb-prev" class="phead-bn" data-uid="${esc(uid)}"></div>${av?`<img class="phacc" src="${esc(av)}" alt="Аватар">`:''}</div><table class="tbl">${row('ФИО',(m&&m.name)||(pb&&pb.n))}${pr?row('Дата рождения',pr.birth)+row('Номер паспорта',pr.passport):''}${row('Дата вступления',m&&m.joined)}${row('Должность',m&&m.role)}</table>`)};
+  const roles=seats.map(s=>s.role).filter(Boolean);return box('Профиль',`<h2 class="acc-h2">Профиль</h2><div class="phead${av?'':' noav'}"><div id="vb-prev" class="phead-bn" data-uid="${esc(uid)}"></div>${av?`<img class="phacc" src="${esc(av)}" alt="Аватар">`:''}</div><table class="tbl">${row('ФИО',(m&&m.name)||(pb&&pb.n))}${pr?row('Дата рождения',pr.birth)+row('Номер паспорта',pr.passport):''}${row('Дата вступления',m&&m.joined)}${row('Должность',roles.length?roles.join(' · '):(m&&m.role))}</table>`)};
  const err=t=>{const e=document.getElementById('a-e');if(e)e.textContent=t};
  document.addEventListener('click',async ev=>{const id=ev.target.id;const v=x=>(document.getElementById(x)||{}).value||'';
   if(id==='c-go'){const p0=profile||{};const ce=t=>{const e=document.getElementById('c-e');if(e)e.textContent=t};const fio=v('c-fio').trim().replace(/\s+/g,' '),birth=v('c-birth').trim();let pass=v('c-pass').replace(/\s/g,'');
@@ -131,12 +137,12 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  // одна подписка вместо getDocs+onSnapshot: первый снимок используется как начальная загрузка (экономия чтений)
  let liveOn=false,liveRes=null;
  async function loadData(){if(liveOn){return}liveOn=true;await new Promise(res=>{liveRes=res;setTimeout(res,8000);liveSubs()});}
- const toD=()=>{const D={...(window.VPPKA_DATA||{})};if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||x.group!=='Члены партии'||x.id==='p_Xglv_ypsOH3s7mW2UTXD').sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));window.VPPKA_DATA=(D.news||D.members)?D:null};
+ const toD=()=>{const D={...(window.VPPKA_DATA||{})};if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));window.VPPKA_DATA=(D.news||D.members)?D:null};
  window.VPPKA_RELOAD=async()=>{await loadData();toD();route();};
  let liveN=null,liveM=null,livePend=false,liveNew=new Set();
  const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
  const liveApply=()=>{if(!liveN&&!liveM)return;if(busy()){livePend=true;return}livePend=false;const D={...(window.VPPKA_DATA||{})};
-  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||x.group!=='Члены партии'||x.id==='p_Xglv_ypsOH3s7mW2UTXD').sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
+  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
   window.VPPKA_DATA=(D.news||D.members)?D:null;const y=scrollY;route();scrollTo(0,y);
   liveNew.forEach(id=>document.querySelectorAll('a[href="#news/'+id+'"]').forEach(a=>{const it=a.closest('.it,.card,div');it&&it.classList.add('fresh')}));liveNew.clear();};
  document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
@@ -148,6 +154,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   let ex=null;try{ex=await F.getDoc(ref)}catch(e){}if(ex&&ex.exists()){const st=ex.data().status;if(st==='rejected')await F.deleteDoc(ref);else throw new Error(st==='new'?'Ваша заявка уже подана и ждёт рассмотрения.':'Заявка уже рассмотрена.')}
   const d={answers,status:'new',createdAt:F.serverTimestamp(),uid:user.uid};if(profile&&profile.discordId)d.discordId=profile.discordId;await F.setDoc(ref,d);}};
  window.VPPKA_FB={get F(){return F},get db(){return db},get user(){return user},get power(){return power}};
+ window.VPPKA_SUPER=()=>!!(power&&power.owner);
  async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
  async function checkKey(k,discordId){const h=await sha(k);let s;try{s=await F.getDoc(F.doc(db,'accessKeys',h));}catch(e){return{ok:false,msg:'ключ не найден.'}}
   if(!s.exists())return{ok:false,msg:'ключ не найден.'};const x=s.data();if(x.revoked)return{ok:false,msg:'ключ аннулирован.'};if(x.discordId!==discordId)return{ok:false,msg:'ключ выдан другому пользователю Discord.'};return{ok:true,h,rank:x.rank,roleName:x.roleName};}
@@ -173,16 +180,18 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   const person='<svg class="avic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>';
   const av=ph?`<img class="avimg" src="${esc(ph)}" alt="">`:(ini?`<span class="avini" aria-hidden="true">${esc(ini)}</span>`:person);
   link.className='authlink in';link.href='#account';link.title=name;link.setAttribute('aria-label',name);
-  const did=profile&&profile.discordId;const mem=did&&((window.VPPKA_DATA||{}).members||[]).find(m=>m.discordId===did);
-  const pos=(power.rank>0&&power.roleName)||(mem&&(mem.role||mem.roleName))||(profile&&profile.rank>0&&profile.roleName)||(mem?'Член партии':'');
+  const did=profile&&profile.discordId;const seats=did&&window.VPPKA_SEATS?window.VPPKA_SEATS(did):[];const mem=seats[0]||(did&&((window.VPPKA_DATA||{}).members||[]).find(m=>m.discordId===did));
+  const pos=(seats[0]&&seats[0].role)||(power.rank>0&&power.roleName)||(mem&&(mem.role||mem.roleName))||(profile&&profile.rank>0&&profile.roleName)||(mem?'Член партии':'');
   const full=(mem&&mem.name)||(profile&&(profile.fio||profile.rpName))||name;const pw=full.trim().split(/\s+/);const sh=pw.length>=2&&/^[А-ЯЁA-Z]/.test(pw[1])?pw[0]+' '+pw.slice(1,3).map(w=>w[0].toUpperCase()+'.').join(''):full;
   let gold=false;try{gold=!!window.isLdr&&(window.isLdr(full)||(mem&&window.isLdr(mem.name))||(profile&&window.isLdr(profile.displayName)))}catch(e){}link.classList.add('hcard');link.classList.toggle('gold',!!gold);link.classList.forEach(c=>{if(/^t-/.test(c))link.classList.remove(c)});if(gold&&window.LT){const nm=[full,mem&&mem.name,profile&&profile.displayName].find(x=>x&&window.isLdr(x));const t=nm&&window.LT(nm).trim();if(t)link.classList.add(t)}
   link.innerHTML=`<span class="av">${av}</span><span class="hc-tx"><span class="hc-n">${esc(sh)}</span><span class="hc-p">${esc(pos||'Беспартийный')}</span></span>`;
+  let al=document.querySelector('#menu a[href="#admin"]');if(power.owner){if(!al){al=document.createElement('a');al.href='#admin';al.textContent='Админ';const w=document.querySelector('#menu .w');if(w)w.appendChild(al)}}else if(al)al.remove();
  }
 
- await loadData();route();if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=183').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=183').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=183').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=183').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=183').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=183').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=183').then(m=>m.install()).catch(e=>console.error('chat',e));
+ async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=184').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=184').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=184').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=184').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=184').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=184').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=184').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=184').then(m=>m.install()).catch(e=>console.error('admin',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();
-  if(['login','register','account','join','news','leadership','apps','members','party','member','home',''].includes(location.hash.slice(1).split('/')[0]))route();});
+  if(['login','register','account','join','news','leadership','apps','members','party','member','home','admin',''].includes(location.hash.slice(1).split('/')[0]))route();});
 }
