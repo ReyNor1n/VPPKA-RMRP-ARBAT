@@ -546,3 +546,9 @@ body>.amu.def:not([hidden]){display:inline-flex;position:fixed;left:12px;bottom:
 .duties h3{margin:0 0 10px;font:600 12px Oxanium,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--tc,#5ad1e6)}
 .duties ul{margin:0;padding:0;list-style:none}.duties li{position:relative;padding:5px 0 5px 20px;font-size:14px;line-height:1.45;color:#d8dbe0}
 .duties li:before{content:"";position:absolute;left:3px;top:11px;width:7px;height:7px;background:var(--tc,var(--red));transform:rotate(45deg);box-shadow:0 0 6px var(--tc,var(--red))}
+/* мобильный: кнопки установки — компактные значки у правого края, не перекрывают подписи и плашку новости */
+@media(max-width:860px){#installBtn,#apkBtn,#winBtn{width:44px;height:44px;padding:0;font-size:0;letter-spacing:0;display:flex;align-items:center;justify-content:center;right:10px;opacity:.92}
+#installBtn:before,#apkBtn:before,#winBtn:before{content:"⬇";font-size:19px;line-height:1}
+#installBtn[hidden],#apkBtn[hidden],#winBtn[hidden]{display:none}
+#installBtn{bottom:calc(10px + env(safe-area-inset-bottom))}#apkBtn,#winBtn{bottom:calc(62px + env(safe-area-inset-bottom))}
+body:has(.ntoast) #installBtn{bottom:calc(84px + env(safe-area-inset-bottom))}body:has(.ntoast) #apkBtn,body:has(.ntoast) #winBtn{bottom:calc(136px + env(safe-area-inset-bottom))}}

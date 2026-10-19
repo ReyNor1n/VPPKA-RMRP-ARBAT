@@ -50,6 +50,8 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/applications/$(request.auth.uid)).data.status in ['accepted','member']));
     }
     function myRank() { return !signedIn() ? 0 : (isOwner() ? 1000 : keyRank()); }
+    // аккаунт подтверждён: профиль users/{uid} существует (создать его можно только с кодом от бота в ЛС Discord)
+    function verified() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
 
     // необязательное строковое поле не длиннее max
     function optStr(d, k, max) { return !(k in d) || (d[k] is string && d[k].size() <= max); }
@@ -326,7 +328,9 @@ service cloud.firestore {
     match /members/{id} {
       function validMember(d) {
         return d.keys().hasOnly(['name','role','group','photo','bio','quote','joined','birth','city','achievements',
-                                 'discord','forum','contact','rank','order','updatedBy','updatedAt','discordId','tier'])
+                                 'discord','forum','contact','rank','order','updatedBy','updatedAt','discordId','tier','reportsTo','duties'])
+          && optStr(d, 'reportsTo', 120)
+          && (!('duties' in d) || (d.duties is list && d.duties.size() <= 12))
           && d.get('tier', 0) is int && d.get('tier', 0) >= 0 && d.get('tier', 0) <= 9
           && reqStr(d, 'name', 100) && optStr(d, 'role', 120) && optStr(d, 'group', 80)
           && optStr(d, 'photo', 900000) && optStr(d, 'bio', 5000) && optStr(d, 'quote', 500)
@@ -381,15 +385,15 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['n','ph','did','t'])
         && reqStr(request.resource.data, 'n', 40) && optStr(request.resource.data, 'did', 64)
         // did своего справочника = Discord ID из логина (нельзя выдать себя за другого)
-        && (request.auth.uid != uid || request.resource.data.get('did', '') == request.auth.token.email.split('@')[0])
+        && (request.auth.uid != uid || (request.resource.data.get('did', '') == request.auth.token.email.split('@')[0] && verified()))
         && (!('ph' in request.resource.data) || (request.resource.data.ph is string && (request.resource.data.ph.size() <= 30000 && request.resource.data.ph.matches('^data:image/jpeg;base64,.*') || request.resource.data.ph.size() <= 100000 && request.resource.data.ph.matches('^data:image/gif;base64,.*'))));
       allow delete: if signedIn() && (request.auth.uid == uid || isOwner() || myTier() >= 5);
     }
     // rankNotes: системный раздел чата «Повышения и понижения». Цель — по Discord ID (did).
     match /rankNotes/{id} {
       function myDid() { return request.auth.token.email.split('@')[0]; }
-      allow read: if signedIn() && request.auth.token.email is string && resource.data.did == myDid();
-      allow update: if signedIn() && request.auth.token.email is string && resource.data.did == myDid()
+      allow read: if verified() && request.auth.token.email is string && resource.data.did == myDid();
+      allow update: if verified() && request.auth.token.email is string && resource.data.did == myDid()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) && request.resource.data.read == true;
       allow create: if signedIn() && myTier() >= 4
         && request.resource.data.keys().hasOnly(['did','kind','text','by','byName','at','read'])
@@ -477,7 +481,7 @@ service cloud.firestore {
     }
     match /banners/{uid} {
       allow read: if true;
-      allow create, update: if signedIn() && request.auth.uid == uid && request.auth.token.email is string
+      allow create, update: if verified() && request.auth.uid == uid && request.auth.token.email is string
         && request.resource.data.keys().hasOnly(['url','did','t','kind','mime','n','size','ver'])
         && request.resource.data.did == request.auth.token.email.split('@')[0]
         && request.resource.data.t == request.time
@@ -491,7 +495,7 @@ service cloud.firestore {
       allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
       match /chunks/{cid} {
         allow read: if true;
-        allow create, update: if signedIn() && request.auth.uid == uid
+        allow create, update: if verified() && request.auth.uid == uid
           && cid.matches('^[0-9]{1,20}_([0-9]|1[0-2])$')
           && request.resource.data.keys().hasOnly(['d'])
           && request.resource.data.d is string && request.resource.data.d.size() <= 900000;
