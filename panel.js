@@ -284,7 +284,7 @@ function installAssign(){const P=window.P,om=P.member;
 // ---------- Публичный список членов партии: принятые заявки → members/p_<id> (group «Члены партии»), ступень 4+ ----------
 let rsBusy=false;
 async function rosterSync(){if(rsBusy||tier()<4)return;rsBusy=true;try{const f=F();const qs=await f.getDocs(f.collection(db(),'applications'));const cur=Object.fromEntries((D().members||[]).map(m=>[m.id,m]));
- for(const d of qs.docs){const a=d.data();if(!['accepted','member'].includes(a.status)||window.VPPKA_HIDDEN(a))continue;const id='p_'+d.id,o=cur[id]||{};if(!cur[id]&&a.discordId&&(D().members||[]).some(x=>x.discordId===a.discordId))continue;
+ for(const d of qs.docs){const a=d.data();if(!['accepted','member'].includes(a.status)||window.VPPKA_HIDDEN(a))continue;const id='p_'+d.id,o=cur[id]||{};if(!cur[id]&&a.discordId&&(D().members||[]).some(x=>x.discordId===a.discordId&&!String(x.id).startsWith('p_')))continue;
   const ts=a.reviewedAt||a.createdAt;const dt=ts&&ts.toDate?ts.toDate():null;
   const m={name:String((a.answers||{}).fio||'Товарищ').trim().replace(/\s+/g,' ').slice(0,100),role:String(a.partyRole||PR[a.partyRank||0]||'Кандидат').slice(0,120),group:'Члены партии',rank:0,
    joined:o.joined||(dt?dt.toLocaleDateString('ru-RU'):new Date().toLocaleDateString('ru-RU'))};
