@@ -225,6 +225,8 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    const vids=v('pn-v').split(/\s+/).map(x=>x.trim()).filter(Boolean);const bad=vids.filter(x=>!VOK(x)||x.length>300);if(bad.length){b.disabled=false;return msg('Неподдерживаемая ссылка на видео: '+bad[0]);}if(vids.length>5){b.disabled=false;return msg('Не больше 5 видео.');}if(vids.length)n.videos=vids;
    if(JSON.stringify(n).length>950000){b.disabled=false;return msg('Новость слишком большая — уберите одно фото.');}
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();await f.addDoc(f.collection(db(),'news'),n);}
+   // Отправка в Discord (тот же вебхук, что созывы/объявления)
+   try{const c=await f.getDoc(f.doc(db(),'config','discord'));const w=c.exists()&&c.data().webhook;if(w){const PING='1559635259635531947';const body={username:'ВППКА «Коммунисты Арбата»',content:'<@&'+PING+'>',allowed_mentions:{parse:[],roles:[PING]},embeds:[{title:('📰 Новость: '+n.title).slice(0,256),description:(n.text||'').replace(/\[фото:\d+\]/gi,'').slice(0,4000)||undefined,url:'https://vppka-arbat-rmrp.ru/#news',color:0xE32B2B,footer:{text:'vppka-arbat-rmrp.ru'},timestamp:new Date().toISOString()}]};await fetch(w,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});} }catch(e){console.warn('discord news',e)}
    editNews=null;await done('Сохранено.');}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}
