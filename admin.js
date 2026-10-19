@@ -1,37 +1,98 @@
-// Раздел #admin. Только владелец сайта (config/owners → power.owner). admin.html — отдельная публикация на GitHub, её не заменяет.
+// Раздел #admin. Только владелец сайта (config/owners → power.owner).
+// Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=187';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
-const SECTIONS=['site','home','about','program','charter','legal','contacts'];
-const LISTS=[['news','Новости'],['events','Мероприятия'],['members','Состав'],['users','Пользователи'],['applications','Заявки'],['votes','Голосования'],['notifications','Уведомления'],['chats','Чаты']];
-let tab='texts',edit=null,busy=false;
-function page(title,body){return `<div class="crumbs"><a href="#home">Главная</a> / Администрирование</div><div class="pg"><h1>${esc(title)}</h1>${body}</div>`}
+const onAdmin=()=>(location.hash.slice(1)||'').split('/')[0]==='admin';
+const TABS=[...CONTENT,...COLS.map(([id,t])=>[id,t]),['raw','Коллекция']];
+const AUTO_ID=new Set(['news','events','votes','notifications']);
+const state={tab:'site',edit:null,rows:null,hist:[],tpls:{},q:'',msg:'',msgOk:false,dirty:false,expert:false,loading:false,busy:false,fieldErr:{},seq:0,previewOpen:null,booted:false};
 function plain(v){if(v&&typeof v.toDate==='function')return {_time:v.toDate().toISOString()};if(Array.isArray(v))return v.map(plain);if(v&&typeof v==='object')return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,plain(x)]));return v}
-function revive(v,f){if(Array.isArray(v))return v.map(x=>revive(x,f));if(v&&typeof v==='object'){if(typeof v._time==='string'&&Object.keys(v).length===1)return f.Timestamp.fromDate(new Date(v._time));return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,revive(x,f)]))}return v}
-function label(x){return x.title||x.name||x.role||(x.answers&&x.answers.fio)||x.displayName||x.fio||x.type||''}
-function tabs(){const all=[['texts','Тексты'],...LISTS,['raw','Коллекция']];return `<div class="adm-tabs">${all.map(([id,t])=>`<button type="button" data-adtab="${id}" class="${tab===id?'on':''}">${esc(t)}</button>`).join('')}</div>`}
-function texts(){return `${tabs()}<div class="blk"><p class="amut">Тексты страниц читаются из базы (content/…). Если документа нет — остаётся content.json. Руководство и новости здесь не сидируются: места живут в members, новости — в news.</p>
-<p class="aerr" id="ad-msg"></p><button class="btn" id="ad-seed" type="button">Записать текущий content.json в базу</button>
-${SECTIONS.map(id=>`<details class="blk" style="margin-top:12px"><summary>${esc(id)}</summary><textarea class="adm-json" id="ad-sec-${id}" spellcheck="false" placeholder="Загрузка…"></textarea><button class="btn sm" type="button" data-sec="${id}">Сохранить ${esc(id)}</button></details>`).join('')}</div>`}
-function listView(){return `${tabs()}<div class="blk"><p class="amut">Правка документа как JSON. Удаление спрашивает подтверждение. Назначать на должности удобнее в «Руководстве».</p><p class="aerr" id="ad-msg"></p><div id="ad-list"><p class="amut">Загрузка…</p></div>
-${edit?`<h3>Документ ${esc(edit.col)}/${esc(edit.id||'новый')}</h3><textarea class="adm-json" id="ad-json" spellcheck="false">${esc(edit.text)}</textarea><p><button class="btn sm" id="ad-save" type="button">Сохранить</button> <button class="btn sm o" id="ad-cancel" type="button">Закрыть</button></p>`:''}</div>`}
-function rawView(){return `${tabs()}<div class="blk"><p class="amut">Любая коллекция и документ. config/owners с сайта не перезаписывайте: из него берётся право владельца.</p>
-<label class="fl">Коллекция<input id="ad-col" maxlength="80" placeholder="members"></label>
-<label class="fl">Идентификатор документа<input id="ad-id" maxlength="200" placeholder="m18"></label>
-<textarea class="adm-json" id="ad-raw" spellcheck="false" placeholder="{ }"></textarea>
-<p class="aerr" id="ad-msg"></p>
-<p><button class="btn sm" id="ad-col-load" type="button">Прочитать</button> <button class="btn sm" id="ad-col-save" type="button">Сохранить</button> <button class="btn sm o" id="ad-col-del" type="button">Удалить</button></p></div>`}
-function render(){const fb=FB();if(!fb||fb.user===undefined)return page('Администрирование','<p>Проверка доступа…</p>');if(!fb.user)return page('Нет доступа','<p>Войдите на сайт. Раздел откроется, если учётка есть в config/owners.</p>');if(!superOn())return page('Нет доступа','<p>Раздел только для владельца сайта.</p>');
- if(tab==='texts')return page('Администрирование',texts());if(tab==='raw')return page('Администрирование',rawView());return page('Администрирование',listView())}
-async function fillTexts(){if(tab!=='texts'||!superOn())return;const f=F();for(const id of SECTIONS){const el=document.getElementById('ad-sec-'+id);if(!el||el.value)continue;try{const s=await f.getDoc(f.doc(db(),'content',id));el.value=JSON.stringify(s.exists()?plain(s.data()):{},null,2)}catch(e){el.value='';const m=document.getElementById('ad-msg');if(m)m.textContent='Не удалось прочитать content/'+id+': '+(e.code||e.message)}}}
-async function fillList(){if(!LISTS.some(([id])=>id===tab)||!superOn())return;const host=document.getElementById('ad-list');if(!host)return;const f=F();
- try{const s=await f.getDocs(f.query(f.collection(db(),tab),f.limit(40)));const rows=s.docs.map(d=>{const x=plain(d.data());const t=label(x);return `<div class="adm-row"><span><b>${esc(t||d.id)}</b> <small>${esc(d.id)}</small></span><span><button class="btn sm" type="button" data-adedit="${esc(tab)}" data-adid="${esc(d.id)}">Изменить</button> <button class="btn sm o" type="button" data-addel="${esc(tab)}" data-adid="${esc(d.id)}">Удалить</button></span></div>`});
-  host.innerHTML=rows.join('')||'<p class="amut">Пусто.</p>'}catch(e){host.innerHTML='';const m=document.getElementById('ad-msg');if(m)m.textContent=e.code==='permission-denied'?'Нет доступа: опубликуйте firestore.rules.':(e.code||e.message)}}
-function say(t){const m=document.getElementById('ad-msg');if(m)m.textContent=t}
+function revive(v,f){if(Array.isArray(v))return v.map(x=>revive(x,f));if(v&&typeof v==='object'){if(typeof v._time==='string'&&Object.keys(v).length===1&&v._time)return f.Timestamp.fromDate(new Date(v._time));return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,revive(x,f)]))}return v}
+function strip(v){if(Array.isArray(v))return v.map(strip);if(v&&typeof v==='object'){if(typeof v._time==='string')return v;const o={};for(const [k,x] of Object.entries(v))if(x!==undefined)o[k]=strip(x);return o}return v}
+function errText(e){if(!e)return 'Ошибка';if(e.code==='permission-denied')return 'Нет прав. Опубликуйте firestore.rules.';return e.message||e.code||String(e)}
+function say(t,ok){state.msg=t||'';state.msgOk=!!ok}
+function page(title,body){return `<div class="crumbs"><a href="#home">Главная</a> / Администрирование</div><div class="pg"><h1>${esc(title)}</h1>${body}</div>`}
+function tabs(){return `<div class="adm-tabs">${TABS.map(([id,t])=>`<button type="button" data-adtab="${id}" class="${state.tab===id?'on':''}">${esc(t)}</button>`).join('')}</div>`}
+function msgLine(){return `<p class="${state.msgOk?'af-ok':'aerr'}" id="ad-msg">${esc(state.msg||'')}</p>`}
+function siteNow(){try{return (window.VPPKA_C&&window.VPPKA_C()||{}).site||{}}catch(e){return {}}}
+function editor(){
+ const e=state.edit;if(!e)return '';
+ const heavy=e.kind==='charter'||e.kind==='legal'||e.kind==='program';
+ const open=state.previewOpen==null?!heavy:state.previewOpen;
+ const note=e.kind==='seat'?`<p class="amut">Места <b>m1</b>, <b>m4</b>, <b>m5</b> и <b>m11</b> защищены. Порядок — число. Новая карточка члена партии создаётся с замком memClaim. После правки руководящего места обновляется список должностей.</p>`:'';
+ const idBox=e.col==='content'?'':`<label class="af-field"><div class="af-l">Идентификатор документа</div><input id="ad-docid" maxlength="200" value="${esc(e.id||'')}"${e.isNew?'':' readonly'}><small class="amut">${AUTO_ID.has(e.col)&&e.isNew?'Можно оставить пустым — база выдаст идентификатор.':e.col==='members'?'Латиница, цифры, _ и -. Карточка члена партии начинается с p_.':''}</small></label>`;
+ const body=state.expert?`<textarea id="ad-json" class="adm-json" spellcheck="false">${esc(JSON.stringify(e.data,null,2))}</textarea>`:renderForm(e.kind,e.data,{errors:state.fieldErr,customs:state.tpls});
+ const hn=hiddenNote(e.kind);
+ const tpls=listTemplates(e.kind,state.tpls);
+ const asTpl=e.col!=='content'?`<button type="button" class="btn sm o" id="ad-as-tpl">Сохранить как шаблон</button>`:'';
+ return `<div class="af-top"><label class="af-sw"><input type="checkbox" id="ad-expert"${state.expert?' checked':''}><span>Экспертный режим (JSON)</span></label><span class="af-dirty" id="ad-dirty"${state.dirty?'':' hidden'}>● есть несохранённые изменения</span></div>
+ ${note}${idBox}${hn?`<p class="amut">${esc(hn)}</p>`:''}${body}
+ <details class="adm-live" id="ad-live"${open?' open':''}><summary>Как это выглядит на сайте</summary><div id="ad-prev">${preview(e.kind,e.data,siteNow())}</div></details>
+ ${histHTML()}${tpls.length&&e.col!=='content'?`<p class="amut">Свои шаблоны хранятся в config/adminTemplates и видны только владельцу.</p>`:''}
+ <div class="af-bar"><button type="button" class="btn sm" id="ad-save">Сохранить</button> <button type="button" class="btn sm o" id="ad-cancel">Отменить</button> ${asTpl}</div>`;
+}
+function histHTML(){
+ const hs=state.hist||[];if(!hs.length)return '<p class="amut">История изменений пока пуста. После сохранения здесь появятся последние версии.</p>';
+ return `<details class="af-hist"><summary>История изменений (${hs.length})</summary>${hs.map((h,i)=>`<div class="adm-row"><span>${esc(new Date(h.at).toLocaleString('ru-RU'))}</span><button type="button" class="btn sm o" data-afact="revert" data-hi="${i}">Вернуть</button></div>`).join('')}</details>`;
+}
+function rowsHTML(){
+ const q=state.q.trim().toLowerCase();
+ const rows=(state.rows||[]).filter(r=>{if(!q)return true;return (rowLabel(r.data,r.id)+' '+r.id).toLowerCase().includes(q)});
+ if(!rows.length)return '<p class="amut">Пусто.</p>';
+ return rows.map(r=>`<div class="adm-row"><span><b>${esc(rowLabel(r.data,r.id))}</b> <small>${esc(r.id)}</small></span><span><button type="button" class="btn sm" data-adedit="${esc(state.tab)}" data-adid="${esc(r.id)}">Изменить</button> <button type="button" class="btn sm danger" data-addel="${esc(state.tab)}" data-adid="${esc(r.id)}">🗑 Удалить</button></span></div>`).join('');
+}
+function listHTML(){
+ const kind=kindOf(state.tab),tpls=listTemplates(kind,state.tpls);
+ const create=`<div class="af-acts"><button type="button" class="btn sm" id="ad-add">➕ Добавить</button>${tpls.length?`<select id="ad-newtpl">${tpls.map(t=>`<option value="${esc(t.id)}">${esc(t.title)}</option>`).join('')}</select><button type="button" class="btn sm o" id="ad-fromtpl">Создать по шаблону</button>`:''}</div>`;
+ return `${create}<input id="ad-q" class="af-q" type="search" placeholder="Поиск" value="${esc(state.q)}">${(state.rows||[]).length>=120?'<p class="amut">Показаны первые 120 документов.</p>':''}<div id="ad-list">${state.loading?'<p class="amut">Загрузка…</p>':rowsHTML()}</div>${state.edit?`<h2>Правка</h2>${editor()}`:''}`;
+}
+function rawHTML(){const r=state.raw||{col:'',id:'',text:'{}'};return `<div class="blk"><p class="amut">Любая коллекция и документ. config/owners с сайта не перезаписывайте: из него берётся право владельца.</p>
+<label class="fl">Коллекция<input id="ad-col" maxlength="80" value="${esc(r.col)}" placeholder="members"></label>
+<label class="fl">Идентификатор документа<input id="ad-id" maxlength="200" value="${esc(r.id)}" placeholder="m18"></label>
+<textarea class="adm-json" id="ad-raw" spellcheck="false">${esc(r.text||'')}</textarea>
+<p><button class="btn sm" id="ad-col-load" type="button">Прочитать</button> <button class="btn sm" id="ad-col-save" type="button">Сохранить</button> <button class="btn sm danger" id="ad-col-del" type="button">🗑 Удалить</button></p></div>`;}
+function textsHTML(){
+ return `<p class="amut">Тексты читаются из базы (content/…). Если документа нет — в форму подставляется content.json. Состав и новости живут в своих вкладках.</p>
+ <p><button class="btn sm o" id="ad-seed" type="button">Записать текущий content.json в базу</button></p>
+ ${state.loading&&!state.edit?'<p class="amut">Загрузка…</p>':''}${state.edit?editor():''}`;
+}
+function render(){
+ const fb=FB();if(!fb||fb.user===undefined)return page('Администрирование','<p>Проверка доступа…</p>');
+ if(!fb.user)return page('Нет доступа','<p>Войдите на сайт. Раздел откроется, если учётка есть в config/owners.</p>');
+ if(!superOn())return page('Нет доступа','<p>Раздел только для владельца сайта.</p>');
+ const body=state.tab==='raw'?rawHTML():isContent(state.tab)?textsHTML():listHTML();
+ return page('Администрирование',`${tabs()}${msgLine()}<div class="blk af-wrap">${body}</div>`);
+}
+function refresh(){if(!onAdmin())return;const y=scrollY,focus=document.activeElement,af=focus&&focus.dataset&&focus.dataset.af||'',sel=focus&&focus.selectionStart,id=focus&&focus.id;const app=document.getElementById('app');if(!app)return;app.innerHTML=render();scrollTo(0,y);
+ if(af){const el=[...document.querySelectorAll('[data-af]')].find(x=>x.dataset.af===af);if(el){el.focus();if(sel!=null&&el.setSelectionRange)try{el.setSelectionRange(sel,sel)}catch(e){}}}
+ else if(id){const el=document.getElementById(id);if(el)el.focus()}}
+function touch(){if(!state.edit)return;state.dirty=!state.edit.base||JSON.stringify(state.edit.data)!==JSON.stringify(state.edit.base);const d=document.getElementById('ad-dirty');if(d)d.hidden=!state.dirty}
+function setPath(obj,path,value){let cur=obj;for(let i=0;i<path.length-1;i++){const k=path[i],n=path[i+1];if(cur[k]==null||typeof cur[k]!=='object')cur[k]=typeof n==='number'?[]:{};cur=cur[k]}cur[path[path.length-1]]=value}
+function readControl(el){const t=el.dataset.aft;if(t==='bool')return el.checked;if(t==='number')return el.value;if(t==='select')return el.dataset.num?(el.value===''?'':Number(el.value)):el.value;if(t==='datetime')return fromLocal(el.value);if(t==='time'){const ms=fromLocal(el.value);return Number.isFinite(ms)?{_time:new Date(ms).toISOString()}:{_time:''}}return el.value}
+let prevT=0;
+function schedulePreview(){clearTimeout(prevT);prevT=setTimeout(()=>{const el=document.getElementById('ad-prev');if(!el||!state.edit||state.expert)return;try{el.innerHTML=preview(state.edit.kind,state.edit.data,siteNow())}catch(e){el.textContent='Предпросмотр недоступен.'}},150)}
+function fileToData(file){return new Promise((res,rej)=>{if(!/^image\//.test(file.type))return rej(new Error('Нужен файл изображения.'));const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1000/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));const x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(im,0,0,c.width,c.height);let q=.88,u=c.toDataURL('image/jpeg',q);while(u.length>850000&&q>.3){q-=.1;u=c.toDataURL('image/jpeg',q)}u.length>850000?rej(new Error('Изображение слишком большое')):res(u)};im.onerror=()=>rej(new Error('Не удалось открыть изображение.'));im.src=r.result};r.onerror=()=>rej(new Error('Не удалось прочитать файл.'));r.readAsDataURL(file)})}
+let contentCache=null;
+async function contentFile(){if(!contentCache)contentCache=await (await fetch('content.json?'+Date.now())).json();return contentCache}
+async function loadSection(id){const f=F();let data=null;try{const s=await f.getDoc(f.doc(db(),'content',id));if(s.exists())data=plain(s.data())}catch(e){if(e.code==='permission-denied')throw e}
+ const empty=!data||typeof data!=='object'||Array.isArray(data)||!Object.keys(data).length||(id==='leadership'&&!String(data.intro||'').trim());
+ if(empty){const c=await contentFile();data=id==='leadership'?{intro:(c.leadership&&c.leadership.intro)||''}:(clone(c[id])||{})}
+ if(id==='leadership')return {intro:String((data&&data.intro)||'')};return data}
+function histKey(col,id){return (col+'__'+String(id)).replace(/[^A-Za-z0-9_-]/g,'_').slice(0,700)}
+async function loadHist(col,id){try{const f=F();const s=await f.getDoc(f.doc(db(),'adminHist',histKey(col,id)));return s.exists()&&Array.isArray(s.data().items)?s.data().items:[]}catch(e){return []}}
+async function pushHist(col,id,data){const f=F(),ref=f.doc(db(),'adminHist',histKey(col,id));const snap={at:Date.now(),by:(FB().user&&FB().user.uid)||'',data:clone(data)};if(JSON.stringify(snap).length>800000)return false;let items=[];try{const s=await f.getDoc(ref);if(s.exists()&&Array.isArray(s.data().items))items=s.data().items}catch(e){}items=items.concat([snap]);while(items.length>HIST_N)items.shift();while(items.length>1&&JSON.stringify(items).length>700000)items.shift();await f.setDoc(ref,{col,id:String(id),items});return true}
+async function loadTpls(){try{const f=F();const s=await f.getDoc(f.doc(db(),'config','adminTemplates'));state.tpls=(s.exists()&&s.data().items)||{}}catch(e){state.tpls={}}}
+async function openContent(id){const seq=++state.seq;state.loading=true;state.edit=null;refresh();try{const data=await loadSection(id);if(seq!==state.seq)return;state.edit={col:'content',id,isNew:false,kind:id,data,base:clone(data)};state.hist=await loadHist('content',id);state.dirty=false;state.fieldErr={};state.expert=false;state.loading=false}catch(e){state.loading=false;say(errText(e))}if(seq===state.seq)refresh()}
+async function openList(col){const seq=++state.seq;state.loading=true;state.edit=null;refresh();try{const f=F();const s=await f.getDocs(f.query(f.collection(db(),col),f.limit(120)));if(seq!==state.seq)return;state.rows=s.docs.map(d=>({id:d.id,data:plain(d.data())}));state.loading=false}catch(e){state.loading=false;state.rows=[];say(errText(e))}if(seq===state.seq)refresh()}
+async function openDoc(col,id){const f=F();const s=await f.getDoc(f.doc(db(),col,id));const data=plain(s.exists()?s.data():{});const kind=kindOf(col);state.edit={col,id,isNew:false,kind,data,base:clone(data)};state.hist=await loadHist(col,id);state.dirty=false;state.fieldErr={};state.expert=false;state.msg='';refresh()}
+function newDoc(tplId){const col=state.tab,kind=kindOf(col);const meta=tplId?templateMeta(kind,tplId):null;const data=tplId?templateData(kind,tplId,state.tpls):blank(kind);if(!data)return say('Шаблон не найден.');let id='';const party=!!(meta&&meta.party)||data.group==='Члены партии';if(col==='members')id=party?newPartyId():nextSeatId((state.rows||[]).map(r=>r.id));state.edit={col,id,isNew:true,kind,data,base:null,party};state.hist=[];state.dirty=true;state.fieldErr={};state.expert=false;state.msg='';refresh()}
 function claimKey(name){const s=String(name||'').trim().replace(/\s+/g,' ');if(!s||s.length>100||/[\\/]/.test(s)||s==='.'||s==='..')return '';return s}
 function ldrDoc(id,data){return !!data&&data.group!=='Члены партии'&&!String(id||'').startsWith('p_')}
 function ldrDids(list){const s=[],seen=new Set();for(const m of list||[]){if(!ldrDoc(m.id,m)||!m.name||/^Вакансия/i.test(m.name))continue;const d=String(m.discordId||'');if(!/^\d{15,21}$/.test(d)||seen.has(d))continue;seen.add(d);s.push(d)}return s}
 function withMember(id,data,removed){const base=[...(((window.VPPKA_DATA||{}).members)||[])];if(!base.length)return null;const i=base.findIndex(m=>m.id===id);if(removed){if(i>=0)base.splice(i,1);return base}const row={...(i>=0?base[i]:{}),...(data||{}),id};if(i>=0)base[i]=row;else base.push(row);return base}
+function seatList(id,data,removed){const live=withMember(id,data,removed);if(live)return live;if(!state.rows||!state.rows.length)return null;const base=state.rows.map(r=>({...r.data,id:r.id}));if(removed)return base.filter(m=>m.id!==id);const i=base.findIndex(m=>m.id===id);const row={...(i>=0?base[i]:{}),...(data||{}),id};if(i>=0)base[i]=row;else base.push(row);return base}
 async function syncSeats(list){if(!list)return;const f=F();if(window.VPPKA_SYNC_SEATS){await window.VPPKA_SYNC_SEATS(list);return}await f.setDoc(f.doc(db(),'config','ldrSeats'),{dids:ldrDids(list)},{merge:true})}
 async function putMember(f,id,data){const ref=f.doc(db(),'members',id);const prev=await f.getDoc(ref);const was=prev.exists()?prev.data():null;const party=x=>!!x&&(x.group==='Члены партии'||String(id).startsWith('p_'));
  if(!prev.exists()&&(data.group==='Члены партии'||String(id).startsWith('p_'))){const key=claimKey(data.name);if(!key||data.group!=='Члены партии'||!String(id).startsWith('p_'))throw new Error('Карточка члена партии: идентификатор p_…, группа «Члены партии» и ФИО без «/».');
@@ -45,24 +106,113 @@ async function putMember(f,id,data){const ref=f.doc(db(),'members',id);const pre
 async function removeMember(f,id){const ref=f.doc(db(),'members',id);const prev=await f.getDoc(ref);const was=prev.exists()?prev.data():null;
  if(was&&(String(id).startsWith('p_')||was.group==='Члены партии')){const key=claimKey(was.name);const b=f.writeBatch(db());b.delete(ref);if(key){const c=await f.getDoc(f.doc(db(),'memClaim',key));if(c.exists()&&c.data()&&c.data().memberId===id)b.delete(c.ref)}await b.commit()}
  else await f.deleteDoc(ref);return ldrDoc(id,was)}
-async function onClick(e){const b=e.target.closest('button');if(!b||!superOn())return;const f=F();
- if(b.dataset.adtab){tab=b.dataset.adtab;edit=null;window.route();setTimeout(()=>{fillTexts();fillList()},0);return}
- if(b.id==='ad-cancel'){edit=null;window.route();setTimeout(fillList,0);return}
- if(b.dataset.adedit){const s=await f.getDoc(f.doc(db(),b.dataset.adedit,b.dataset.adid));edit={col:b.dataset.adedit,id:b.dataset.adid,text:JSON.stringify(plain(s.exists()?s.data():{}),null,2)};window.route();setTimeout(fillList,0);return}
- if(b.dataset.addel){if(!confirm('Удалить '+b.dataset.addel+'/'+b.dataset.adid+'? Это нельзя отменить кнопкой «назад».'))return;try{let ldr=false;if(b.dataset.addel==='members')ldr=await removeMember(f,b.dataset.adid);else await f.deleteDoc(f.doc(db(),b.dataset.addel,b.dataset.adid));if(ldr){try{await syncSeats(withMember(b.dataset.adid,null,true))}catch(err){say('Удалено. Список должностей не обновился: '+(err.code||err.message));fillList();return}}say('Удалено.');fillList()}catch(err){say(err.code==='permission-denied'?'Нет прав. Опубликуйте firestore.rules.':(err.code||err.message))}return}
- if(b.dataset.sec){let obj;try{obj=JSON.parse(document.getElementById('ad-sec-'+b.dataset.sec).value)}catch(err){return say('JSON: '+err.message)}if(!obj||typeof obj!=='object'||Array.isArray(obj))return say('Нужен объект JSON.');
-  try{await f.setDoc(f.doc(db(),'content',b.dataset.sec),revive(obj,f));if(window.VPPKA_APPLY_CONTENT){const part={};part[b.dataset.sec]=obj;window.VPPKA_APPLY_CONTENT(part)}say('Сохранено: '+b.dataset.sec+'.')}catch(err){say(err.code==='permission-denied'?'Нет прав. Опубликуйте firestore.rules.':(err.code||err.message))}return}
- if(b.id==='ad-seed'){if(!confirm('Записать в базу тексты из content.json (site, home, about, program, charter, legal, contacts)? Руководство и новости не затрагиваются.'))return;if(busy)return;busy=true;
-  try{const c=await (await fetch('content.json?'+Date.now())).json();for(const id of SECTIONS){if(!c[id])continue;await f.setDoc(f.doc(db(),'content',id),c[id]);const el=document.getElementById('ad-sec-'+id);if(el)el.value=JSON.stringify(c[id],null,2)}
-   window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(c);say('Тексты записаны в content/.')}catch(err){say(err.code==='permission-denied'?'Нет прав. Сначала опубликуйте firestore.rules.':(err.code||err.message))}finally{busy=false}return}
- if(b.id==='ad-save'&&edit){let obj;try{obj=JSON.parse(document.getElementById('ad-json').value)}catch(err){return say('JSON: '+err.message)}if(!obj||typeof obj!=='object'||Array.isArray(obj))return say('Нужен объект JSON.');
-  try{const body=revive(obj,f);if(edit.col==='members'){const ldr=await putMember(f,edit.id,body);if(ldr){try{await syncSeats(withMember(edit.id,body,false))}catch(err){say('Сохранено. Список должностей не обновился: '+(err.code||err.message));if(window.VPPKA_RELOAD)window.VPPKA_RELOAD();return}}if(window.VPPKA_RELOAD)window.VPPKA_RELOAD()}else await f.setDoc(f.doc(db(),edit.col,edit.id),body);say('Сохранено.')}catch(err){say(err.code==='permission-denied'?'Нет прав. Опубликуйте firestore.rules.':(err.code||err.message))}return}
- if(b.id==='ad-col-load'||b.id==='ad-col-save'||b.id==='ad-col-del'){const col=(document.getElementById('ad-col').value||'').trim(),id=(document.getElementById('ad-id').value||'').trim();if(!/^[A-Za-z0-9_-]{1,80}$/.test(col)||!id||id.length>200||/[\\/]/.test(id))return say('Укажите коллекцию латиницей и идентификатор документа без «/».');
-  if((col==='config'&&id==='owners')&&b.id!=='ad-col-load')return say('config/owners с сайта не меняется: иначе можно потерять право владельца.');
-  try{if(b.id==='ad-col-load'){const s=await f.getDoc(f.doc(db(),col,id));document.getElementById('ad-raw').value=JSON.stringify(plain(s.exists()?s.data():{}),null,2);say(s.exists()?'Прочитано.':'Документа нет. Пустой объект.')}
-   else if(b.id==='ad-col-del'){if(!confirm('Удалить '+col+'/'+id+'?'))return;if(col==='members'){const ldr=await removeMember(f,id);if(ldr){try{await syncSeats(withMember(id,null,true))}catch(err){return say('Удалено. Список должностей не обновился: '+(err.code||err.message))}}}else await f.deleteDoc(f.doc(db(),col,id));say('Удалено.')}
-   else{let obj;try{obj=JSON.parse(document.getElementById('ad-raw').value||'{}')}catch(err){return say('JSON: '+err.message)}if(!obj||typeof obj!=='object'||Array.isArray(obj))return say('Нужен объект JSON.');const body=revive(obj,f);if(col==='members'){const ldr=await putMember(f,id,body);if(ldr){try{await syncSeats(withMember(id,body,false))}catch(err){return say('Сохранено. Список должностей не обновился: '+(err.code||err.message))}}if(window.VPPKA_RELOAD)window.VPPKA_RELOAD()}else await f.setDoc(f.doc(db(),col,id),body);say('Сохранено.')}}
-  catch(err){say(err.code==='permission-denied'?'Нет прав. Опубликуйте firestore.rules.':(err.code||err.message))}}}
-export function install(){const P=window.P;if(!P)return;P.admin=render;document.addEventListener('click',onClick);
- const kick=()=>{if((location.hash.slice(1)||'').split('/')[0]!=='admin')return;fillTexts();fillList()};
- kick();addEventListener('hashchange',()=>setTimeout(kick,0));if((location.hash.slice(1)||'').split('/')[0]==='admin'&&window.route)window.route()}
+function guardDelete(col,id,data){
+ if(col==='members'&&isProtected(id)){const why=id==='m11'?'начальник технического отдела':id==='m1'?'председатель ЦК':'заместитель председателя ЦК';return confirm('Место '+id+' защищено ('+why+'). Удалить его может только владелец. Удалить?')}
+ if(col==='members'&&data&&data.role==='Начальник технического отдела')return confirm('Это должность начальника технического отдела. Удалить?');
+ return confirm('Удалить '+col+'/'+id+'?');
+}
+async function save(){
+ const e=state.edit;if(!e||state.busy)return;
+ if(state.expert){let obj;try{obj=JSON.parse(document.getElementById('ad-json').value)}catch(err){say('JSON: '+err.message);refresh();return}if(!obj||typeof obj!=='object'||Array.isArray(obj)){say('Нужен объект JSON.');refresh();return}e.data=obj}
+ let id=e.col==='content'?e.id:(document.getElementById('ad-docid')?document.getElementById('ad-docid').value.trim():e.id);
+ if(e.col!=='content'&&id&&!/^[A-Za-z0-9_-]{1,200}$/.test(id)){say('Идентификатор: латиница, цифры, _ и -, без «/».');refresh();return}
+ const body=normalize(e.kind,e.data);
+ const errs=validate(e.kind,body,{id,isNew:e.isNew});
+ if(errs.length){state.fieldErr=errMap(errs);state.expert=false;say(errs[0].msg);refresh();return}
+ if(needsTechConfirm(body,id)&&!confirm('Место m11 закреплено за начальником технического отдела. Сменить должность?'))return;
+ if(e.col==='members'&&e.isNew&&isProtected(id)&&!confirm('Идентификатор '+id+' — защищённое место. Перезаписать документ?'))return;
+ state.busy=true;say('Сохранение…');refresh();
+ try{const f=F();
+  let note='';
+  if(e.base){const ok=await pushHist(e.col,id||e.id,e.base);if(!ok)note+=' Снимок истории не записан: документ слишком большой.'}
+  if(e.col==='content'){
+   if(e.kind==='leadership'){await f.setDoc(f.doc(db(),'content','leadership'),{intro:body.intro},{merge:true});window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT({leadership:{intro:body.intro}})}
+   else{await f.setDoc(f.doc(db(),'content',e.id),revive(strip(body),f));const part={};part[e.id]=body;window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
+  }else if(e.col==='members'){
+   if(!id)throw new Error('Укажите идентификатор документа.');
+   const payload={...body,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};
+   const ldr=await putMember(f,id,payload);
+   if(ldr){const list=seatList(id,body,false);if(list)await syncSeats(list);else note+=' Список должностей не обновлён: состав ещё не загружен.'}
+   if(window.VPPKA_RELOAD)window.VPPKA_RELOAD();
+  }else{
+   const rev=revive(strip(body),f);
+   if(e.col==='events'){if(rev.status==='ended'){if(!e.base||e.base.status!=='ended'){rev.endedAt=f.serverTimestamp();rev.endedBy=FB().user.uid}else{if(e.base.endedAt)rev.endedAt=revive(e.base.endedAt,f);if(e.base.endedBy)rev.endedBy=e.base.endedBy}}rev.updatedAt=Date.now();if(e.isNew)rev.createdBy=FB().user.uid}
+   if(e.col==='news'&&e.isNew&&!rev.author)rev.author=FB().user.uid;
+   if(e.col==='votes'&&e.isNew){rev.createdBy=FB().user.uid;if(rev.createdAt==null)rev.createdAt=Date.now()}
+   if(e.isNew&&!id){if(!AUTO_ID.has(e.col))throw new Error('Укажите идентификатор документа.');const ref=await f.addDoc(f.collection(db(),e.col),rev);id=ref.id}
+   else{if(!id)throw new Error('Укажите идентификатор документа.');await f.setDoc(f.doc(db(),e.col,id),rev)}
+   if(e.col==='news'&&window.VPPKA_RELOAD)window.VPPKA_RELOAD();
+  }
+  e.id=id;e.isNew=false;e.data=clone(body);e.base=clone(body);state.dirty=false;state.fieldErr={};state.hist=await loadHist(e.col,id);
+  if(e.col!=='content'){const i=(state.rows||[]).findIndex(r=>r.id===id);const row={id,data:clone(body)};if(i>=0)state.rows[i]=row;else if(state.rows)state.rows.unshift(row)}
+  say('Сохранено.'+note,true);
+ }catch(err){say(errText(err))}finally{state.busy=false;refresh()}
+}
+async function delDoc(col,id){
+ const row=(state.rows||[]).find(r=>r.id===id);const data=row?row.data:(state.edit&&state.edit.id===id?state.edit.data:null);
+ if(!guardDelete(col,id,data))return;const f=F();
+ try{if(data)await pushHist(col,id,data);let ldr=false;if(col==='members'){ldr=await removeMember(f,id);if(ldr){const list=seatList(id,null,true);if(list)await syncSeats(list)}}else await f.deleteDoc(f.doc(db(),col,id));
+  if(state.rows)state.rows=state.rows.filter(r=>r.id!==id);if(state.edit&&state.edit.id===id){state.edit=null;state.dirty=false}say('Удалено.',true);if((col==='members'||col==='news')&&window.VPPKA_RELOAD)window.VPPKA_RELOAD()}
+ catch(err){say(errText(err))}refresh()}
+function parentOf(path){const idx=path[path.length-1];let cur=state.edit.data;for(let i=0;i<path.length-1;i++){cur=cur==null?null:cur[path[i]]}return {arr:cur,idx}}
+function mutateList(path,fn){const {arr,idx}=parentOf(path);if(!Array.isArray(arr))return;fn(arr,idx);touch();refresh()}
+async function onTplSave(kind,data){const title=prompt('Название шаблона','Мой шаблон');if(!title)return;const id='c'+Date.now().toString(36);const item={kind,title:String(title).slice(0,80),data:clone(data),at:Date.now()};
+ try{const f=F(),ref=f.doc(db(),'config','adminTemplates');const s=await f.getDoc(ref);const items=(s.exists()&&s.data().items)||{};items[id]=item;await f.setDoc(ref,{items,updatedAt:Date.now()});state.tpls=items;say('Шаблон сохранён.',true)}catch(err){say(errText(err))}refresh()}
+async function onTplDel(kind,sel){const id=sel&&sel.value;const cur=id&&state.tpls[id];if(!cur||cur.kind!==kind){say('Выберите свой шаблон. Встроенный удалить нельзя.');refresh();return}if(!confirm('Удалить шаблон «'+(cur.title||'')+'»?'))return;
+ try{const f=F(),ref=f.doc(db(),'config','adminTemplates');const s=await f.getDoc(ref);const items=(s.exists()&&s.data().items)||{};delete items[id];await f.setDoc(ref,{items,updatedAt:Date.now()});state.tpls=items;say('Шаблон удалён.',true)}catch(err){say(errText(err))}refresh()}
+function leave(next){if(state.dirty&&!confirm('Есть несохранённые изменения. Уйти без сохранения?'))return false;state.dirty=false;state.edit=null;state.fieldErr={};state.msg='';return true}
+async function onClick(e){
+ const a=e.target.closest&&e.target.closest('#ad-prev a, #ad-live a');if(a){e.preventDefault()}
+ const b=e.target.closest&&e.target.closest('button');if(!b||!onAdmin()||!superOn())return;
+ if(b.dataset.adtab){if(!leave())return;state.tab=b.dataset.adtab;state.rows=null;state.q='';refresh();if(isContent(state.tab))openContent(state.tab);else if(state.tab!=='raw')openList(state.tab);return}
+ if(b.id==='ad-save'){save();return}
+ if(b.id==='ad-cancel'){if(!state.edit)return;if(state.edit.isNew||!state.edit.base){state.edit=null;state.dirty=false;state.msg='Изменения отменены.';refresh();return}state.edit.data=clone(state.edit.base);state.dirty=false;state.fieldErr={};state.expert=false;say('Изменения отменены.');refresh();return}
+ if(b.id==='ad-add'||b.id==='ad-fromtpl'){if(state.dirty&&!confirm('Есть несохранённые изменения. Уйти без сохранения?'))return;if(b.id==='ad-add')newDoc('');else{const sel=document.getElementById('ad-newtpl');newDoc(sel&&sel.value)}return}
+ if(b.id==='ad-as-tpl'&&state.edit){onTplSave(state.edit.kind,state.edit.data);return}
+ if(b.dataset.adedit){if(state.dirty&&state.edit&&state.edit.id!==b.dataset.adid&&!confirm('Есть несохранённые изменения. Уйти без сохранения?'))return;openDoc(b.dataset.adedit,b.dataset.adid);return}
+ if(b.dataset.addel){delDoc(b.dataset.addel,b.dataset.adid);return}
+ if(b.dataset.afact){const act=b.dataset.afact;if(act==='revert'){const h=state.hist[+b.dataset.hi];if(!h||!state.edit)return;if(state.dirty&&!confirm('Есть несохранённые правки. Они пропадут. Вернуть выбранную версию?'))return;if(!confirm('Вернуть версию от '+new Date(h.at).toLocaleString('ru-RU')+' на сайт?'))return;state.expert=false;state.edit.data=clone(h.data);save();return}
+  if(!state.edit)return;let path=[];try{path=JSON.parse(b.dataset.path||'[]')}catch(err){return}
+  if(act==='add'){const field=fieldAt(state.edit.kind,state.edit.data,path);let cur=state.edit.data;for(const k of path){if(cur[k]==null)cur[k]=[];cur=cur[k]}if(!Array.isArray(cur))return;cur.push(newItem(field));touch();refresh();return}
+  if(act==='del'){if(!confirm('Удалить этот элемент?'))return;mutateList(path,(arr,idx)=>arr.splice(idx,1));return}
+  if(act==='dup'){mutateList(path,(arr,idx)=>arr.splice(idx+1,0,clone(arr[idx])));return}
+  if(act==='up'){mutateList(path,(arr,idx)=>{if(idx<=0)return;const t=arr[idx-1];arr[idx-1]=arr[idx];arr[idx]=t});return}
+  if(act==='down'){mutateList(path,(arr,idx)=>{if(idx>=arr.length-1)return;const t=arr[idx+1];arr[idx+1]=arr[idx];arr[idx]=t});return}
+  if(act==='fromtpl'){const sel=b.parentElement.querySelector('select[data-tplsel]');const data=templateData(b.dataset.kind,sel&&sel.value,state.tpls);if(!data){say('Шаблон не найден.');refresh();return}let cur=state.edit.data;for(const k of path){if(cur[k]==null)cur[k]=[];cur=cur[k]}if(!Array.isArray(cur))return;cur.push(data);touch();refresh();return}
+  if(act==='savetpl'){const {arr,idx}=parentOf(path);if(!arr)return;onTplSave(b.dataset.kind,arr[idx]);return}
+  if(act==='deltpl'){onTplDel(b.dataset.kind,b.parentElement.querySelector('select[data-tplsel]'));return}
+ }
+ if(b.id==='ad-seed'){if(!confirm('Записать в базу тексты из content.json (сайт, главная, о партии, программа, устав, право, контакты и вступление руководства)? Состав и новости не затрагиваются.'))return;if(state.busy)return;state.busy=true;
+  try{const f=F(),c=await contentFile();contentCache=null;const ids=CONTENT.map(x=>x[0]);for(const id of ids){if(id==='leadership'){await f.setDoc(f.doc(db(),'content','leadership'),{intro:(c.leadership&&c.leadership.intro)||''},{merge:true});continue}if(!c[id])continue;await f.setDoc(f.doc(db(),'content',id),c[id])}
+   window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(c);say('Тексты записаны в content/.',true);state.edit=null;openContent(isContent(state.tab)?state.tab:'site')}catch(err){say(errText(err));refresh()}finally{state.busy=false}return}
+ if(b.id==='ad-col-load'||b.id==='ad-col-save'||b.id==='ad-col-del'){const col=(document.getElementById('ad-col').value||'').trim(),id=(document.getElementById('ad-id').value||'').trim();state.raw={col,id,text:document.getElementById('ad-raw').value};if(!/^[A-Za-z0-9_-]{1,80}$/.test(col)||!id||id.length>200||/[\\/]/.test(id)){say('Укажите коллекцию латиницей и идентификатор документа без «/».');refresh();return}
+  if(col==='config'&&id==='owners'&&b.id!=='ad-col-load'){say('config/owners с сайта не меняется: иначе можно потерять право владельца.');refresh();return}
+  const f=F();
+  try{if(b.id==='ad-col-load'){const s=await f.getDoc(f.doc(db(),col,id));state.raw.text=JSON.stringify(plain(s.exists()?s.data():{}),null,2);say(s.exists()?'Прочитано.':'Документа нет. Пустой объект.',true)}
+   else if(b.id==='ad-col-del'){if(!guardDelete(col,id,null))return;if(col==='members'){const ldr=await removeMember(f,id);if(ldr){const list=seatList(id,null,true);if(list)await syncSeats(list)}}else await f.deleteDoc(f.doc(db(),col,id));say('Удалено.',true)}
+   else{let obj;try{obj=JSON.parse(state.raw.text||'{}')}catch(err){say('JSON: '+err.message);refresh();return}if(!obj||typeof obj!=='object'||Array.isArray(obj)){say('Нужен объект JSON.');refresh();return}const body=revive(obj,f);if(col==='members'){const ldr=await putMember(f,id,body);if(ldr){const list=seatList(id,plain(body),false);if(list)await syncSeats(list)}}else await f.setDoc(f.doc(db(),col,id),body);say('Сохранено.',true)}}
+  catch(err){say(errText(err))}refresh()}
+}
+function onInput(e){if(!onAdmin()||!superOn())return;
+ if(e.target.id==='ad-q'){state.q=e.target.value;const host=document.getElementById('ad-list');if(host)host.innerHTML=rowsHTML();return}
+ if(e.target.id==='ad-docid'&&state.edit){state.edit.id=e.target.value;return}
+ if(e.target.id==='ad-json'&&state.edit){try{const obj=JSON.parse(e.target.value);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw new Error('x');state.edit.data=obj;state.msg='';touch();schedulePreview()}catch(err){state.msg='JSON: '+err.message;const m=document.getElementById('ad-msg');if(m){m.textContent=state.msg;m.className='aerr'}}return}
+ if(e.target.id==='ad-col'||e.target.id==='ad-id'||e.target.id==='ad-raw'){state.raw={col:(document.getElementById('ad-col')||{}).value||'',id:(document.getElementById('ad-id')||{}).value||'',text:(document.getElementById('ad-raw')||{}).value||''};return}
+ const el=e.target.closest&&e.target.closest('[data-af]');if(!el||!state.edit||el.readOnly)return;let path;try{path=JSON.parse(el.dataset.af)}catch(err){return}
+ if(el.dataset.aft==='json'){try{setPath(state.edit.data,path,el.value.trim()?JSON.parse(el.value):null);state.msg=''}catch(err){const m=document.getElementById('ad-msg');state.msg='JSON: '+err.message;if(m){m.textContent=state.msg;m.className='aerr'}return}}
+ else setPath(state.edit.data,path,readControl(el));
+ if(el.dataset.aft==='textarea'){const lb=el.parentElement&&el.parentElement.querySelector('.af-lb');if(lb)lb.textContent=el.value}
+ if(el.dataset.aft==='image'){const img=el.parentElement&&el.parentElement.querySelector('.af-prev');const v=el.value.trim();if(img){if(v){img.hidden=false;img.src=v}else img.remove()}else if(v){el.insertAdjacentHTML('afterend',`<img class="af-prev" src="${esc(v)}" alt="">`)}}
+ touch();schedulePreview()}
+async function onChange(e){if(!onAdmin()||!superOn())return;
+ if(e.target.id==='ad-expert'){if(!state.edit)return;if(e.target.checked){state.expert=true;refresh();return}try{const obj=JSON.parse(document.getElementById('ad-json').value);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw new Error('Нужен объект JSON.');state.edit.data=obj;state.expert=false;state.fieldErr={};touch();refresh()}catch(err){say('JSON: '+err.message);refresh()}return}
+ const file=e.target.closest&&e.target.closest('[data-affile]');if(!file||!file.files||!file.files[0]||!state.edit)return;
+ try{const url=await fileToData(file.files[0]);setPath(state.edit.data,JSON.parse(file.dataset.affile),url);touch();refresh();schedulePreview()}catch(err){say(err.message||String(err));refresh()}}
+async function ensure(){if(!onAdmin()||!superOn())return;if(!state.booted){state.booted=true;loadTpls()}if(isContent(state.tab)){if(!state.edit&&!state.loading)openContent(state.tab)}else if(state.tab!=='raw'){if(!state.rows&&!state.loading)openList(state.tab)}}
+// auth.js вызывает route() после refreshPower, уже после install(). Пока power.owner ещё не выставлен, ensure выходит сразу — ждём флаг и грузим раздел, не затирая открытую правку.
+let armToken=0;
+function armEnsure(){const token=++armToken,t0=Date.now();const tick=()=>{if(token!==armToken||!onAdmin())return;if(superOn()){ensure();return}if(Date.now()-t0>20000)return;setTimeout(tick,400)};tick()}
+export function install(){const P=window.P;if(!P)return;P.admin=render;document.addEventListener('click',onClick);document.addEventListener('input',onInput);document.addEventListener('change',onChange);
+ document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='ad-live')state.previewOpen=e.target.open},true);
+ addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue=''}});
+ armEnsure();addEventListener('hashchange',()=>armEnsure());if(onAdmin()&&window.route)window.route()}

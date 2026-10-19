@@ -517,7 +517,7 @@ service cloud.firestore {
       // Занятое руководящее место не удаляется: его освобождают, имя становится «Вакансия». Карточки «Члены партии» удаляются как раньше.
       allow delete: if !techSeat() && !(id in ['m1', 'm4', 'm5']) && resource.data.get('rank', 0) < 100
         && (id.matches('^p_.*') || resource.data.get('group', '') == 'Члены партии'
-            || (resource.data.get('name', '') is string && resource.data.get('name', '').lower() == 'вакансия'))
+            || (resource.data.get('name', '') is string && (resource.data.get('name', '') == 'Вакансия' || resource.data.get('name', '').lower() == 'вакансия')))
         && ((myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100))
             || (rankAdmin() && !id.matches('^p_.*') && resource.data.get('group', '') != 'Члены партии'));
     }
