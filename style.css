@@ -542,13 +542,34 @@ body>.amu.def:not([hidden]){display:inline-flex;position:fixed;left:12px;bottom:
 @media(max-width:600px){h1 .amu{width:30px!important;height:30px!important;margin-left:8px!important;vertical-align:-5px!important}}
 @media(prefers-reduced-motion:reduce){.amu .wv{animation:none}}
 
-.duties{margin-top:18px;padding:14px 16px 12px;border:1px solid color-mix(in srgb,var(--tc,#3a3f47) 45%,transparent);border-left:3px solid var(--tc,var(--red));background:linear-gradient(90deg,color-mix(in srgb,var(--tc,#d62828) 10%,transparent),transparent 70%)}
-.duties h3{margin:0 0 10px;font:600 12px Oxanium,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--tc,#5ad1e6)}
-.duties ul{margin:0;padding:0;list-style:none}.duties li{position:relative;padding:5px 0 5px 20px;font-size:14px;line-height:1.45;color:#d8dbe0}
-.duties li:before{content:"";position:absolute;left:3px;top:11px;width:7px;height:7px;background:var(--tc,var(--red));transform:rotate(45deg);box-shadow:0 0 6px var(--tc,var(--red))}
+.duty-btn{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:6px 12px;font:600 11px Oxanium,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--tc,#5ad1e6);border:1px solid color-mix(in srgb,var(--tc,#5ad1e6) 55%,transparent);background:color-mix(in srgb,var(--tc,#5ad1e6) 9%,transparent);cursor:pointer;transition:background .2s,box-shadow .2s}
+.duty-btn:hover,.duty-btn:focus-visible{background:color-mix(in srgb,var(--tc,#5ad1e6) 20%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--tc,#5ad1e6) 45%,transparent);outline:none}
+.duty-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.4}
+.prof .duty-btn{display:flex;width:max-content}
+.duty-ov{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;background:#04050899;backdrop-filter:blur(3px);animation:dutyF .18s ease-out}
+.duty-box{position:relative;width:min(560px,100%);max-height:86vh;overflow:auto;padding:22px 24px 18px;background:linear-gradient(180deg,#14111a,#0b0a0f);border:1px solid color-mix(in srgb,var(--tc) 70%,transparent);box-shadow:0 0 0 1px #000,0 0 28px color-mix(in srgb,var(--tc) 35%,transparent),inset 0 1px 0 #ffffff10;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));animation:dutyU .22s ease-out}
+.duty-box:not([class*="t-"]){--tc:#d62828}.duty-box:before{content:"";position:absolute;left:0;top:0;width:90px;height:2px;background:var(--tc);box-shadow:0 0 8px var(--tc)}
+.duty-hd{display:flex;justify-content:space-between;gap:12px;margin-bottom:14px}.duty-hd span{font:600 11px Oxanium,monospace;letter-spacing:.14em;color:var(--tc)}
+.duty-hd h3{margin:4px 0 2px;font-size:19px;color:#fff;text-transform:uppercase;letter-spacing:.04em}.duty-hd small{color:#9aa1ab;font-size:12px}
+.duty-x{flex:none;width:34px;height:34px;border:1px solid #ffffff2e;background:#0007;color:#fff;cursor:pointer}.duty-x:hover{border-color:var(--tc);color:var(--tc)}
+.duty-box ul{margin:0;padding:12px 0 0;list-style:none;border-top:1px solid #ffffff14}.duty-box li{position:relative;padding:7px 0 7px 22px;font-size:14.5px;line-height:1.45;color:#dfe2e7}
+.duty-box li:before{content:"";position:absolute;left:4px;top:13px;width:7px;height:7px;background:var(--tc);transform:rotate(45deg);box-shadow:0 0 6px var(--tc)}
+@keyframes dutyF{from{opacity:0}}@keyframes dutyU{from{opacity:0;transform:translateY(10px) scale(.98)}}
+@media(prefers-reduced-motion:reduce){.duty-ov,.duty-box{animation:none}}
 /* мобильный: кнопки установки — компактные значки у правого края, не перекрывают подписи и плашку новости */
 @media(max-width:860px){#installBtn,#apkBtn,#winBtn{width:44px;height:44px;padding:0;font-size:0;letter-spacing:0;display:flex;align-items:center;justify-content:center;right:10px;opacity:.92}
 #installBtn:before,#apkBtn:before,#winBtn:before{content:"⬇";font-size:19px;line-height:1}
 #installBtn[hidden],#apkBtn[hidden],#winBtn[hidden]{display:none}
 #installBtn{bottom:calc(10px + env(safe-area-inset-bottom))}#apkBtn,#winBtn{bottom:calc(62px + env(safe-area-inset-bottom))}
 body:has(.ntoast) #installBtn{bottom:calc(84px + env(safe-area-inset-bottom))}body:has(.ntoast) #apkBtn,body:has(.ntoast) #winBtn{bottom:calc(136px + env(safe-area-inset-bottom))}}
+
+/* золотая карточка (Ульянов) */
+.gold-card,.prof.blk.ldr-card.gold-card{background:linear-gradient(90deg,rgba(14,10,4,.80) 0%,rgba(14,10,4,.58) 40%,rgba(14,10,4,.28) 75%,rgba(14,10,4,.10) 100%),linear-gradient(135deg,#8a6414 0%,#c9971f 18%,#f3d36b 34%,#b8851a 50%,#e8bf4a 66%,#8f6512 84%,#c49326 100%)!important;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,226,140,.35),inset 0 0 40px rgba(255,210,100,.25),0 0 22px rgba(230,180,60,.25)}
+.mcard.gold-card{background:linear-gradient(180deg,rgba(14,10,4,.12) 0%,rgba(14,10,4,.55) 55%,rgba(14,10,4,.78) 100%),linear-gradient(135deg,#8a6414 0%,#c9971f 18%,#f3d36b 34%,#b8851a 50%,#e8bf4a 66%,#8f6512 84%,#c49326 100%)!important}
+.gold-card:after{content:"";display:block!important;position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,248,210,.0) 40%,rgba(255,250,225,.26) 50%,rgba(255,248,210,0) 60%,transparent 70%) -150% 0/250% 100% no-repeat;mix-blend-mode:screen;animation:goldSh 5s ease-in-out infinite}
+@keyframes goldSh{0%,55%{background-position:-150% 0}100%{background-position:150% 0}}
+@media(prefers-reduced-motion:reduce){.gold-card:after{animation:none}}
+.gold-card h1,.gold-card h3,.gold-card .prof-n{text-shadow:0 1px 2px #000c}.gold-card .tbl td,.gold-card .role,.gold-card .prof-r{text-shadow:0 1px 2px #000a}
+.gold-card .tbl td:first-child,.gold-card .prof-r,.gold-card .tbl td a,.gold-card .role,.gold-card .ldr-badge span{color:#ecdcff!important;text-shadow:0 0 6px #2a0d55,0 1px 2px #000}
+.gold-card .tbl td{border-color:rgba(40,25,5,.45)!important}
+@media(max-width:860px){.prof.blk.ldr-card.gold-card{background:linear-gradient(180deg,rgba(14,10,4,.25) 0%,rgba(14,10,4,.62) 45%,rgba(14,10,4,.72) 100%),linear-gradient(135deg,#8a6414 0%,#c9971f 18%,#f3d36b 34%,#b8851a 50%,#e8bf4a 66%,#8f6512 84%,#c49326 100%)!important}}
