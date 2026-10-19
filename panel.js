@@ -251,7 +251,7 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
 
 // ---------- Назначение на должность (владелец и ступень 5) ----------
 const isOwnerP=()=>rank()>=1000;
-const canAssign=m=>!!m&&m.group!=='Члены партии'&&!String(m.id||'').startsWith('p_')&&(isOwnerP()||(tier()>=5&&mt(m)<5&&(m.rank??0)<100));
+const canAssign=m=>!!m&&m.group!=='Члены партии'&&!String(m.id||'').startsWith('p_')&&(isOwnerP()||chair()||(tier()>=5&&mt(m)<5&&(m.rank??0)<100));
 let asgUsers=null,asgPos=null;
 function asgClose(){const o=document.getElementById('asg-ov');if(o)o.remove();document.body.classList.remove('asg-lock')}
 function asgList(q){const ms=D().members||[];q=(q||'').toLowerCase();
