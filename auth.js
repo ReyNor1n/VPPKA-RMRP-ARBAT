@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=182';
+import { firebaseConfig } from './firebase-config.js?v=183';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -131,12 +131,12 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  // одна подписка вместо getDocs+onSnapshot: первый снимок используется как начальная загрузка (экономия чтений)
  let liveOn=false,liveRes=null;
  async function loadData(){if(liveOn){return}liveOn=true;await new Promise(res=>{liveRes=res;setTimeout(res,8000);liveSubs()});}
- const toD=()=>{const D={...(window.VPPKA_DATA||{})};if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||['p_Xglv_ypsOH3s7mW2UTXD','m11'].includes(x.id)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));window.VPPKA_DATA=(D.news||D.members)?D:null};
+ const toD=()=>{const D={...(window.VPPKA_DATA||{})};if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||x.group!=='Члены партии'||x.id==='p_Xglv_ypsOH3s7mW2UTXD').sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));window.VPPKA_DATA=(D.news||D.members)?D:null};
  window.VPPKA_RELOAD=async()=>{await loadData();toD();route();};
  let liveN=null,liveM=null,livePend=false,liveNew=new Set();
  const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
  const liveApply=()=>{if(!liveN&&!liveM)return;if(busy()){livePend=true;return}livePend=false;const D={...(window.VPPKA_DATA||{})};
-  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||['p_Xglv_ypsOH3s7mW2UTXD','m11'].includes(x.id)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
+  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>!VPPKA_HIDDEN(x)||x.group!=='Члены партии'||x.id==='p_Xglv_ypsOH3s7mW2UTXD').sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
   window.VPPKA_DATA=(D.news||D.members)?D:null;const y=scrollY;route();scrollTo(0,y);
   liveNew.forEach(id=>document.querySelectorAll('a[href="#news/'+id+'"]').forEach(a=>{const it=a.closest('.it,.card,div');it&&it.classList.add('fresh')}));liveNew.clear();};
  document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
@@ -180,7 +180,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   link.innerHTML=`<span class="av">${av}</span><span class="hc-tx"><span class="hc-n">${esc(sh)}</span><span class="hc-p">${esc(pos||'Беспартийный')}</span></span>`;
  }
 
- await loadData();route();if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=182').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=182').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=182').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=182').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=182').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=182').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=182').then(m=>m.install()).catch(e=>console.error('chat',e));
+ await loadData();route();if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=183').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=183').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=183').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=183').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=183').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=183').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=183').then(m=>m.install()).catch(e=>console.error('chat',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();
