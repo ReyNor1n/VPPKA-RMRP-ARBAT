@@ -18,7 +18,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  // ---------- Вход через Discord (OAuth2, scope identify). ВЫКЛЮЧЕНО, пока DCL.enabled=false ----------
  // Обмен кода делает бот (очередь oauthReq в Firestore, как verifyReq): секрет приложения на сайт не попадает.
  // Запасной вход владельца (email/пароль) — только по прямой ссылке #login/owner, в интерфейсе её нет.
- const DCL=Object.assign({enabled:true,clientId:'1560986799927599205',redirect:location.origin+'/',invite:'https://discord.gg/AMx3X6w8KJ'},window.VPPKA_DCL||{});if(DCL.enabled)document.documentElement.classList.add('dcl-on');
+ const DCL=Object.assign({enabled:false,clientId:'1560986799927599205',redirect:location.origin+'/',invite:'https://discord.gg/AMx3X6w8KJ'},window.VPPKA_DCL||{});if(DCL.enabled)document.documentElement.classList.add('dcl-on');
  const rnd=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>b.toString(16).padStart(2,'0')).join('');
  const DC_SVG='<svg viewBox="0 0 127.14 96.36" width="22" height="17" aria-hidden="true"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg>';
  const dcBox=(t)=>box(t,`<h2>${t}</h2><p class="dcl-lead">Вход и регистрация на сайте — через ваш аккаунт Discord. При первом входе аккаунт создаётся автоматически.</p><button class="btn dcl-btn" id="dc-go">${DC_SVG}<span>Войти через Discord</span></button><p class="aerr" id="a-e"></p><ul class="dcl-notes"><li>Сайт получает только ваш Discord ID и имя — без доступа к переписке и паролю.</li><li>Нужно быть участником нашего <a href="${DCL.invite}" target="_blank" rel="noopener">Discord-сервера</a>.</li><li>Если страница discord.com не открывается — включите VPN и повторите.</li></ul>`);
@@ -186,5 +186,3 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   paintAuth();
   if(['login','register','account','join','news','leadership','apps','members','party','member','home',''].includes(location.hash.slice(1).split('/')[0]))route();});
 }
-
-document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='c-pass'){const d=t.value.replace(/\D/g,'').slice(0,6);t.value=d.length>3?d.slice(0,3)+'-'+d.slice(3):d}});
