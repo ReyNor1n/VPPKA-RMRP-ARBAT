@@ -301,15 +301,23 @@ async function writeLdrSeats(list){const f=F();await f.setDoc(f.doc(db(),'config
 window.VPPKA_SYNC_SEATS=writeLdrSeats;
 function whoLabel(){const did=myDidA();if(window.VPPKA_HIDDEN&&window.VPPKA_HIDDEN({uid:FB().user&&FB().user.uid,discordId:did}))return 'Начальник технического отдела';return actorName()||'Руководство партии'}
 async function seatNote(m,kind,text){const did=String(m&&m.discordId||'');if(!/^\d{15,21}$/.test(did)||!m.id)return;const f=F();await f.addDoc(f.collection(db(),'notifications'),{type:kind,title:(kind==='recall'?'Снятие: ':'Назначение: ')+String(m.role||'должность').slice(0,80),text:String(text).slice(0,300),to:did,seat:String(m.id).slice(0,40),author:FB().user.uid,authorName:whoLabel().slice(0,160),createdAt:f.serverTimestamp()})}
-let asgUsers=null,asgPos=null;
+let asgUsers=null,asgPos=null,asgBusy=false;
 function asgClose(){const o=document.getElementById('asg-ov');if(o)o.remove();document.body.classList.remove('asg-lock')}
-function asgList(q){const ms=D().members||[];q=(q||'').toLowerCase();
- return (asgUsers||[]).filter(u=>!q||(u.displayName||'').toLowerCase().includes(q)||String(u.discordId).toLowerCase().includes(q)).map(u=>{const curs=ms.filter(m=>u.discordId&&m.discordId===u.discordId&&isLdrPost(m)&&m.name&&!/^Вакансия/i.test(m.name));const here=curs.some(m=>m.id===asgPos.id);
-  return `<button class="asg-it" data-asg="${esc(u.id)}"><span class="asg-av">${u.photo?`<img src="${esc(u.photo)}" alt="">`:esc((u.displayName||u.discordId||'?')[0])}</span><span class="asg-tx"><b>${esc(u.displayName||u.discordId)}</b><small>${curs.length?esc(curs.map(m=>m.role).join(', '))+(here?' (уже на этой должности)':''):(u.roleName?esc(u.roleName):'Без должности')}</small></span></button>`}).join('')||'<p class="amut">Никого не найдено.</p>'}
-async function asgOpen(pid){asgPos=(D().members||[]).find(m=>m.id===pid);if(!canAssign(asgPos))return;asgClose();
- const o=document.createElement('div');o.id='asg-ov';o.className='asg-ov';o.innerHTML=`<div class="asg-box" role="dialog" aria-modal="true"><div class="asg-h"><div><span>// НАЗНАЧЕНИЕ</span><h3>${esc(asgPos.role)}</h3></div><button class="asg-x" id="asg-x" aria-label="Закрыть">✕</button></div><input id="asg-q" class="asg-q" placeholder="Поиск по имени или Discord"><div id="asg-l" class="asg-l"><p class="amut">Загрузка членов партии…</p></div><p class="aerr" id="asg-e"></p></div>`;
+// Уже занимает любое место руководства (не «Вакансия»): Discord, uid или ФИО (ё→е).
+function seatHeld(u){const did=String(u.discordId||''),uid=String(u.id||'').startsWith('m:')?'':String(u.id||''),nm=nzName(u.displayName);
+ return (D().members||[]).some(m=>{if(!occupiedSeat(m))return false;const md=String(m.discordId||'');if(did&&md&&did===md)return true;if(uid&&(String(m.uid||'')===uid||m.id===uid||m.id==='p_'+uid))return true;if(nm&&nzName(m.name)===nm&&!(did&&md&&did!==md))return true;return false})}
+function asgList(q){const ms=D().members||[];q=(q||'').toLowerCase();const show=asgBusy&&isOwnerP();
+ const hit=u=>!q||(u.displayName||'').toLowerCase().includes(q)||String(u.discordId).toLowerCase().includes(q);
+ const all=(asgUsers||[]).filter(hit),list=all.filter(u=>show||!seatHeld(u));
+ if(!list.length)return '<p class="amut">'+(all.length?'Кандидаты уже занимают руководящие должности.':'Никого не найдено.')+'</p>';
+ return list.map(u=>{const curs=ms.filter(m=>occupiedSeat(m)&&((u.discordId&&String(m.discordId||'')===String(u.discordId))||(!u.discordId&&nzName(m.name)===nzName(u.displayName))));const here=curs.some(m=>m.id===asgPos.id);
+  return `<button class="asg-it" data-asg="${esc(u.id)}"><span class="asg-av">${u.photo?`<img src="${esc(u.photo)}" alt="">`:esc((u.displayName||u.discordId||'?')[0])}</span><span class="asg-tx"><b>${esc(u.displayName||u.discordId)}</b><small>${curs.length?esc(curs.map(m=>m.role).join(', '))+(here?' (уже на этой должности)':''):(u.roleName?esc(u.roleName):'Без должности')}</small></span></button>`}).join('')}
+async function asgOpen(pid){asgPos=(D().members||[]).find(m=>m.id===pid);if(!canAssign(asgPos))return;asgClose();asgBusy=false;
+ const tog=isOwnerP()?'<label class="asg-tog"><input type="checkbox" id="asg-busy"> показать занятых</label>':'';
+ const o=document.createElement('div');o.id='asg-ov';o.className='asg-ov';o.innerHTML=`<div class="asg-box" role="dialog" aria-modal="true"><div class="asg-h"><div><span>// НАЗНАЧЕНИЕ</span><h3>${esc(asgPos.role)}</h3></div><button class="asg-x" id="asg-x" aria-label="Закрыть">✕</button></div><input id="asg-q" class="asg-q" placeholder="Поиск по имени или Discord">${tog}<div id="asg-l" class="asg-l"><p class="amut">Загрузка членов партии…</p></div><p class="aerr" id="asg-e"></p></div>`;
  document.body.appendChild(o);document.body.classList.add('asg-lock');
  o.addEventListener('click',e=>{if(e.target===o)asgClose()});document.getElementById('asg-q').oninput=e=>{document.getElementById('asg-l').innerHTML=asgList(e.target.value)};
+ const busy=document.getElementById('asg-busy');if(busy)busy.onchange=e=>{asgBusy=!!e.target.checked;const q=document.getElementById('asg-q');document.getElementById('asg-l').innerHTML=asgList(q?q.value:'')};
  try{if(!asgUsers){let us=[];try{const s=await F().getDocs(F().collection(db(),'users'));us=s.docs.map(d=>({id:d.id,...d.data()})).filter(u=>!window.VPPKA_HIDDEN(u))}catch(e){if(e.code!=='permission-denied')throw e}
   // Только члены партии: принятые заявки (p_*) и действующие обладатели должностей. Просто зарегистрированные не попадают.
   const nz=x=>String(x||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
