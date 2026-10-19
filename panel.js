@@ -232,7 +232,7 @@ async function asgOpen(pid){asgPos=(D().members||[]).find(m=>m.id===pid);if(!can
    out.push({id:u?u.id:'m:'+m.id,displayName:m.name||(u&&u.displayName)||m.discordId,discordId:m.discordId||'',photo:(u&&u.photo)||m.photo||'',roleName:m.role})}
   asgUsers=out.sort((a,b)=>String(a.displayName).localeCompare(String(b.displayName),'ru'))}
   document.getElementById('asg-l').innerHTML=asgList('')}catch(e){document.getElementById('asg-l').innerHTML='';document.getElementById('asg-e').textContent=e.code==='permission-denied'?'Нет доступа к списку членов партии: правила Firestore не разрешают чтение. Владельцу нужно опубликовать актуальный firestore.rules в консоли Firebase.':'Не удалось загрузить список: '+(e.code||e.message)}}
-const KEEP=['role','group','rank','tier','order'];
+const KEEP=['role','group','rank','tier','order','reportsTo','duties'];
 const pick=(m,ks)=>Object.fromEntries(ks.filter(k=>m[k]!=null).map(k=>[k,m[k]]));
 async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if(!u||!p)return;const f=F(),ms=D().members||[];
  const old=ms.find(m=>m.id!==p.id&&!String(m.id).startsWith('p_')&&(u.discordId?m.discordId===u.discordId:(!m.discordId&&m.name===u.displayName))),nm=u.displayName||u.discordId;

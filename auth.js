@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=171';
+import { firebaseConfig } from './firebase-config.js?v=172';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -150,7 +150,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   link.innerHTML=`<span class="av">${av}</span><span class="hc-tx"><span class="hc-n">${esc(sh)}</span><span class="hc-p">${esc(pos||'Беспартийный')}</span></span>`;
  }
 
- await loadData();route();window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=171').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=171').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=171').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=171').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=171').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=171').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=171').then(m=>m.install()).catch(e=>console.error('chat',e));
+ await loadData();route();window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=172').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=172').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=172').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=172').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=172').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=172').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=172').then(m=>m.install()).catch(e=>console.error('chat',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();
