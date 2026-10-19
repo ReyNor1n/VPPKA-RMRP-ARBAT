@@ -257,7 +257,7 @@ const canAssign=m=>{
   // Председатель по месту m1 или по Discord
   const me=FB().user, did=((window.VPPKA_AUTH||{}).profile||{}).discordId||(me&&(me.email||'').split('@')[0]);
   if(did==='1183072840774320220')return true;
-  return tier()>=5&&mt(m)<5&&(m.rank??0)<100;
+  return tier()>=5;
 };
 let asgUsers=null,asgPos=null;
 function asgClose(){const o=document.getElementById('asg-ov');if(o)o.remove();document.body.classList.remove('asg-lock')}
