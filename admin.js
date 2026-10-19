@@ -1,6 +1,6 @@
 // Раздел #admin. Только владелец сайта (config/owners → power.owner).
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=187';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=188';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
@@ -104,7 +104,7 @@ async function putMember(f,id,data){const ref=f.doc(db(),'members',id);const pre
  else await f.setDoc(ref,data);
  return ldrDoc(id,data)||ldrDoc(id,was)}
 async function removeMember(f,id){const ref=f.doc(db(),'members',id);const prev=await f.getDoc(ref);const was=prev.exists()?prev.data():null;
- if(was&&(String(id).startsWith('p_')||was.group==='Члены партии')){const key=claimKey(was.name);const b=f.writeBatch(db());b.delete(ref);if(key){const c=await f.getDoc(f.doc(db(),'memClaim',key));if(c.exists()&&c.data()&&c.data().memberId===id)b.delete(c.ref)}await b.commit()}
+ if(was&&(String(id).startsWith('p_')||was.group==='Члены партии')){const key=claimKey(was.name);const b=f.writeBatch(db());b.delete(ref);if(key){const c=await f.getDoc(f.doc(db(),'memClaim',key));if(c.exists()&&c.data()&&c.data().memberId===id)b.delete(c.ref)}await b.commit();if(window.VPPKA_ARCHIVE_APPS)await window.VPPKA_ARCHIVE_APPS({...was,id})}
  else await f.deleteDoc(ref);return ldrDoc(id,was)}
 function guardDelete(col,id,data){
  if(col==='members'&&isProtected(id)){const why=id==='m11'?'начальник технического отдела':id==='m1'?'председатель ЦК':'заместитель председателя ЦК';return confirm('Место '+id+' защищено ('+why+'). Удалить его может только владелец. Удалить?')}

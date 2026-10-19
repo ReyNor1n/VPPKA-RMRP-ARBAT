@@ -244,8 +244,8 @@ service cloud.firestore {
         && reqStr(request.resource.data, 'discordSourceId', 32)
         && optStr(request.resource.data, 'discordId', 64);
       allow read: if myTier() >= 3 || (signedIn() && resource.data.get('uid', '') == request.auth.uid);
-      // заявитель может удалить свою отклонённую заявку, чтобы подать новую
-      allow delete: if signedIn() && id == request.auth.uid && resource.data.status == 'rejected';
+      // заявитель может удалить свою отклонённую или архивную (карточку удалили / уволен) заявку, чтобы подать новую
+      allow delete: if signedIn() && id == request.auth.uid && resource.data.status in ['rejected','expelled'];
       function aChanged() { return request.resource.data.diff(resource.data).affectedKeys(); }
       // ступень заявителя: по ключу его аккаунта (нет аккаунта/ключа → 0)
       function targetTier() { return resource.data.get('uid', '') == '' ? 0 : userTier(resource.data.uid); }
