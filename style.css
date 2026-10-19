@@ -601,3 +601,4 @@ body:has(.ntoast) #installBtn{bottom:calc(84px + env(safe-area-inset-bottom))}bo
 .dcl-notes{margin:18px 0 0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--mut,#aaa)}.dcl-notes li{margin:4px 0}
 #dcl-st{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:9999;background:#1d1f2b;border:1px solid #5865F2;color:#fff;padding:12px 18px;font-size:14px;max-width:min(92vw,520px);box-shadow:0 6px 24px #0008}#dcl-st.bad{border-color:#d33}
 html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
+.btn.dcl-btn *{pointer-events:none}
