@@ -6,7 +6,7 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches)return;w.querySelectorAll('.mauth').forEach(x=>x.remove());const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);if(!al.classList.contains('in')&&!w.querySelector('.mreg')){const r=document.createElement('a');r.className='mauth mreg';r.href='#register';r.textContent='Регистрация';w.appendChild(r)}}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство',party:'Члены партии',news:'Новости',events:'Мероприятия',votes:'Голосования',legal:'Правовая база',contacts:'Контакты'};
-function chrome(){if(!C||!S)return;document.title=S.short+' — '+S.name;logo.src=S.mark||'img/gerb-red.png?v=186';
+function chrome(){if(!C||!S)return;document.title=S.short+' — '+S.name;logo.src=S.mark||'img/gerb-red.png?v=187';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+(S.server||'');
 const items=(C.contacts&&C.contacts.items)||[];
 foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
@@ -14,7 +14,7 @@ foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p
 <div><h4>Информация</h4><a href="#news">Новости</a><a href="#legal">Правовая база</a><a href="#contacts">Контакты</a></div>
 <div><h4>Связь</h4>${items.filter(i=>i.url).map(i=>`<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.label)}</a>`).join('')}</div></div>
 <div class="req">${esc(S.name)} · Местонахождение руководящего органа: г. Москва (в рамках игрового проекта) · Устав одобрен постановлением ГП от 18.10.2026 · Программа от ${esc(((C.program&&C.program.date)||'').replace('г. Москва, ',''))}<br>© ${new Date().getFullYear()} ${esc(S.short)}. ${esc(S.footer)} · <span id="sitever">Версия сайта</span></div></div>`;}
-window.VPPKA_APPLY_CONTENT=part=>{if(!C||!part||typeof part!=='object')return;for(const k of ['site','home','about','program','charter','legal','contacts'])if(part[k]&&typeof part[k]==='object')C[k]=part[k];S=C.site;chrome();try{route()}catch(e){}};
+window.VPPKA_APPLY_CONTENT=part=>{if(!C||!part||typeof part!=='object')return;for(const k of ['site','home','about','program','charter','legal','contacts'])if(part[k]&&typeof part[k]==='object')C[k]=part[k];if(part.leadership&&typeof part.leadership==='object'&&C.leadership&&typeof part.leadership.intro==='string')C.leadership.intro=part.leadership.intro;S=C.site;chrome();try{route()}catch(e){}};
 load().then(c=>{C=c;S=c.site;C.leadership.members.forEach((m,i)=>{if(!m.id)m.id='m'+(i+1)});chrome();
 document.querySelectorAll('.join-link').forEach(a=>{a.href='#join';a.removeAttribute('target')});
 addEventListener('hashchange',route);route();});
