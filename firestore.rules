@@ -382,7 +382,10 @@ service cloud.firestore {
     // ---------- новости ----------
     match /news/{id} {
       function validNews(d) {
-        return d.keys().hasOnly(['title','text','image','photos','videos','date','author','createdAt','updatedAt','pinned','likeCount','align'])
+        // pushSent и discordMessageId ставит бот/рассылка; при правке с сайта их можно только сохранить как есть
+        return d.keys().hasOnly(['title','text','image','photos','videos','date','author','createdAt','updatedAt','pinned','likeCount','align','pushSent','discordMessageId'])
+          && (!('pushSent' in d) || (resource != null && d.pushSent == resource.data.get('pushSent', null)))
+          && (!('discordMessageId' in d) || (resource != null && d.discordMessageId == resource.data.get('discordMessageId', null)))
           && (!('align' in d) || d.align in ['center'])
           && (!('likeCount' in d) || d.likeCount is int)
           && (!('pinned' in d) || d.pinned is bool)
@@ -501,10 +504,11 @@ service cloud.firestore {
           && resource.data.get('group', '') != 'Члены партии'
           && resource.data.get('rank', 0) < 100
           && (!deputySeat() || chair)
+          // нет поля tier = ступень 0 (форма админки дописывает tier: 0 у старых вакансий)
           && d.keys().hasOnly(['name','bio','discord','discordId','joined','photo','updatedBy','updatedAt',
                                'role','group','rank','tier','order','reportsTo','duties'])
           && d.get('updatedBy', '') == request.auth.uid
-          && sameSeat('role') && sameSeat('group') && sameSeat('rank') && sameSeat('tier')
+          && sameSeat('role') && sameSeat('group') && sameSeat('rank') && d.get('tier', 0) == resource.data.get('tier', 0)
           && sameSeat('order') && sameSeat('reportsTo') && sameSeat('duties')
           && reqStr(d, 'name', 100) && optStr(d, 'discordId', 64) && optStr(d, 'discord', 200)
           && optStr(d, 'joined', 60) && optStr(d, 'bio', 5000) && optStr(d, 'photo', 900000);
