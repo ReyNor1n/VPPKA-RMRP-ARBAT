@@ -74,7 +74,7 @@ function msgHtml(){if(!chats[cur.id])return '<p class="ch-empty">Напишит�
 const uidByDid=did=>did&&Object.keys(pub).find(u=>pub[u].did===String(did));
 function hookPages(){const P=window.P;if(!P||P.__ch)return;P.__ch=1;const om=P.member,op=P.party;const MEM=()=>(window.VPPKA_DATA&&window.VPPKA_DATA.members)||(window.VPPKA_C&&window.VPPKA_C().leadership.members)||[];
  P.member=(id,from)=>{const h=om(id,from);const m=MEM().find(x=>x.id===id),u=me&&m&&uidByDid(m.discordId);return u&&u!==me?h.replace(/(<div class="prof-r">[\s\S]*?<\/div>)/,`$1<button class="btn ch-write" onclick="VPPKA_CHAT.open('${esc(u)}')">✉ Написать</button>`):h};
- P.party=(...a)=>{let h=op(...a);if(!me)return h;return h.replace(/<a class="pm-card" href="#member\/([^"]*)"([^>]*)>/g,(s,id)=>{const m=MEM().find(x=>x.id===id),u=m&&uidByDid(m.discordId);return u&&u!==me?s+`<button class="ch-w" title="Написать" aria-label="Написать" onclick="event.preventDefault();event.stopPropagation();VPPKA_CHAT.open('${esc(u)}')">✉</button>`:s})}}
+ P.party=(...a)=>{let h=op(...a);if(!me)return h;return h.replace(/<a class="pm-card" href="#member\/([^"/]+)(?:\/[^"]*)?"([^>]*)>/g,(s,id)=>{const m=MEM().find(x=>x.id===id),u=m&&uidByDid(m.discordId);return u&&u!==me?s+`<button class="ch-w" title="Написать" aria-label="Написать" onclick="event.preventDefault();event.stopPropagation();VPPKA_CHAT.open('${esc(u)}')">✉</button>`:s})}}
 
 // ---------- Push-уведомления (Web Push, VAPID): pushSubs/{uid}, рассылает служба на сервере ----------
 const VAPID='BIfgn4PZruBuQrwMaZEpJS9DYi-9f8W3f9kkiqqtm9JHz7dkwnVaMeuxTOqD_-MmbGzdOyJOjB9hnCiJGrOEzLA';
