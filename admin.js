@@ -1,6 +1,6 @@
 // Раздел #admin. Только владелец сайта (config/owners → power.owner).
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=189';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=190';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;

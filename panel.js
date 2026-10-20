@@ -170,7 +170,7 @@ window.VPPKA_EXPEL=async id=>{const m=xMem().find(x=>x.id===id);if(!canX(m))retu
    if(x.group===window.VPPKA_PG||String(x.id||'').startsWith('p_')){await deletePartyCard(x);gone.add(x.id);continue}
    if(!canTouch(x))continue;
    const ref=f.doc(d,'members',x.id);
-   const v={name:'Вакансия',rank:x.rank??0,tier:0,updatedBy:me,updatedAt:now};['role','group','order'].forEach(k=>{if(x[k]!==undefined)v[k]=x[k]});await f.setDoc(ref,v);vacated.add(x.id)}
+   const v={name:'Вакансия',rank:x.rank??0,tier:0,updatedBy:me,updatedAt:now};['role','group','order','reportsTo','duties'].forEach(k=>{if(x[k]!==undefined)v[k]=x[k]});await f.setDoc(ref,v);vacated.add(x.id)}
   if(vacated.size){try{await writeLdrSeats(xMem().filter(x=>!gone.has(x.id)).map(x=>vacated.has(x.id)?{...x,name:'Вакансия',discordId:''}:x))}catch(e){console.warn('ldrSeats',e.code||e)}}
   if(m.discordId){const q=await f.getDocs(f.query(f.collection(d,'applications'),f.where('discordId','==',m.discordId)));
    for(const a of q.docs)if(['accepted','member'].includes(a.data().status))await f.updateDoc(a.ref,{status:'expelled',expelledBy:me,expelledAt:now});
