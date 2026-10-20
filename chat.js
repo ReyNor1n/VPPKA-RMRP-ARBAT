@@ -7,7 +7,20 @@ const ms=t=>t?.toMillis?.()||0;
 let rn=[],rnDid='',me=null,isOwn=false,subs=[],msub=null,pub={},chats={},msgs=[],view='list',cur=null,open=false,q='',draft={},sent=0;
 const cid=(a,b)=>[a,b].sort().join('_');
 const other=c=>c.participants.find(x=>x!==me);
-const person=(u,c)=>{const p=pub[u];if(p)return {n:p.n||'Пользователь',ph:p.ph};const n=c&&c.names&&c.names[u];return {n:n||'Пользователь',ph:''}};
+// ФИО собеседника (по Discord ID из справочника pub — его нельзя подделать, см. правила pub):
+// 1) карточка состава/«Члены партии» — публичные данные; 2) ФИО из принятой заявки — только тем, кому правила дают читать заявки (ступень 3+);
+// 3) имя профиля из справочника. Хранимые сообщения не переписываются — имя подставляется при показе.
+const OWNER_DID='646280678736003073';
+const MEMS=()=>(window.VPPKA_DATA&&window.VPPKA_DATA.members)||(window.VPPKA_C&&window.VPPKA_C().leadership&&window.VPPKA_C().leadership.members)||[];
+const realName=n=>!!n&&!/^вакансия$/i.test(String(n).trim());
+function cardName(did){did=String(did||'');if(!did)return '';const L=MEMS().filter(m=>String(m.discordId||'')===did&&realName(m.name));const m=L.find(x=>String(x.id||'').startsWith('p_'))||L[0];return m?String(m.name).trim().replace(/\s+/g,' '):''}
+let appFio={},appKey='';
+async function loadAppFio(){const pw=FB().power||{},k=me+':'+(pw.owner?9:(pw.tier|0));if(k===appKey)return;appKey=k;appFio={};if(!(pw.owner||(pw.tier|0)>=3))return;
+ try{const f=F(),s=await f.getDocs(f.query(f.collection(db(),'applications'),f.where('status','in',['accepted','member'])));const m={};s.docs.forEach(d=>{const a=d.data(),n=a.answers&&a.answers.fio;if(a.discordId&&n)m[String(a.discordId)]=String(n).trim().replace(/\s+/g,' ').slice(0,100)});appFio=m;repaint()}catch(e){console.warn('chat fio',e.code||e)}}
+const didOf=u=>u===OWNER?OWNER_DID:String((pub[u]&&pub[u].did)||'');
+const fio=u=>{const d=didOf(u);return d?(cardName(d)||appFio[d]||''):''};
+const person=(u,c)=>{const p=pub[u],f=fio(u);if(p)return {n:f||p.n||'Пользователь',ph:p.ph};const n=c&&c.names&&c.names[u];return {n:f||n||'Пользователь',ph:''}};
+function repaint(){const p=document.getElementById('chPanel');if(p)p.dataset.v='';paint()}
 const av=(p,cls='')=>`<span class="ch-av ${cls}${window.isLdr&&window.isLdr(p.n)?' ldr-av'+(window.LT?window.LT(p.n):''):''}${p.ph?'':' noph'}">${p.ph?`<img src="${esc(p.ph)}" alt="${esc(p.n||'')}">`:`<b>${esc(ini(p.n))}</b>`}</span>`;
 function ft(t,full){const d=t?.toDate?.();if(!d)return '';const n=new Date(),hm=d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
  if(d.toDateString()===n.toDateString())return hm;const dm=d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});return full?dm+' '+hm:dm}
@@ -16,12 +29,12 @@ const unreadTotal=()=>Object.values(chats).filter(c=>((c.unread||{})[me]||0)>0).
 function thumb(src){return new Promise(r=>{if(!src)return r('');const im=new Image();im.onload=()=>{const k=160/Math.max(im.width,im.height,160),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.8))};im.onerror=()=>r('');im.src=src})}
 window.VPPKA_PUBMAP=()=>pub;window.VPPKA_PUBSELF=()=>pubSelf();
 async function pubSelf(){const a=window.VPPKA_AUTH,pf=a&&a.profile;if(!pf||isOwn||me===KEYMASTER||window.VPPKA_HIDDEN({uid:me,discordId:pf.discordId}))return;
- const n=(pf.displayName||pf.discordId||'').slice(0,40),ph=(()=>{const g=pf.avatar||pf.photo||'';return /^data:image\/gif;/.test(g)&&g.length<=100000?g:null})()||await thumb(pf.avatar||pf.photo),old=pub[me];if(old&&old.n===n&&(old.ph||'')===ph&&old.did===pf.discordId)return;
+ const n=(cardName(pf.discordId)||pf.displayName||pf.discordId||'').slice(0,40),ph=(()=>{const g=pf.avatar||pf.photo||'';return /^data:image\/gif;/.test(g)&&g.length<=100000?g:null})()||await thumb(pf.avatar||pf.photo),old=pub[me];if(old&&old.n===n&&(old.ph||'')===ph&&old.did===pf.discordId)return;
  const d={n,did:String(pf.discordId||'').slice(0,64),t:F().serverTimestamp()};if(ph)d.ph=ph;try{await F().setDoc(F().doc(db(),'pub',me),d)}catch(e){console.warn('pub',e.code||e)}}
 // владелец/ступень 5 дополняют справочник теми, кто ещё не заходил после обновления
 async function backfill(){const pw=FB().power||{};if(!(pw.owner||(pw.tier||0)>=5))return;try{const s=await F().getDocs(F().collection(db(),'users'));
  for(const d of s.docs){const u=d.data();if(pub[d.id]||d.id===me||d.id===KEYMASTER||window.VPPKA_HIDDEN({uid:d.id,discordId:u.discordId})||!u.discordId)continue;
-  const x={n:(u.displayName||u.discordId).slice(0,40),did:String(u.discordId).slice(0,64),t:F().serverTimestamp()};const ph=await thumb(u.photo);if(ph)x.ph=ph;
+  const x={n:(cardName(u.discordId)||u.displayName||u.discordId).slice(0,40),did:String(u.discordId).slice(0,64),t:F().serverTimestamp()};const ph=await thumb(u.photo);if(ph)x.ph=ph;
   await F().setDoc(F().doc(db(),'pub',d.id),x).catch(e=>console.warn('pub fill',e.code))}}catch(e){}}
 function start(){const f=F(),d=db();let first=true;
  subs.push(f.onSnapshot(f.collection(d,'pub'),s=>{pub={};s.docs.forEach(x=>{if(x.id!==OWNER&&x.id!==KEYMASTER)pub[x.id]=x.data()});if(first){first=false;pubSelf();rnStart();setTimeout(rnStart,5000);setTimeout(backfill,3000);if(['party','member'].includes(location.hash.slice(1).split('/')[0])&&window.route){const y=scrollY;window.route();scrollTo(0,y)}}paint()},e=>console.warn('pub',e.code)));
@@ -51,7 +64,7 @@ function els(){let b=document.getElementById('chBtn'),p=document.getElementById(
   p.addEventListener('input',e=>{if(e.target.id==='ch-q'){q=e.target.value;paintPeople()}if(e.target.id==='ch-in'&&cur){draft[cur.id]=e.target.value;const c=document.getElementById('ch-cnt');if(c){const n=e.target.value.length;c.textContent=n>MAX-200?n+'/'+MAX:'';c.classList.toggle('over',n>MAX)}}});
   p.addEventListener('keydown',e=>{if(e.target.id==='ch-in'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}if(e.key==='Escape'){open=false;paint()}})}
  return {b,p}}
-function people(){const s=q.trim().toLowerCase();return Object.entries(pub).filter(([u,p])=>u!==me&&(!s||(p.n||'').toLowerCase().includes(s)||(p.did||'').toLowerCase().includes(s))).sort((a,b)=>(a[1].n||'').localeCompare(b[1].n||'','ru')).slice(0,60)}
+function people(){const s=q.trim().toLowerCase();return Object.entries(pub).map(([u,p])=>[u,{...p,n:fio(u)||p.n}]).filter(([u,p])=>u!==me&&(!s||(p.n||'').toLowerCase().includes(s)||(pub[u].n||'').toLowerCase().includes(s)||(p.did||'').toLowerCase().includes(s))).sort((a,b)=>(a[1].n||'').localeCompare(b[1].n||'','ru')).slice(0,60)}
 function paintPeople(){const l=document.getElementById('ch-pl');if(!l)return;const L=people();l.innerHTML=L.map(([u,p])=>`<button class="ch-row" data-a="open" data-u="${esc(u)}">${av(p)}<span class="ch-rt"><span class="ch-nm">${esc(p.n)}</span><span class="ch-lm">${chats[cid(me,u)]?'есть переписка':'начать чат'}</span></span></button>`).join('')||'<p class="ch-empty">Никого не найдено.</p>'}
 function paint(msgOnly){if(!me){const b=document.getElementById('chBtn'),p=document.getElementById('chPanel');if(b)b.hidden=true;if(p)p.hidden=true;document.body.classList.remove('ch-open');return}
  const {b,p}=els();b.hidden=false;const n=unreadTotal(),bd=b.querySelector('.ch-bdg');bd.hidden=!n;bd.textContent=n>99?'99+':n;b.title=n?'Непрочитанных чатов: '+n:'Сообщения';b.classList.toggle('on',open);
@@ -67,9 +80,10 @@ function paint(msgOnly){if(!me){const b=document.getElementById('chBtn'),p=docum
  p.dataset.v='list';const rk=rn.filter(x=>!x.read).length,r0=rn[0];const sysRow=`<button class="ch-row ch-pin${rk?' unr':''}" data-a="sys"><span class="ch-av ch-sysav">📢</span><span class="ch-rt"><span class="ch-nm">Повышения и понижения<span class="ch-tm">${r0?esc(ft(r0.at)):''}</span></span><span class="ch-lm">${r0?esc(r0.text):'Системные уведомления'}${rk?`<span class="ch-k">${rk}</span>`:''}</span></span></button>`;const L=Object.values(chats).sort((a,b)=>ms(b.updatedAt)-ms(a.updatedAt));
  p.innerHTML=`<div class="ch-hd"><span class="ch-tt">Сообщения</span><button class="ch-ib ch-plus" data-a="new" aria-label="Новый чат" title="Новый чат">＋</button><button class="ch-ib" data-a="close" aria-label="Закрыть">×</button></div>${pushBar()}<div class="ch-list">${sysRow}${L.map(c=>{const u=other(c),o=person(u,c),k=(c.unread||{})[me]||0,lm=c.lastMessage||{};
   return `<button class="ch-row${k?' unr':''}" data-a="open" data-u="${esc(u)}">${av(o)}<span class="ch-rt"><span class="ch-nm">${esc(o.n)}<span class="ch-tm">${esc(ft(c.updatedAt))}</span></span><span class="ch-lm">${lm.from===me?'Вы: ':''}${esc(lm.text||'')}${k?`<span class="ch-k">${k}</span>`:''}</span></span></button>`}).join('')||'<p class="ch-empty">Личных чатов пока нет.<br><button class="btn o" data-a="new">Начать чат</button></p>'}</div>`}
-function msgHtml(){if(!chats[cur.id])return '<p class="ch-empty">Напишите первое сообщение.</p>';let last='';
+function msgHtml(){if(!chats[cur.id])return '<p class="ch-empty">Напишите первое сообщение.</p>';let last='',prev='';const c=chats[cur.id];
  return msgs.map(m=>{const d=m.at?.toDate?.(),day=d?d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'';const sep=day&&day!==last?`<div class="ch-day">${esc(day)}</div>`:'';last=day||last;
-  return `${sep}<div class="ch-m${m.from===me?' me':''}"><div class="ch-bb">${esc(m.text).replace(/\n/g,'<br>')}<span class="ch-mt">${esc(ft(m.at))}</span></div></div>`}).join('')}
+  const who=m.from!==me&&(sep||prev!==m.from)?`<span class="ch-au">${esc(person(m.from,c).n)}</span>`:'';prev=m.from;
+  return `${sep}<div class="ch-m${m.from===me?' me':''}"><div class="ch-bb">${who}${esc(m.text).replace(/\n/g,'<br>')}<span class="ch-mt">${esc(ft(m.at))}</span></div></div>`}).join('')}
 // «Написать»: профиль участника и карточки «Членов партии» (по discordId → pub)
 const uidByDid=did=>did&&Object.keys(pub).find(u=>pub[u].did===String(did));
 function hookPages(){const P=window.P;if(!P||P.__ch)return;P.__ch=1;const om=P.member,op=P.party;const MEM=()=>(window.VPPKA_DATA&&window.VPPKA_DATA.members)||(window.VPPKA_C&&window.VPPKA_C().leadership.members)||[];
@@ -97,8 +111,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('messag
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.t==='openHash'&&e.data.h)location.hash=e.data.h});
 function hashChat(){const m=location.hash.match(/^#chat\/(.+)$/);if(m&&me){history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>openConv(m[1]),800)}}
 window.VPPKA_CHAT={open:openConv};
-let pubKey='';
+let pubKey='',fioSig='';
 export function install(){let key='';const tick=()=>{const fb=FB();if(!fb||!fb.F)return;hookPages();const u=fb.user,k=u?u.uid+':'+!!(fb.power||{}).owner:'';
  if(k!==key){key=k;stop();me=u?u.uid:null;isOwn=!!(fb.power||{}).owner;if(me){start();pushSync();hashChat()}paint()}
- const pf=(window.VPPKA_AUTH||{}).profile,pk=pf?(pf.displayName||'')+(pf.photo||'').length:'';if(me&&pk!==pubKey&&Object.keys(pub).length){pubKey=pk;pubSelf()}};
+ if(me){loadAppFio();const sg=MEMS().map(m=>m.discordId+'='+m.name).join('|').length+':'+Object.keys(appFio).length;if(sg!==fioSig){fioSig=sg;if(open)repaint()}}
+ const pf=(window.VPPKA_AUTH||{}).profile,pk=pf?(cardName(pf.discordId)||pf.displayName||'')+(pf.photo||'').length:'';if(me&&pk!==pubKey&&Object.keys(pub).length){pubKey=pk;pubSelf()}};
  tick();setInterval(tick,1000)}
