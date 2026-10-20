@@ -47,7 +47,7 @@ function subMsgs(){if(msub)msub();msgs=[];const f=F();msub=f.onSnapshot(f.query(
 async function markRead(){if(!cur||!chats[cur.id])return;try{await F().updateDoc(F().doc(db(),'chats',cur.id),{['unread.'+me]:0})}catch(e){}}
 function openConv(uid){if(!uid||uid===me)return;if(!isOwn&&(uid===OWNER||uid===KEYMASTER)&&!chats[cid(me,uid)])return;if(uid===KEYMASTER)return;
  const id=cid(me,uid);if(msub)msub();msub=null;msgs=[];cur={id,uid};view='conv';open=true;if(chats[id]){subMsgs();markRead()}paint();setTimeout(()=>{const t=document.getElementById('ch-in');t&&t.focus()},50)}
-async function send(){const t=document.getElementById('ch-in');if(!t||!cur)return;const text=t.value.trim();if(!text)return;if(text.length>MAX)return alert('Сообщение длиннее '+MAX+' символов.');
+async function send(){const t=document.getElementById('ch-in');if(!t||!cur)return;const text=t.value.trim();if(!text)return;if(window.VPPKA_NEEDST&&window.VPPKA_NEEDST())return;if(text.length>MAX)return alert('Сообщение длиннее '+MAX+' символов.');
  if(Date.now()-sent<400)return;sent=Date.now();const f=F(),d=db(),ref=f.doc(d,'chats',cur.id),now=f.serverTimestamp(),o=cur.uid;t.value='';draft[cur.id]='';
  const b=f.writeBatch(d),lm={text:text.slice(0,140),from:me,at:now};
  if(!chats[cur.id]){const c={participants:[me,o].sort(),createdBy:me,updatedAt:now,lastMessage:lm,unread:{[me]:0,[o]:1}};if(isOwn){const pf=(window.VPPKA_AUTH||{}).profile||{};c.names={[me]:String(pf.displayName||'Пользователь').slice(0,40)}}b.set(ref,c)}
