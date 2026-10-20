@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js?v=202';
+import { firebaseConfig } from './firebase-config.js?v=203';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -116,13 +116,13 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
   if(id==='k-rm'){await F.updateDoc(F.doc(db,'users',user.uid),{keyHash:F.deleteField(),rank:F.deleteField(),roleName:F.deleteField()});delete profile.keyHash;delete profile.rank;delete profile.roleName;await refreshPower();route();}
   if(id==='av-go'||id==='av-rm'){const pe=t=>{const e=document.getElementById('av-e');if(e)e.textContent=t};let ph=null;
    if(id==='av-go'){try{ph=await photoData(document.getElementById('p-av').files[0]);}catch(e){return pe(e.message)}if(!ph)return pe('Выберите файл.');}
-   ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{avatar:ph?ph:F.deleteField()});if(ph)profile.avatar=ph;else delete profile.avatar;paintAuth();route();syncAv();window.VPPKA_PUBSELF&&window.VPPKA_PUBSELF();}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает аватар (правила базы не обновлены).':em(e));}return;}
+   ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{avatar:ph?ph:F.deleteField()});if(ph)profile.avatar=ph;else delete profile.avatar;paintAuth();route();syncAv();window.VPPKA_PUBSELF&&window.VPPKA_PUBSELF();if(ph&&!profile.photo)syncPhoto(false).catch(e=>console.warn('автофото',e.code||e));}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает аватар (правила базы не обновлены).':em(e));}return;}
   if(id==='ld-go'||id==='ld-rm'){const pe=t=>{const e=document.getElementById('ld-e');if(e)e.textContent=t};const ln=window.VPPKA_MYLDR&&window.VPPKA_MYLDR();if(!ln)return pe('Вы не в составе руководства.');let ph=null;
    if(id==='ld-go'){try{ph=await photoData(document.getElementById('p-ld').files[0]);}catch(e){return pe(e.message)}if(!ph)return pe('Выберите файл.');}
    ev.target.disabled=true;try{const r=F.doc(db,'ldrPhotos',user.uid);if(ph)await F.setDoc(r,{d:ph,n:ln.slice(0,160)});else await F.deleteDoc(r);await (window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD());pe(ph?'Сохранено.':'Сброшено — используется фото карточки.');}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Нет прав (нужен ключ доступа руководства).':em(e));}return;}
   if(id==='p-go'||id==='p-rm'){const pe=t=>{const e=document.getElementById('p-e');if(e)e.textContent=t};let ph=null;
    if(id==='p-go'){try{ph=await photoData(document.getElementById('p-ph').files[0]);}catch(e){return pe(e.message)}if(!ph)return pe('Выберите файл.');}
-   ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{photo:ph?ph:F.deleteField()});if(ph)profile.photo=ph;else delete profile.photo;paintAuth();route();syncAv();window.VPPKA_PUBSELF&&window.VPPKA_PUBSELF();if(ph&&power.rank>0)syncPhoto().catch(e=>console.warn('автофото',e.code||e));F.setDoc(F.doc(db,'syncReq',user.uid),{t:F.serverTimestamp()}).catch(()=>{});}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает фото (правила базы не обновлены).':em(e));}return;}
+   ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{photo:ph?ph:F.deleteField()});if(ph)profile.photo=ph;else delete profile.photo;paintAuth();route();syncAv();window.VPPKA_PUBSELF&&window.VPPKA_PUBSELF();if(ph)syncPhoto(true).catch(e=>console.warn('автофото',e.code||e));F.setDoc(F.doc(db,'syncReq',user.uid),{t:F.serverTimestamp()}).catch(()=>{});}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает фото (правила базы не обновлены).':em(e));}return;}
   if(id==='a-out'){await A.signOut(auth);location.hash='#home';}
   }catch(e){err(em(e));ev.target.disabled=false;}
  });
@@ -159,13 +159,18 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  async function checkKey(k,discordId){const h=await sha(k);let s;try{s=await F.getDoc(F.doc(db,'accessKeys',h));}catch(e){return{ok:false,msg:'ключ не найден.'}}
   if(!s.exists())return{ok:false,msg:'ключ не найден.'};const x=s.data();if(x.revoked)return{ok:false,msg:'ключ аннулирован.'};if(x.discordId!==discordId)return{ok:false,msg:'ключ выдан другому пользователю Discord.'};return{ok:true,h,rank:x.rank,roleName:x.roleName};}
  // Живая проверка полномочий: владелец (config/owners) или действующий ключ, привязанный к этому Discord
- async function refreshPower(){power={rank:0,roleName:''};if(!user)return;
+ async function refreshPower(){await refreshPower0();if(user&&profile)syncPhoto(false).catch(e=>console.warn('автофото',e.code||e));}
+ async function refreshPower0(){power={rank:0,roleName:''};if(!user)return;
   try{const o=await F.getDoc(F.doc(db,'config','owners'));if(o.exists()&&(o.data().uids||[]).includes(user.uid)){power={rank:1000,tier:9,roleName:(profile&&profile.roleName)||'Владелец',members:true,owner:true};return;}}catch(e){}
   const h=profile&&profile.keyHash;if(!h)return;try{const s=await F.getDoc(F.doc(db,'accessKeys',h));const x=s.exists()&&s.data();if(x&&!x.revoked&&x.discordId===profile.discordId&&user.email===profile.discordId+'@vppka.local')power={rank:x.rank,tier:x.tier||0,roleName:x.roleName,chair:x.canEditChairman===true,members:x.canViewMembers===true};}catch(e){}
-  if(power.rank>0)syncPhoto().catch(e=>console.warn('автофото',e.code||e));}
- // Автофото: фото из профиля копируется в запись руководства с тем же discordId
- async function syncPhoto(){const ph=profile&&(profile.photo||profile.avatar);if(!ph||!profile.discordId)return;const s=await F.getDocs(F.query(F.collection(db,'members'),F.where('discordId','==',profile.discordId)));let ch=false;
-  for(const d of s.docs){if(d.data().photo!==ph){await F.updateDoc(d.ref,{photo:ph,updatedBy:user.uid,updatedAt:F.serverTimestamp()});ch=true;}}if(ch&&window.VPPKA_RELOAD)window.VPPKA_RELOAD();}
+ }
+ // Автофото: «Фото для карточки» из профиля (нет его — аватар) копируется во все записи состава с тем же discordId:
+ // карточку «Члены партии» (p_*) и места руководства (m*). force — пользователь только что сменил фото: заменяем;
+ // иначе (вход на сайт) — только заполняем записи без фото, чтобы не затирать фото, поставленное руководством.
+ // Правило members selfPhotoOk: своя запись (discordId = логин), подтверждённый аккаунт, меняется только photo.
+ async function syncPhoto(force){const ph=profile&&(profile.photo||profile.avatar);if(!ph||!profile.discordId||!user)return;const s=await F.getDocs(F.query(F.collection(db,'members'),F.where('discordId','==',profile.discordId)));let ch=false;
+  for(const d of s.docs){const m=d.data(),cur=m.photo||'';if(cur===ph||(!force&&cur)||!m.name||/^вакансия$/i.test(String(m.name).trim()))continue;try{await F.updateDoc(d.ref,{photo:ph,updatedBy:user.uid,updatedAt:F.serverTimestamp()});ch=true}catch(e){console.warn('автофото',d.id,e.code||e)}}
+  if(ch&&window.VPPKA_RELOAD)window.VPPKA_RELOAD();return ch}
 
  function paintAuth(){
   window.VPPKA_PAINTAUTH=paintAuth;if(!link)return;
@@ -189,7 +194,7 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  }
 
  async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=202').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=202').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=202').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=202').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=202').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=202').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=202').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=202').then(m=>m.install()).catch(e=>console.error('admin',e));
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=203').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=203').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=203').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=203').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=203').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=203').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=203').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=203').then(m=>m.install()).catch(e=>console.error('admin',e));
  A.onAuthStateChanged(auth,async u=>{user=u;profile=null;
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():null;if(!s.exists()){const d0=String(u.email||'').split('@')[0];if(/^[\w.]{2,64}$/.test(d0)){const np={discordId:d0,createdAt:F.serverTimestamp()};if(/^\d{15,21}$/.test(d0))np.discordLink='https://discord.com/users/'+d0;try{await F.setDoc(F.doc(db,'users',u.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}}}catch(e3){console.warn('Профиль не восстановлен',e3)}}}}catch(e){console.warn(e)}}await refreshPower();
   paintAuth();

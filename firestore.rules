@@ -521,14 +521,14 @@ service cloud.firestore {
           && request.resource.data.get('updatedBy', '') == request.auth.uid
           && rkTargetOk(resource.data.get('discordId', ''));
       }
-      // автофото: владелец привязанной записи (discordId совпадает, ключ действителен) меняет только своё фото
+      // автофото: владелец привязанной записи (discordId совпадает с логином, аккаунт подтверждён кодом из Discord) меняет только своё фото
       function selfPhotoOk() {
         return resource.data.get('discordId', '') != ''
           && request.auth.token.email == resource.data.discordId + '@vppka.local'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photo','updatedBy','updatedAt'])
           && optStr(request.resource.data, 'photo', 900000)
           && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy == request.auth.uid)
-          && keyRank() >= 1;
+          && verified();
       }
       // ступень 4+: запись со ступенью ниже своей; смена человека (discordId) — ступень 5+; звание p_* — распорядители и только из rkList()
       function tierUpdOk(t, own, ra) {
