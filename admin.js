@@ -1,7 +1,7 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=200';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=201';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
@@ -20,10 +20,30 @@ const LITE={
 };
 const OWNER_CAPS={add:1,edit:1,del:1};
 const pw=()=>(FB()&&FB().power)||{};
+// Права зрителя сокращённой панели — зеркало firestore.rules (защищают только правила, здесь — что показывать).
+// ra — распорядитель (сидит на m1, m4, m5 или m12): назначает/снимает на руководящих местах и меняет звания p_*.
+// td — заместитель начальника техотдела (m12) без мест m1/m4/m5: не трогает своё место и места владельца.
+const OWNER_DID='646280678736003073';
+const myDidV=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');
+const seatDidV=s=>String((((((window.VPPKA_DATA||{}).members)||[]).find(m=>m.id===s))||{}).discordId||'');
+function viewer(){const did=myDidV(),on=s=>!!did&&seatDidV(s)===did,ra=['m1','m4','m5','m12'].some(on);
+ return {tier:pw().tier|0,ra,chair:on('m1'),td:on('m12')&&!['m1','m4','m5'].some(on)}}
+function liteCaps(tab){const c=LITE[tab];if(!c||tab!=='members')return c;const v=viewer();if(!v.ra&&v.tier<=5)return c;
+ return {...c,hint:`Можно менять карточки со ступенью ниже ${v.tier} и уровнем ниже 100.`+(v.ra?' Вы назначаете и снимаете людей на руководящих местах и меняете звания членов партии (только из списка званий).':'')+(v.td?' Своё место m12 и места владельца (m11, m17) меняет только владелец.':'')+` Места m1${v.chair?'':', m4, m5'} и m11 меняет только владелец${v.chair?'':' или Председатель ЦК'}.`}}
+// Можно ли сохранить/удалить конкретную карточку состава (как в правилах members: tierUpdOk, seatAssignOk, delete).
+function memberCaps(id,d){d=d||{};if(superOn())return OWNER_CAPS;const v=viewer(),party=String(id).startsWith('p_')||d.group==='Члены партии';
+ if(id==='m11'||d.role==='Начальник технического отдела'||(d.rank|0)>=100)return {};
+ if(['m1','m4','m5'].includes(id)&&!v.chair)return {}; // места председателя и замов — только председатель/владелец (как в панели)
+ const tierOk=(d.tier|0)<v.tier&&v.tier>=4;
+ const raOk=v.ra&&!party&&(!['m4','m5'].includes(id)||v.chair)&&!(v.td&&(id==='m12'||String(d.discordId||'')===OWNER_DID));
+ const vac=/^вакансия$/i.test(String(d.name||'').trim());
+ const delOk=!['m1','m4','m5','m12'].includes(id)&&(party||vac)&&(tierOk||(v.ra&&!party));
+ return {edit:tierOk||raOk?1:0,del:delOk?1:0}}
 const liteOn=()=>!superOn()&&!!(FB()&&FB().user)&&(pw().tier|0)>=5&&(pw().rank|0)>0;
 const canAdmin=()=>superOn()||liteOn();
 const TABS_NOW=()=>superOn()?ALL_TABS:ALL_TABS.filter(([id])=>LITE[id]);
-const caps=tab=>superOn()?OWNER_CAPS:(LITE[tab]||{});
+const caps=tab=>superOn()?OWNER_CAPS:(liteCaps(tab)||{});
+const rowCaps=(col,id,d)=>{const c=caps(col);if(superOn()||col!=='members')return c;const m=memberCaps(id,d);return {...c,edit:c.edit&&m.edit,del:c.del&&m.del}};
 function fixTab(){const t=TABS_NOW();if(!t.some(([id])=>id===state.tab)){state.tab=t[0][0];state.rows=null;state.edit=null}}
 const AUTO_ID=new Set(['news','events','votes','notifications']);
 const state={tab:'site',edit:null,rows:null,hist:[],tpls:{},q:'',msg:'',msgOk:false,dirty:false,expert:false,loading:false,busy:false,fieldErr:{},seq:0,previewOpen:null,booted:false};
@@ -45,9 +65,9 @@ function editor(){
  const body=state.expert?`<textarea id="ad-json" class="adm-json" spellcheck="false">${esc(JSON.stringify(e.data,null,2))}</textarea>`:renderForm(e.kind,e.data,{errors:state.fieldErr,customs:state.tpls});
  const hn=hiddenNote(e.kind);
  const tpls=listTemplates(e.kind,state.tpls);
- const lite=!superOn(),cp=caps(e.col),canSave=e.isNew?!!cp.add:!!cp.edit;
+ const lite=!superOn(),cp=e.isNew?caps(e.col):rowCaps(e.col,e.id,e.base),canSave=e.isNew?!!cp.add:!!cp.edit;
  const asTpl=e.col!=='content'&&!lite?`<button type="button" class="btn sm o" id="ad-as-tpl">Сохранить как шаблон</button>`:'';
- const ro=lite&&!canSave?`<p class="amut">Только просмотр: изменить этот документ можно только владельцу.</p>`:'';
+ const ro=lite&&!canSave?`<p class="amut">Только просмотр: ${e.col==='members'&&caps('members').edit?'эту карточку вы не меняете (ступень, защищённое место или место владельца).':'изменить этот документ можно только владельцу.'}</p>`:'';
  return `<div class="af-top">${lite?'':`<label class="af-sw"><input type="checkbox" id="ad-expert"${state.expert?' checked':''}><span>Экспертный режим (JSON)</span></label>`}<span class="af-dirty" id="ad-dirty"${state.dirty&&canSave?'':' hidden'}>● есть несохранённые изменения</span></div>
  ${ro}${note}${idBox}${hn?`<p class="amut">${esc(hn)}</p>`:''}${body}
  <details class="adm-live" id="ad-live"${open?' open':''}><summary>Как это выглядит на сайте</summary><div id="ad-prev">${preview(e.kind,e.data,siteNow())}</div></details>
@@ -62,8 +82,7 @@ function rowsHTML(){
  const q=state.q.trim().toLowerCase();
  const rows=(state.rows||[]).filter(r=>{if(!q)return true;return (rowLabel(r.data,r.id)+' '+r.id).toLowerCase().includes(q)});
  if(!rows.length)return '<p class="amut">Пусто.</p>';
- const cp=caps(state.tab);
- return rows.map(r=>`<div class="adm-row"><span><b>${esc(rowLabel(r.data,r.id))}</b> <small>${esc(r.id)}</small></span><span><button type="button" class="btn sm" data-adedit="${esc(state.tab)}" data-adid="${esc(r.id)}">${cp.edit?'Изменить':'Открыть'}</button>${cp.del?` <button type="button" class="btn sm danger" data-addel="${esc(state.tab)}" data-adid="${esc(r.id)}">🗑 Удалить</button>`:''}</span></div>`).join('');
+ return rows.map(r=>{const cp=rowCaps(state.tab,r.id,r.data);return `<div class="adm-row"><span><b>${esc(rowLabel(r.data,r.id))}</b> <small>${esc(r.id)}</small></span><span><button type="button" class="btn sm" data-adedit="${esc(state.tab)}" data-adid="${esc(r.id)}">${cp.edit?'Изменить':'Открыть'}</button>${cp.del?` <button type="button" class="btn sm danger" data-addel="${esc(state.tab)}" data-adid="${esc(r.id)}">🗑 Удалить</button>`:''}</span></div>`}).join('');
 }
 function listHTML(){
  const kind=kindOf(state.tab),tpls=listTemplates(kind,state.tpls),cp=caps(state.tab),hint=!superOn()&&cp.hint?`<p class="amut">${esc(cp.hint)}</p>`:'',apps=!superOn()&&state.tab==='applications'?'<p><a class="btn sm o" href="#apps">Заявки в партию →</a></p>':'';
@@ -138,7 +157,7 @@ function guardDelete(col,id,data){
 }
 async function save(){
  const e=state.edit;if(!e||state.busy)return;
- const lite=!superOn();if(lite){const cp=caps(e.col);if(e.col==='content'||!(e.isNew?cp.add:cp.edit)){say('Нет прав на это действие.');refresh();return}}
+ const lite=!superOn();if(lite){const cp=e.isNew?caps(e.col):rowCaps(e.col,e.id,e.base);if(e.col==='content'||!(e.isNew?cp.add:cp.edit)){say('Нет прав на это действие.');refresh();return}}
  if(state.expert&&!lite){let obj;try{obj=JSON.parse(document.getElementById('ad-json').value)}catch(err){say('JSON: '+err.message);refresh();return}if(!obj||typeof obj!=='object'||Array.isArray(obj)){say('Нужен объект JSON.');refresh();return}e.data=obj}
  let id=e.col==='content'?e.id:(document.getElementById('ad-docid')?document.getElementById('ad-docid').value.trim():e.id);
  if(e.col!=='content'&&id&&!/^[A-Za-z0-9_-]{1,200}$/.test(id)){say('Идентификатор: латиница, цифры, _ и -, без «/».');refresh();return}
@@ -177,7 +196,7 @@ async function save(){
 }
 async function delDoc(col,id){
  const row=(state.rows||[]).find(r=>r.id===id);const data=row?row.data:(state.edit&&state.edit.id===id?state.edit.data:null);
- if(!superOn()&&!caps(col).del){say('Нет прав на удаление.');refresh();return}
+ if(!superOn()&&!rowCaps(col,id,data).del){say('Нет прав на удаление.');refresh();return}
  if(!guardDelete(col,id,data))return;const f=F();
  try{if(data&&superOn())await pushHist(col,id,data);let ldr=false;if(col==='members'){ldr=await removeMember(f,id);if(ldr){const list=seatList(id,null,true);if(list){if(superOn())await syncSeats(list);else try{await syncSeats(list)}catch(err){}}}}else await f.deleteDoc(f.doc(db(),col,id));
   if(state.rows)state.rows=state.rows.filter(r=>r.id!==id);if(state.edit&&state.edit.id===id){state.edit=null;state.dirty=false}say('Удалено.',true);if((col==='members'||col==='news')&&window.VPPKA_RELOAD)window.VPPKA_RELOAD()}
