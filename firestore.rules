@@ -56,7 +56,8 @@ service cloud.firestore {
     function verified() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
     // ---------- звания членов партии: менять могут только Председатель ЦК (m1), его заместители (m4, m5) и владелец сайта ----------
     // кто есть кто — по документам мест руководства (members/m1, m4, m5), а не по данным клиента
-    function rkList() { return ['Кандидат','Член партии','Активист','Старший член партии','Ветеран партии','Почётный член партии']; }
+    // Звания; applications.partyRank 1..5 = rkList()[partyRank - 1]. «Кандидат» упразднён 20.10.2026.
+    function rkList() { return ['Член партии','Активист','Старший член партии','Ветеран партии','Почётный член партии']; }
     function seatDoc(s) { return /databases/$(database)/documents/members/$(s); }
     // Нет документа места — пустой Discord, а не ошибка всего правила.
     function seatDid(s) { return get(seatDoc(s)).data.get('discordId', ''); }
@@ -265,8 +266,8 @@ service cloud.firestore {
           && rankAdmin() && rkTargetOk(resource.data.get('discordId', ''))
           && resource.data.status in ['accepted','member']
           && request.resource.data.get('partyRank', 0) is int
-          && request.resource.data.get('partyRank', 0) >= 0 && request.resource.data.get('partyRank', 0) <= 5
-          && request.resource.data.get('partyRole', '') == rkList()[request.resource.data.get('partyRank', 0)]
+          && request.resource.data.get('partyRank', 0) >= 1 && request.resource.data.get('partyRank', 0) <= 5
+          && request.resource.data.get('partyRole', '') == rkList()[request.resource.data.get('partyRank', 0) - 1]
           && request.resource.data.rankedBy == request.auth.uid
           && request.resource.data.rankedAt == request.time;
       }
@@ -525,7 +526,7 @@ service cloud.firestore {
           && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy == request.auth.uid)
           && keyRank() >= 1;
       }
-      // ступень 4+: запись со ступенью ниже своей; смена человека (discordId) — ступень 5+; звание p_* — распорядители
+      // ступень 4+: запись со ступенью ниже своей; смена человека (discordId) — ступень 5+; звание p_* — распорядители и только из rkList()
       function tierUpdOk(t, own, ra) {
         let lim = own ? 1000 : 100;
         return t >= 4
@@ -533,7 +534,8 @@ service cloud.firestore {
           && (request.resource.data.get('discordId', '') == resource.data.get('discordId', '') || t >= 5)
           && request.resource.data.get('tier', 0) is int && request.resource.data.get('tier', 0) < t
           && request.resource.data.get('rank', -1) is int && request.resource.data.rank < lim
-          && (!id.matches('^p_.*') || request.resource.data.get('role', '') == resource.data.get('role', '') || ra)
+          && (!id.matches('^p_.*') || request.resource.data.get('role', '') == resource.data.get('role', '')
+              || (ra && request.resource.data.get('role', '') in rkList()))
           && validMember(request.resource.data);
       }
       // председатель: только правка полей, ранг и ступень менять нельзя, удалять нельзя
