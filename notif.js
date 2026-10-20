@@ -5,7 +5,9 @@ const tier=()=>(FB().power||{}).tier||0, isOwner=()=>((FB().power||{}).rank||0)>
 const canApps=()=>isOwner()||tier()>=3, canPost=()=>isOwner()||tier()>=4;
 const TYPES={news:'Новость',convocation:'Созыв',other:'Объявление',appoint:'Назначение',recall:'Снятие'};
 function myDid(){const pr=((window.VPPKA_AUTH||{}).profile)||{},em=String((FB().user&&FB().user.email)||'').split('@')[0];return String(pr.discordId||(/^\d{15,21}$/.test(em)?em:''))}
-function noteVisible(n){if(!n||(n.type!=='appoint'&&n.type!=='recall'))return true;const did=myDid(),me=FB().user&&FB().user.uid;return (!!did&&String(n.to||'')===did)||(!!me&&n.author===me)}
+// Личные уведомления (назначение/снятие, любое с полем to) — только адресату по Discord ID. Автору (тому, кто назначил) они не показываются:
+// текст «Вас назначили…» обращён к адресату. Владелец по правилам читает всё, поэтому фильтр обязателен на клиенте.
+function noteVisible(n){if(!n)return false;const personal=n.type==='appoint'||n.type==='recall'||(n.to!=null&&n.to!=='');if(!personal)return true;const did=myDid();return !!did&&String(n.to||'')===did}
 let uid=null,unsub=[],news=[],notes=[],apps=[],tab='n',open=false;
 const ms=t=>t&&t.toMillis?t.toMillis():(t&&t.seconds?t.seconds*1000:(typeof t==='string'?Date.parse(t)||0:0));
 const fdt=t=>{const m=ms(t);return m?new Date(m).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''};
