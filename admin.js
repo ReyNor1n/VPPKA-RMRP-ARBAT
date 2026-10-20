@@ -1,7 +1,7 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=193';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=194';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
@@ -88,7 +88,7 @@ function render(){
  const lite=!superOn();
  const head=lite?`<p class="amut">Сокращённая панель: ${esc(pw().roleName||'администратор')}, ступень ${esc(pw().tier)}. Тексты страниц, ключи доступа, настройки сайта и Discord меняет только владелец.</p><style>.adm-lite [data-afact=savetpl],.adm-lite [data-afact=deltpl]{display:none}</style>`:'';
  const body=state.tab==='raw'?rawHTML():isContent(state.tab)?textsHTML():listHTML();
- return page(lite?'Администрирование (сокращённая панель)':'Администрирование',`${head}${tabs()}${msgLine()}<div class="blk af-wrap${lite?' adm-lite':''}">${body}</div>`);
+ return page('Администрирование',`${head}${tabs()}${msgLine()}<div class="blk af-wrap${lite?' adm-lite':''}">${body}</div>`);
 }
 function refresh(){if(!onAdmin())return;const y=scrollY,focus=document.activeElement,af=focus&&focus.dataset&&focus.dataset.af||'',sel=focus&&focus.selectionStart,id=focus&&focus.id;const app=document.getElementById('app');if(!app)return;app.innerHTML=render();scrollTo(0,y);
  if(af){const el=[...document.querySelectorAll('[data-af]')].find(x=>x.dataset.af===af);if(el){el.focus();if(sel!=null&&el.setSelectionRange)try{el.setSelectionRange(sel,sel)}catch(e){}}}
