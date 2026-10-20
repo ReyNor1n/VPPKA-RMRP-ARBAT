@@ -122,7 +122,9 @@ service cloud.firestore {
         allow write: if signedIn() && request.auth.uid == uid && d == 'p'
           && request.resource.data.keys().hasOnly(['birth','passport'])
           && (!('birth' in request.resource.data) || (request.resource.data.birth is string && request.resource.data.birth.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')))
-          && (!('passport' in request.resource.data) || (request.resource.data.passport is string && request.resource.data.passport.matches('^[0-9]{3}-[0-9]{3}$')));
+          && (!('passport' in request.resource.data) || (request.resource.data.passport is string && request.resource.data.passport.matches('^[0-9]{3}-[0-9]{3}$')))
+          // v206: статик обязателен — однажды указанный нельзя стереть (сменить на другой в формате 000-000 можно)
+          && (resource == null || !('passport' in resource.data) || 'passport' in request.resource.data);
       }
       // удаление гостя: владелец или ступень 4+; нельзя удалять держателей ключей, владельцев и служебный аккаунт
       allow delete: if signedIn() && (isOwner() || myTier() >= 4)

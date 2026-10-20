@@ -680,3 +680,6 @@ html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
 .silver-card .acc-priv{color:#f1f5fa;text-shadow:0 1px 2px #000}
 .prof.blk.ldr-card.silver-card{border-color:#cfd6de!important;box-shadow:inset 0 0 0 1px rgba(235,242,250,.38),inset 0 0 40px rgba(210,222,235,.22),0 0 18px -4px rgba(200,212,226,.7)}
 .silver-card .ldr-badge span{border-top-color:rgba(220,228,238,.55)!important}
+
+/* v206: окно «Укажите статик» */
+#st-ov{z-index:9999}#st-ov .st-md{max-width:440px}#st-ov .st-act{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}#st-ov .st-n{font-size:.85em;margin-top:10px}
