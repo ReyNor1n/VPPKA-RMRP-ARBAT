@@ -395,10 +395,11 @@ async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if
  const meta={updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};let noteErr='';
  const note=async(m,kind,text)=>{try{await seatNote(m,kind,text)}catch(e){noteErr=e.code||e.message;console.warn('seatNote',noteErr)}};
  try{if(!canAssign(p))throw new Error('нет прав на эту должность');
-  if(displaced){await note(displaced,'recall',`Вас сняли с должности «${p.role}». Решение: ${who}.`);rankNote(displaced.discordId,'down',`Вы сняты с должности «${p.role}». Решение: ${who}.`);window.VPPKA_RH&&window.VPPKA_RH(displaced.discordId,'down',p.role,'Снят(а) с должности',displaced.name,'').catch(()=>{})}
+  if(displaced)await note(displaced,'recall',`Вас сняли с должности «${p.role}». Решение: ${who}.`);
   const d={...pick(p,KEEP),name:String(nm).slice(0,100),discordId:u.discordId||'',discord:/^\d{15,21}$/.test(u.discordId)?'https://discord.com/users/'+u.discordId:'',joined:new Date().toLocaleDateString('ru-RU'),...meta};
   if(u.photo)d.photo=u.photo;
   await f.setDoc(f.doc(db(),'members',p.id),d);
+  if(displaced){rankNote(displaced.discordId,'down',`Вы сняты с должности «${p.role}». Решение: ${who}.`);window.VPPKA_RH&&window.VPPKA_RH(displaced.discordId,'down',p.role,'Снят(а) с должности',displaced.name,'').catch(()=>{})}
   try{await writeLdrSeats(ms.map(x=>x.id===p.id?{...x,name:String(nm).slice(0,100),discordId:u.discordId||''}:x))}catch(e){noteErr=noteErr||(e.code||e.message);console.warn('ldrSeats',e.code||e)}
   await note({id:p.id,role:p.role,discordId:u.discordId},'appoint',`Вас назначили на должность «${p.role}». Назначил: ${who}.`);
   rankNote(u.discordId,'assign',`Вас назначили на должность «${p.role}». Назначил: ${who}.`);
@@ -435,8 +436,10 @@ async function unseat(id){if(unseatBusy)return;const m=(D().members||[]).find(x=
  if(!confirm(`Снять «${m.name}» с должности «${role}»?\n\nМесто снова станет вакантным. Другие должности этого человека сохраняются.`))return;
  unseatBusy=true;const f=F();let noteErr='';
  try{if(/^\d{15,21}$/.test(String(m.discordId||''))){try{await seatNote(m,'recall',`Вас сняли с должности «${role}». Решение: ${who}.`)}catch(e){noteErr=e.code||e.message;console.warn('seatNote',noteErr)}
-  rankNote(m.discordId,'down',`Вы сняты с должности «${role}». Решение: ${who}.`);window.VPPKA_RH&&window.VPPKA_RH(m.discordId,'down',role,'Снят(а) с должности',m.name,'').catch(()=>{})}
+  }
   await f.setDoc(f.doc(db(),'members',m.id),{...pick(m,KEEP),name:'Вакансия',bio:'Должность вакантна.',updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});
+  // Личное сообщение и история — только после того, как место действительно освобождено (иначе при отказе человеку приходит ложное «Вы сняты»).
+  if(/^\d{15,21}$/.test(String(m.discordId||''))){rankNote(m.discordId,'down',`Вы сняты с должности «${role}». Решение: ${who}.`);window.VPPKA_RH&&window.VPPKA_RH(m.discordId,'down',role,'Снят(а) с должности',m.name,'').catch(()=>{})}
   try{await writeLdrSeats((D().members||[]).map(x=>x.id===m.id?{...x,name:'Вакансия',discordId:''}:x))}catch(e){noteErr=noteErr||(e.code||e.message);console.warn('ldrSeats',e.code||e)}
   if(window.VPPKA_RELOAD)await window.VPPKA_RELOAD();msg(`«${m.name}» снят(а) с должности «${role}».`+(noteErr?' Уведомление или список должностей не записались ('+noteErr+') — опубликуйте firestore.rules.':''))}
  catch(e){msg('Не удалось снять: '+(e.code==='permission-denied'?'нет прав (опубликуйте новые правила базы).':(e.code||e.message)))}
