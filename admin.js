@@ -1,11 +1,30 @@
-// Раздел #admin. Только владелец сайта (config/owners → power.owner).
+// Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
+// Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=192';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=193';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
 const onAdmin=()=>(location.hash.slice(1)||'').split('/')[0]==='admin';
-const TABS=[...CONTENT,...COLS.map(([id,t])=>[id,t]),['raw','Коллекция']];
+const ALL_TABS=[...CONTENT,...COLS.map(([id,t])=>[id,t]),['raw','Коллекция']];
+// Сокращённая панель (ступень 5+, не владелец). Права — по firestore.rules: правила остаются единственной защитой, здесь только интерфейс.
+// add — создать, edit — сохранить правку, del — удалить; без edit документ открывается только для просмотра.
+const LITE={
+ news:{add:1,edit:1,del:1},
+ events:{add:1,edit:1,del:1},
+ members:{add:1,edit:1,del:1,hint:'Можно менять карточки со ступенью ниже вашей и уровнем ниже 100. Места m1, m4, m5 и m11 меняет только владелец.'},
+ votes:{add:1,edit:1,del:1},
+ notifications:{add:1,del:1,hint:'Новое уведомление: тип «Новость», «Созыв» или «Объявление». Готовые уведомления не редактируются, их можно удалить.'},
+ applications:{del:1,hint:'Принять, отклонить или уволить — на странице «Заявки в партию». Удалить можно только новую, отклонённую или архивную заявку гостя без ключа.'},
+ users:{del:1,hint:'Только просмотр. Удалить можно гостя без ключа доступа (не владельца).'}
+};
+const OWNER_CAPS={add:1,edit:1,del:1};
+const pw=()=>(FB()&&FB().power)||{};
+const liteOn=()=>!superOn()&&!!(FB()&&FB().user)&&(pw().tier|0)>=5&&(pw().rank|0)>0;
+const canAdmin=()=>superOn()||liteOn();
+const TABS_NOW=()=>superOn()?ALL_TABS:ALL_TABS.filter(([id])=>LITE[id]);
+const caps=tab=>superOn()?OWNER_CAPS:(LITE[tab]||{});
+function fixTab(){const t=TABS_NOW();if(!t.some(([id])=>id===state.tab)){state.tab=t[0][0];state.rows=null;state.edit=null}}
 const AUTO_ID=new Set(['news','events','votes','notifications']);
 const state={tab:'site',edit:null,rows:null,hist:[],tpls:{},q:'',msg:'',msgOk:false,dirty:false,expert:false,loading:false,busy:false,fieldErr:{},seq:0,previewOpen:null,booted:false};
 function plain(v){if(v&&typeof v.toDate==='function')return {_time:v.toDate().toISOString()};if(Array.isArray(v))return v.map(plain);if(v&&typeof v==='object')return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,plain(x)]));return v}
@@ -14,7 +33,7 @@ function strip(v){if(Array.isArray(v))return v.map(strip);if(v&&typeof v==='obje
 function errText(e){if(!e)return 'Ошибка';if(e.code==='permission-denied')return 'Нет прав. Опубликуйте firestore.rules.';return e.message||e.code||String(e)}
 function say(t,ok){state.msg=t||'';state.msgOk=!!ok}
 function page(title,body){return `<div class="crumbs"><a href="#home">Главная</a> / Администрирование</div><div class="pg"><h1>${esc(title)}</h1>${body}</div>`}
-function tabs(){return `<div class="adm-tabs">${TABS.map(([id,t])=>`<button type="button" data-adtab="${id}" class="${state.tab===id?'on':''}">${esc(t)}</button>`).join('')}</div>`}
+function tabs(){return `<div class="adm-tabs">${TABS_NOW().map(([id,t])=>`<button type="button" data-adtab="${id}" class="${state.tab===id?'on':''}">${esc(t)}</button>`).join('')}</div>`}
 function msgLine(){return `<p class="${state.msgOk?'af-ok':'aerr'}" id="ad-msg">${esc(state.msg||'')}</p>`}
 function siteNow(){try{return (window.VPPKA_C&&window.VPPKA_C()||{}).site||{}}catch(e){return {}}}
 function editor(){
@@ -26,12 +45,14 @@ function editor(){
  const body=state.expert?`<textarea id="ad-json" class="adm-json" spellcheck="false">${esc(JSON.stringify(e.data,null,2))}</textarea>`:renderForm(e.kind,e.data,{errors:state.fieldErr,customs:state.tpls});
  const hn=hiddenNote(e.kind);
  const tpls=listTemplates(e.kind,state.tpls);
- const asTpl=e.col!=='content'?`<button type="button" class="btn sm o" id="ad-as-tpl">Сохранить как шаблон</button>`:'';
- return `<div class="af-top"><label class="af-sw"><input type="checkbox" id="ad-expert"${state.expert?' checked':''}><span>Экспертный режим (JSON)</span></label><span class="af-dirty" id="ad-dirty"${state.dirty?'':' hidden'}>● есть несохранённые изменения</span></div>
- ${note}${idBox}${hn?`<p class="amut">${esc(hn)}</p>`:''}${body}
+ const lite=!superOn(),cp=caps(e.col),canSave=e.isNew?!!cp.add:!!cp.edit;
+ const asTpl=e.col!=='content'&&!lite?`<button type="button" class="btn sm o" id="ad-as-tpl">Сохранить как шаблон</button>`:'';
+ const ro=lite&&!canSave?`<p class="amut">Только просмотр: изменить этот документ можно только владельцу.</p>`:'';
+ return `<div class="af-top">${lite?'':`<label class="af-sw"><input type="checkbox" id="ad-expert"${state.expert?' checked':''}><span>Экспертный режим (JSON)</span></label>`}<span class="af-dirty" id="ad-dirty"${state.dirty&&canSave?'':' hidden'}>● есть несохранённые изменения</span></div>
+ ${ro}${note}${idBox}${hn?`<p class="amut">${esc(hn)}</p>`:''}${body}
  <details class="adm-live" id="ad-live"${open?' open':''}><summary>Как это выглядит на сайте</summary><div id="ad-prev">${preview(e.kind,e.data,siteNow())}</div></details>
- ${histHTML()}${tpls.length&&e.col!=='content'?`<p class="amut">Свои шаблоны хранятся в config/adminTemplates и видны только владельцу.</p>`:''}
- <div class="af-bar"><button type="button" class="btn sm" id="ad-save">Сохранить</button> <button type="button" class="btn sm o" id="ad-cancel">Отменить</button> ${asTpl}</div>`;
+ ${lite?'':histHTML()}${tpls.length&&e.col!=='content'&&!lite?`<p class="amut">Свои шаблоны хранятся в config/adminTemplates и видны только владельцу.</p>`:''}
+ <div class="af-bar">${canSave?`<button type="button" class="btn sm" id="ad-save">Сохранить</button> <button type="button" class="btn sm o" id="ad-cancel">Отменить</button>`:`<button type="button" class="btn sm o" id="ad-close">Закрыть</button>`} ${asTpl}</div>`;
 }
 function histHTML(){
  const hs=state.hist||[];if(!hs.length)return '<p class="amut">История изменений пока пуста. После сохранения здесь появятся последние версии.</p>';
@@ -41,11 +62,12 @@ function rowsHTML(){
  const q=state.q.trim().toLowerCase();
  const rows=(state.rows||[]).filter(r=>{if(!q)return true;return (rowLabel(r.data,r.id)+' '+r.id).toLowerCase().includes(q)});
  if(!rows.length)return '<p class="amut">Пусто.</p>';
- return rows.map(r=>`<div class="adm-row"><span><b>${esc(rowLabel(r.data,r.id))}</b> <small>${esc(r.id)}</small></span><span><button type="button" class="btn sm" data-adedit="${esc(state.tab)}" data-adid="${esc(r.id)}">Изменить</button> <button type="button" class="btn sm danger" data-addel="${esc(state.tab)}" data-adid="${esc(r.id)}">🗑 Удалить</button></span></div>`).join('');
+ const cp=caps(state.tab);
+ return rows.map(r=>`<div class="adm-row"><span><b>${esc(rowLabel(r.data,r.id))}</b> <small>${esc(r.id)}</small></span><span><button type="button" class="btn sm" data-adedit="${esc(state.tab)}" data-adid="${esc(r.id)}">${cp.edit?'Изменить':'Открыть'}</button>${cp.del?` <button type="button" class="btn sm danger" data-addel="${esc(state.tab)}" data-adid="${esc(r.id)}">🗑 Удалить</button>`:''}</span></div>`).join('');
 }
 function listHTML(){
- const kind=kindOf(state.tab),tpls=listTemplates(kind,state.tpls);
- const create=`<div class="af-acts"><button type="button" class="btn sm" id="ad-add">➕ Добавить</button>${tpls.length?`<select id="ad-newtpl">${tpls.map(t=>`<option value="${esc(t.id)}">${esc(t.title)}</option>`).join('')}</select><button type="button" class="btn sm o" id="ad-fromtpl">Создать по шаблону</button>`:''}</div>`;
+ const kind=kindOf(state.tab),tpls=listTemplates(kind,state.tpls),cp=caps(state.tab),hint=!superOn()&&cp.hint?`<p class="amut">${esc(cp.hint)}</p>`:'',apps=!superOn()&&state.tab==='applications'?'<p><a class="btn sm o" href="#apps">Заявки в партию →</a></p>':'';
+ const create=!cp.add?hint+apps:hint+`<div class="af-acts"><button type="button" class="btn sm" id="ad-add">➕ Добавить</button>${tpls.length?`<select id="ad-newtpl">${tpls.map(t=>`<option value="${esc(t.id)}">${esc(t.title)}</option>`).join('')}</select><button type="button" class="btn sm o" id="ad-fromtpl">Создать по шаблону</button>`:''}</div>`;
  return `${create}<input id="ad-q" class="af-q" type="search" placeholder="Поиск" value="${esc(state.q)}">${(state.rows||[]).length>=120?'<p class="amut">Показаны первые 120 документов.</p>':''}<div id="ad-list">${state.loading?'<p class="amut">Загрузка…</p>':rowsHTML()}</div>${state.edit?`<h2>Правка</h2>${editor()}`:''}`;
 }
 function rawHTML(){const r=state.raw||{col:'',id:'',text:'{}'};return `<div class="blk"><p class="amut">Любая коллекция и документ. config/owners с сайта не перезаписывайте: из него берётся право владельца.</p>
@@ -60,10 +82,13 @@ function textsHTML(){
 }
 function render(){
  const fb=FB();if(!fb||fb.user===undefined)return page('Администрирование','<p>Проверка доступа…</p>');
- if(!fb.user)return page('Нет доступа','<p>Войдите на сайт. Раздел откроется, если учётка есть в config/owners.</p>');
- if(!superOn())return page('Нет доступа','<p>Раздел только для владельца сайта.</p>');
+ if(!fb.user)return page('Нет доступа','<p>Войдите на сайт. Раздел откроется владельцу сайта или администратору с ключом ступени 5 и выше.</p>');
+ if(!canAdmin())return page('Нет доступа','<p>Раздел только для владельца сайта и администраторов (ключ ступени 5 и выше).</p>');
+ fixTab();
+ const lite=!superOn();
+ const head=lite?`<p class="amut">Сокращённая панель: ${esc(pw().roleName||'администратор')}, ступень ${esc(pw().tier)}. Тексты страниц, ключи доступа, настройки сайта и Discord меняет только владелец.</p><style>.adm-lite [data-afact=savetpl],.adm-lite [data-afact=deltpl]{display:none}</style>`:'';
  const body=state.tab==='raw'?rawHTML():isContent(state.tab)?textsHTML():listHTML();
- return page('Администрирование',`${tabs()}${msgLine()}<div class="blk af-wrap">${body}</div>`);
+ return page(lite?'Администрирование (сокращённая панель)':'Администрирование',`${head}${tabs()}${msgLine()}<div class="blk af-wrap${lite?' adm-lite':''}">${body}</div>`);
 }
 function refresh(){if(!onAdmin())return;const y=scrollY,focus=document.activeElement,af=focus&&focus.dataset&&focus.dataset.af||'',sel=focus&&focus.selectionStart,id=focus&&focus.id;const app=document.getElementById('app');if(!app)return;app.innerHTML=render();scrollTo(0,y);
  if(af){const el=[...document.querySelectorAll('[data-af]')].find(x=>x.dataset.af===af);if(el){el.focus();if(sel!=null&&el.setSelectionRange)try{el.setSelectionRange(sel,sel)}catch(e){}}}
@@ -113,7 +138,8 @@ function guardDelete(col,id,data){
 }
 async function save(){
  const e=state.edit;if(!e||state.busy)return;
- if(state.expert){let obj;try{obj=JSON.parse(document.getElementById('ad-json').value)}catch(err){say('JSON: '+err.message);refresh();return}if(!obj||typeof obj!=='object'||Array.isArray(obj)){say('Нужен объект JSON.');refresh();return}e.data=obj}
+ const lite=!superOn();if(lite){const cp=caps(e.col);if(e.col==='content'||!(e.isNew?cp.add:cp.edit)){say('Нет прав на это действие.');refresh();return}}
+ if(state.expert&&!lite){let obj;try{obj=JSON.parse(document.getElementById('ad-json').value)}catch(err){say('JSON: '+err.message);refresh();return}if(!obj||typeof obj!=='object'||Array.isArray(obj)){say('Нужен объект JSON.');refresh();return}e.data=obj}
  let id=e.col==='content'?e.id:(document.getElementById('ad-docid')?document.getElementById('ad-docid').value.trim():e.id);
  if(e.col!=='content'&&id&&!/^[A-Za-z0-9_-]{1,200}$/.test(id)){say('Идентификатор: латиница, цифры, _ и -, без «/».');refresh();return}
  const body=normalize(e.kind,e.data);
@@ -124,7 +150,7 @@ async function save(){
  state.busy=true;say('Сохранение…');refresh();
  try{const f=F();
   let note='';
-  if(e.base){const ok=await pushHist(e.col,id||e.id,e.base);if(!ok)note+=' Снимок истории не записан: документ слишком большой.'}
+  if(e.base&&!lite){const ok=await pushHist(e.col,id||e.id,e.base);if(!ok)note+=' Снимок истории не записан: документ слишком большой.'}
   if(e.col==='content'){
    if(e.kind==='leadership'){await f.setDoc(f.doc(db(),'content','leadership'),{intro:body.intro},{merge:true});window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT({leadership:{intro:body.intro}})}
    else{await f.setDoc(f.doc(db(),'content',e.id),revive(strip(body),f));const part={};part[e.id]=body;window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
@@ -132,13 +158,14 @@ async function save(){
    if(!id)throw new Error('Укажите идентификатор документа.');
    const payload={...body,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};
    const ldr=await putMember(f,id,payload);
-   if(ldr){const list=seatList(id,body,false);if(list)await syncSeats(list);else note+=' Список должностей не обновлён: состав ещё не загружен.'}
+   if(ldr){const list=seatList(id,body,false);if(!list)note+=' Список должностей не обновлён: состав ещё не загружен.';else if(lite){try{await syncSeats(list)}catch(err){note+=' Список должностей обновит Председатель ЦК, его заместитель или владелец.'}}else await syncSeats(list)}
    if(window.VPPKA_RELOAD)window.VPPKA_RELOAD();
   }else{
    const rev=revive(strip(body),f);
    if(e.col==='events'){if(rev.status==='ended'){if(!e.base||e.base.status!=='ended'){rev.endedAt=f.serverTimestamp();rev.endedBy=FB().user.uid}else{if(e.base.endedAt)rev.endedAt=revive(e.base.endedAt,f);if(e.base.endedBy)rev.endedBy=e.base.endedBy}}rev.updatedAt=Date.now();if(e.isNew)rev.createdBy=FB().user.uid}
    if(e.col==='news'&&e.isNew&&!rev.author)rev.author=FB().user.uid;
    if(e.col==='votes'&&e.isNew){rev.createdBy=FB().user.uid;if(rev.createdAt==null)rev.createdAt=Date.now()}
+   if(e.col==='notifications'&&e.isNew&&lite){rev.author=FB().user.uid;rev.createdAt=f.serverTimestamp();for(const k of ['to','seat','when','authorName'])if(rev[k]===''||rev[k]==null)delete rev[k];if(pw().roleName&&!rev.authorName)rev.authorName=String(pw().roleName).slice(0,120)}
    if(e.isNew&&!id){if(!AUTO_ID.has(e.col))throw new Error('Укажите идентификатор документа.');const ref=await f.addDoc(f.collection(db(),e.col),rev);id=ref.id}
    else{if(!id)throw new Error('Укажите идентификатор документа.');await f.setDoc(f.doc(db(),e.col,id),rev)}
    if(e.col==='news'&&window.VPPKA_RELOAD)window.VPPKA_RELOAD();
@@ -150,8 +177,9 @@ async function save(){
 }
 async function delDoc(col,id){
  const row=(state.rows||[]).find(r=>r.id===id);const data=row?row.data:(state.edit&&state.edit.id===id?state.edit.data:null);
+ if(!superOn()&&!caps(col).del){say('Нет прав на удаление.');refresh();return}
  if(!guardDelete(col,id,data))return;const f=F();
- try{if(data)await pushHist(col,id,data);let ldr=false;if(col==='members'){ldr=await removeMember(f,id);if(ldr){const list=seatList(id,null,true);if(list)await syncSeats(list)}}else await f.deleteDoc(f.doc(db(),col,id));
+ try{if(data&&superOn())await pushHist(col,id,data);let ldr=false;if(col==='members'){ldr=await removeMember(f,id);if(ldr){const list=seatList(id,null,true);if(list){if(superOn())await syncSeats(list);else try{await syncSeats(list)}catch(err){}}}}else await f.deleteDoc(f.doc(db(),col,id));
   if(state.rows)state.rows=state.rows.filter(r=>r.id!==id);if(state.edit&&state.edit.id===id){state.edit=null;state.dirty=false}say('Удалено.',true);if((col==='members'||col==='news')&&window.VPPKA_RELOAD)window.VPPKA_RELOAD()}
  catch(err){say(errText(err))}refresh()}
 function parentOf(path){const idx=path[path.length-1];let cur=state.edit.data;for(let i=0;i<path.length-1;i++){cur=cur==null?null:cur[path[i]]}return {arr:cur,idx}}
@@ -163,14 +191,17 @@ async function onTplDel(kind,sel){const id=sel&&sel.value;const cur=id&&state.tp
 function leave(next){if(state.dirty&&!confirm('Есть несохранённые изменения. Уйти без сохранения?'))return false;state.dirty=false;state.edit=null;state.fieldErr={};state.msg='';return true}
 async function onClick(e){
  const a=e.target.closest&&e.target.closest('#ad-prev a, #ad-live a');if(a){e.preventDefault()}
- const b=e.target.closest&&e.target.closest('button');if(!b||!onAdmin()||!superOn())return;
- if(b.dataset.adtab){if(!leave())return;state.tab=b.dataset.adtab;state.rows=null;state.q='';refresh();if(isContent(state.tab))openContent(state.tab);else if(state.tab!=='raw')openList(state.tab);return}
+ const b=e.target.closest&&e.target.closest('button');if(!b||!onAdmin()||!canAdmin())return;
+ const owner=superOn();
+ if(b.id==='ad-close'){state.edit=null;state.dirty=false;state.msg='';refresh();return}
+ if(b.dataset.adtab){if(!TABS_NOW().some(([id])=>id===b.dataset.adtab))return;if(!leave())return;state.tab=b.dataset.adtab;state.rows=null;state.q='';refresh();if(isContent(state.tab))openContent(state.tab);else if(state.tab!=='raw')openList(state.tab);return}
  if(b.id==='ad-save'){save();return}
  if(b.id==='ad-cancel'){if(!state.edit)return;if(state.edit.isNew||!state.edit.base){state.edit=null;state.dirty=false;state.msg='Изменения отменены.';refresh();return}state.edit.data=clone(state.edit.base);state.dirty=false;state.fieldErr={};state.expert=false;say('Изменения отменены.');refresh();return}
+ if((b.id==='ad-add'||b.id==='ad-fromtpl')&&!caps(state.tab).add)return;
  if(b.id==='ad-add'||b.id==='ad-fromtpl'){if(state.dirty&&!confirm('Есть несохранённые изменения. Уйти без сохранения?'))return;if(b.id==='ad-add')newDoc('');else{const sel=document.getElementById('ad-newtpl');newDoc(sel&&sel.value)}return}
- if(b.id==='ad-as-tpl'&&state.edit){onTplSave(state.edit.kind,state.edit.data);return}
+ if(b.id==='ad-as-tpl'&&state.edit&&owner){onTplSave(state.edit.kind,state.edit.data);return}
  if(b.dataset.adedit){if(state.dirty&&state.edit&&state.edit.id!==b.dataset.adid&&!confirm('Есть несохранённые изменения. Уйти без сохранения?'))return;openDoc(b.dataset.adedit,b.dataset.adid);return}
- if(b.dataset.addel){delDoc(b.dataset.addel,b.dataset.adid);return}
+ if(b.dataset.addel&&caps(b.dataset.addel).del){delDoc(b.dataset.addel,b.dataset.adid);return}
  if(b.dataset.afact){const act=b.dataset.afact;if(act==='revert'){const h=state.hist[+b.dataset.hi];if(!h||!state.edit)return;if(state.dirty&&!confirm('Есть несохранённые правки. Они пропадут. Вернуть выбранную версию?'))return;if(!confirm('Вернуть версию от '+new Date(h.at).toLocaleString('ru-RU')+' на сайт?'))return;state.expert=false;state.edit.data=clone(h.data);save();return}
   if(!state.edit)return;let path=[];try{path=JSON.parse(b.dataset.path||'[]')}catch(err){return}
   if(act==='add'){const field=fieldAt(state.edit.kind,state.edit.data,path);let cur=state.edit.data;for(const k of path){if(cur[k]==null)cur[k]=[];cur=cur[k]}if(!Array.isArray(cur))return;cur.push(newItem(field));touch();refresh();return}
@@ -179,9 +210,11 @@ async function onClick(e){
   if(act==='up'){mutateList(path,(arr,idx)=>{if(idx<=0)return;const t=arr[idx-1];arr[idx-1]=arr[idx];arr[idx]=t});return}
   if(act==='down'){mutateList(path,(arr,idx)=>{if(idx>=arr.length-1)return;const t=arr[idx+1];arr[idx+1]=arr[idx];arr[idx]=t});return}
   if(act==='fromtpl'){const sel=b.parentElement.querySelector('select[data-tplsel]');const data=templateData(b.dataset.kind,sel&&sel.value,state.tpls);if(!data){say('Шаблон не найден.');refresh();return}let cur=state.edit.data;for(const k of path){if(cur[k]==null)cur[k]=[];cur=cur[k]}if(!Array.isArray(cur))return;cur.push(data);touch();refresh();return}
+  if((act==='savetpl'||act==='deltpl')&&!owner)return;
   if(act==='savetpl'){const {arr,idx}=parentOf(path);if(!arr)return;onTplSave(b.dataset.kind,arr[idx]);return}
   if(act==='deltpl'){onTplDel(b.dataset.kind,b.parentElement.querySelector('select[data-tplsel]'));return}
  }
+ if((b.id==='ad-seed'||b.id==='ad-col-load'||b.id==='ad-col-save'||b.id==='ad-col-del')&&!owner)return;
  if(b.id==='ad-seed'){if(!confirm('Записать в базу тексты из content.json (сайт, главная, о партии, программа, устав, право, контакты и вступление руководства)? Состав и новости не затрагиваются.'))return;if(state.busy)return;state.busy=true;
   try{const f=F(),c=await contentFile();contentCache=null;const ids=CONTENT.map(x=>x[0]);for(const id of ids){if(id==='leadership'){await f.setDoc(f.doc(db(),'content','leadership'),{intro:(c.leadership&&c.leadership.intro)||''},{merge:true});continue}if(!c[id])continue;await f.setDoc(f.doc(db(),'content',id),c[id])}
    window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(c);say('Тексты записаны в content/.',true);state.edit=null;openContent(isContent(state.tab)?state.tab:'site')}catch(err){say(errText(err));refresh()}finally{state.busy=false}return}
@@ -193,7 +226,7 @@ async function onClick(e){
    else{let obj;try{obj=JSON.parse(state.raw.text||'{}')}catch(err){say('JSON: '+err.message);refresh();return}if(!obj||typeof obj!=='object'||Array.isArray(obj)){say('Нужен объект JSON.');refresh();return}const body=revive(obj,f);if(col==='members'){const ldr=await putMember(f,id,body);if(ldr){const list=seatList(id,plain(body),false);if(list)await syncSeats(list)}}else await f.setDoc(f.doc(db(),col,id),body);say('Сохранено.',true)}}
   catch(err){say(errText(err))}refresh()}
 }
-function onInput(e){if(!onAdmin()||!superOn())return;
+function onInput(e){if(!onAdmin()||!canAdmin())return;
  if(e.target.id==='ad-q'){state.q=e.target.value;const host=document.getElementById('ad-list');if(host)host.innerHTML=rowsHTML();return}
  if(e.target.id==='ad-docid'&&state.edit){state.edit.id=e.target.value;return}
  if(e.target.id==='ad-json'&&state.edit){try{const obj=JSON.parse(e.target.value);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw new Error('x');state.edit.data=obj;state.msg='';touch();schedulePreview()}catch(err){state.msg='JSON: '+err.message;const m=document.getElementById('ad-msg');if(m){m.textContent=state.msg;m.className='aerr'}}return}
@@ -204,14 +237,14 @@ function onInput(e){if(!onAdmin()||!superOn())return;
  if(el.dataset.aft==='textarea'){const lb=el.parentElement&&el.parentElement.querySelector('.af-lb');if(lb)lb.textContent=el.value}
  if(el.dataset.aft==='image'){const img=el.parentElement&&el.parentElement.querySelector('.af-prev');const v=el.value.trim();if(img){if(v){img.hidden=false;img.src=v}else img.remove()}else if(v){el.insertAdjacentHTML('afterend',`<img class="af-prev" src="${esc(v)}" alt="">`)}}
  touch();schedulePreview()}
-async function onChange(e){if(!onAdmin()||!superOn())return;
- if(e.target.id==='ad-expert'){if(!state.edit)return;if(e.target.checked){state.expert=true;refresh();return}try{const obj=JSON.parse(document.getElementById('ad-json').value);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw new Error('Нужен объект JSON.');state.edit.data=obj;state.expert=false;state.fieldErr={};touch();refresh()}catch(err){say('JSON: '+err.message);refresh()}return}
+async function onChange(e){if(!onAdmin()||!canAdmin())return;
+ if(e.target.id==='ad-expert'){if(!superOn())return;if(!state.edit)return;if(e.target.checked){state.expert=true;refresh();return}try{const obj=JSON.parse(document.getElementById('ad-json').value);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw new Error('Нужен объект JSON.');state.edit.data=obj;state.expert=false;state.fieldErr={};touch();refresh()}catch(err){say('JSON: '+err.message);refresh()}return}
  const file=e.target.closest&&e.target.closest('[data-affile]');if(!file||!file.files||!file.files[0]||!state.edit)return;
  try{const url=await fileToData(file.files[0]);setPath(state.edit.data,JSON.parse(file.dataset.affile),url);touch();refresh();schedulePreview()}catch(err){say(err.message||String(err));refresh()}}
-async function ensure(){if(!onAdmin()||!superOn())return;if(!state.booted){state.booted=true;loadTpls()}if(isContent(state.tab)){if(!state.edit&&!state.loading)openContent(state.tab)}else if(state.tab!=='raw'){if(!state.rows&&!state.loading)openList(state.tab)}}
+async function ensure(){if(!onAdmin()||!canAdmin())return;fixTab();if(!state.booted){state.booted=true;if(superOn())loadTpls()}if(isContent(state.tab)){if(!state.edit&&!state.loading)openContent(state.tab)}else if(state.tab!=='raw'){if(!state.rows&&!state.loading)openList(state.tab)}}
 // auth.js вызывает route() после refreshPower, уже после install(). Пока power.owner ещё не выставлен, ensure выходит сразу — ждём флаг и грузим раздел, не затирая открытую правку.
 let armToken=0;
-function armEnsure(){const token=++armToken,t0=Date.now();const tick=()=>{if(token!==armToken||!onAdmin())return;if(superOn()){ensure();return}if(Date.now()-t0>20000)return;setTimeout(tick,400)};tick()}
+function armEnsure(){const token=++armToken,t0=Date.now();const tick=()=>{if(token!==armToken||!onAdmin())return;if(canAdmin()){ensure();return}if(Date.now()-t0>20000)return;setTimeout(tick,400)};tick()}
 export function install(){const P=window.P;if(!P)return;P.admin=render;document.addEventListener('click',onClick);document.addEventListener('input',onInput);document.addEventListener('change',onChange);
  document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='ad-live')state.previewOpen=e.target.open},true);
  addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue=''}});
