@@ -177,6 +177,7 @@ window.VPPKA_MUSIC={
    {src:'audio/golden-hoop.mp3',start:37},             // «Golden Hoop» — Neus, Ольга Восконьян, БИО
    {src:'audio/zvenit-yanvarskaya-vyuga.mp3',start:38},// «Звенит январская вьюга» — Братство Атома, BassnPanda, Квашеная
    {src:'audio/na-zare.mp3',start:85},                 // «На заре» — Альянс, Братство Атома, BassnPanda
+   {src:'audio/prekrasnoe-daleko.mp3',start:26},       // «Прекрасное далёко» — Atomic Heart
   ],vol:0.01,keep:true}     // фон остальных страниц: «Только мы» (GeoffPlaysGuitar, Эдита Пьеха, Atomic Heart)
 };
 (function(){const K='vppka-about-mute',GK='vppka-music-mute';const A={};let cur=null;
