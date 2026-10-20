@@ -667,3 +667,16 @@ html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
 .adm-live summary,.af-hist summary{cursor:pointer;color:var(--gold);font:13px Oxanium,monospace}
 .adm-live .blk,.adm-live .doc{margin-top:12px}
 @media(max-width:700px){.af-acts .btn{flex:1 1 calc(50% - 6px)}.af-ih{flex-direction:column;align-items:stretch}.af-bar .btn{flex:1 1 auto}}
+/* серебряная карточка: зам. начальника техотдела (место m12) — зеркало gold-card */
+.silver-card,.prof.blk.ldr-card.silver-card{background:linear-gradient(90deg,rgba(7,9,13,.80) 0%,rgba(7,9,13,.58) 40%,rgba(7,9,13,.28) 75%,rgba(7,9,13,.10) 100%),linear-gradient(135deg,#5f6873 0%,#9aa3ad 18%,#eef2f6 34%,#8c959f 50%,#d3d9e0 66%,#626b76 84%,#a7b0ba 100%)!important;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(235,242,250,.38),inset 0 0 40px rgba(210,222,235,.22),0 0 22px rgba(190,205,220,.25)}
+.mcard.silver-card{background:linear-gradient(180deg,rgba(7,9,13,.12) 0%,rgba(7,9,13,.55) 55%,rgba(7,9,13,.78) 100%),linear-gradient(135deg,#5f6873 0%,#9aa3ad 18%,#eef2f6 34%,#8c959f 50%,#d3d9e0 66%,#626b76 84%,#a7b0ba 100%)!important}
+.silver-card:after{content:"";display:block!important;position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(245,250,255,.0) 40%,rgba(255,255,255,.30) 50%,rgba(245,250,255,0) 60%,transparent 70%) -150% 0/250% 100% no-repeat;mix-blend-mode:screen;animation:silverSh 5s ease-in-out infinite}
+@keyframes silverSh{0%,55%{background-position:-150% 0}100%{background-position:150% 0}}
+@media(prefers-reduced-motion:reduce){.silver-card:after{animation:none}}
+.silver-card h1,.silver-card h3,.silver-card .prof-n{text-shadow:0 1px 2px #000c}.silver-card .tbl td,.silver-card .role,.silver-card .prof-r{text-shadow:0 1px 2px #000a}
+.silver-card .tbl td:first-child,.silver-card .prof-r,.silver-card .tbl td a,.silver-card .role,.silver-card .ldr-badge span{color:#f1f5fa!important;text-shadow:0 0 6px #1d2a3a,0 1px 2px #000}
+.silver-card .tbl td{border-color:rgba(20,26,34,.45)!important}
+@media(max-width:860px){.prof.blk.ldr-card.silver-card{background:linear-gradient(180deg,rgba(7,9,13,.25) 0%,rgba(7,9,13,.62) 45%,rgba(7,9,13,.72) 100%),linear-gradient(135deg,#5f6873 0%,#9aa3ad 18%,#eef2f6 34%,#8c959f 50%,#d3d9e0 66%,#626b76 84%,#a7b0ba 100%)!important}}
+.silver-card .acc-priv{color:#f1f5fa;text-shadow:0 1px 2px #000}
+.prof.blk.ldr-card.silver-card{border-color:#cfd6de!important;box-shadow:inset 0 0 0 1px rgba(235,242,250,.38),inset 0 0 40px rgba(210,222,235,.22),0 0 18px -4px rgba(200,212,226,.7)}
+.silver-card .ldr-badge span{border-top-color:rgba(220,228,238,.55)!important}
