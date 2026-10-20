@@ -181,7 +181,7 @@ const BUILT={
   {id:'ev-meet',title:'Встреча',data:()=>({title:'Встреча с избирателями',at:evening(),place:'Москва',desc:'Описание мероприятия.',image:'',status:''})}
  ],
  seat:[
-  {id:'seat-vac',title:'Вакансия руководства',data:()=>({name:'Вакансия',role:'Член ЦК (выборный)',group:'Центральный Комитет',bio:'Должность вакантна.',photo:'',rank:80,tier:4,order:10,discordId:''})},
+  {id:'seat-vac',title:'Вакансия руководства',data:()=>({name:'Вакансия',role:'Член ЦК',group:'Центральный Комитет',bio:'Должность вакантна.',photo:'',rank:80,tier:4,order:10,discordId:''})},
   {id:'seat-party',title:'Карточка члена партии',party:1,data:()=>({name:'',role:'Член партии',group:'Члены партии',bio:'',photo:'',rank:10,tier:0,order:50,discordId:''})}
  ],
  charterArticle:[{id:'art',title:'Статья устава',data:()=>({title:'Статья. Название',text:'1.1. Текст пункта.'})}],

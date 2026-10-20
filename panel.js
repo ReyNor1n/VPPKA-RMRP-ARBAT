@@ -412,7 +412,7 @@ async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if
  catch(e){const el=document.getElementById('asg-e');if(el)el.textContent='Ошибка: '+(e.code==='permission-denied'?'недостаточно прав':(e.message||e.code))}}
 function postPanel(){if(!(isPostAdmin()||tier()>=5||chair()))return '';const ms=(D().members||[]).filter(canTouch);
  return `<div class="kpanel kpm"><div class="kp-h"><span>// ДОЛЖНОСТИ</span><h2>Назначения и вакансии</h2></div><div class="kp-f"><p class="amut">Назначить члена партии на руководящую должность или снять человека с занятого места: место остаётся, другие должности этого человека сохраняются. Удалить можно только пустую вакансию.</p>
- <label class="fl">Новая вакансия — название должности<input id="vac-role" maxlength="120" placeholder="Например: Член ЦК (выборный)"></label>
+ <label class="fl">Новая вакансия — название должности<input id="vac-role" maxlength="120" placeholder="Например: Член ЦК"></label>
  <label class="fl">Орган<select id="vac-group"><option>Центральный Комитет</option><option>Контрольно-ревизионная комиссия</option><option>Отделения</option><option>Технический отдел</option></select></label>
  <p class="aerr" id="vac-msg"></p><button class="btn" id="vac-add">Добавить вакансию</button></div>
  ${ms.map(m=>{const vac=isVacName(m.name),del=vac&&(isSuper()||!coreSeat(m.id))?` <button class="btn sm o" data-postdel="${esc(m.id)}">Удалить</button>`:'',off=!vac?` <button type="button" class="btn sm danger" data-unseat="${esc(m.id)}">Снять с должности</button>`:'';
