@@ -60,7 +60,8 @@ service cloud.firestore {
     function seatDoc(s) { return /databases/$(database)/documents/members/$(s); }
     // Нет документа места — пустой Discord, а не ошибка всего правила.
     function seatDid(s) { return get(seatDoc(s)).data.get('discordId', ''); }
-    function rkAdminDids() { return ['646280678736003073', seatDid('m1'), seatDid('m4'), seatDid('m5')]; }
+    // Распорядители: владелец, Председатель ЦК (m1), его заместители (m4, m5) и заместитель начальника техотдела (m12).
+    function rkAdminDids() { return ['646280678736003073', seatDid('m1'), seatDid('m4'), seatDid('m5'), seatDid('m12')]; }
     // Председатель ЦК — тот, кто сейчас сидит на m1. Замы свои и чужие места m4/m5 не переназначают.
     function chairNow() { return isSuper() || (myVDid() != '' && myVDid() == seatDid('m1')); }
     function myVDid() {
@@ -171,10 +172,11 @@ service cloud.firestore {
     match /notifications/{id} {
       // созывы и объявления видны всем (баннер на главной), прочее — вошедшим
       allow read: if signedIn() || resource.data.type in ['convocation','other'];
-      allow create: if myTier() >= 4
+      // тип проверяется первым: для личных уведомлений (appoint/recall) ключ не читается — экономит лимит обращений
+      allow create: if request.resource.data.type in ['news','convocation','other']
         && request.resource.data.keys().hasOnly(['type','title','text','when','author','authorName','createdAt'])
         && optStr(request.resource.data, 'authorName', 120)
-        && request.resource.data.type in ['news','convocation','other']
+        && myTier() >= 4
         && reqStr(request.resource.data, 'title', 200)
         && optStr(request.resource.data, 'text', 2000) && optStr(request.resource.data, 'when', 100)
         && request.resource.data.author == request.auth.uid
@@ -488,9 +490,12 @@ service cloud.firestore {
       // (председатель, замы) любое назначение/снятие/смена звания отклонялись по лимиту.
       // Назначение/снятие на существующей руководящей должности без смены роли, ранга, ступени и порядка.
       // Меняются только человек (name, discordId, discord, joined, bio, photo); остальное — как в документе.
-      function seatAssignOk(ra, chair) {
+      // td — заместитель начальника техотдела (m12), если он не занимает m1/m4/m5: своё место m12
+      // и места, которые занимает владелец (m11, m17), он не меняет.
+      function seatAssignOk(ra, chair, td) {
         let d = request.resource.data;
         return ra
+          && !(td && (id == 'm12' || resource.data.get('discordId', '') == '646280678736003073'))
           && !id.matches('^p_.*')
           && resource.data.get('group', '') != 'Члены партии'
           && resource.data.get('rank', 0) < 100
@@ -546,14 +551,15 @@ service cloud.firestore {
       function updEntry(own, vd) {
         let ra = own || (vd != '' && vd in rkAdminDids());
         let chair = own || (deputySeat() && vd != '' && vd == seatDid('m1'));
+        let td = !own && vd != '' && vd == seatDid('m12') && !(vd in [seatDid('m1'), seatDid('m4'), seatDid('m5')]);
         return !deputyReassignP(chair)
-          && (seatAssignOk(ra, chair) || rankChangeOk(ra) || selfPhotoOk()
+          && (seatAssignOk(ra, chair, td) || rankChangeOk(ra) || selfPhotoOk()
               || tierUpdOk(own ? 9 : keyTier(), own, ra) || chairEditOk());
       }
       allow update: if !techSeat() && !techRoleNew() && updEntry(isOwner(), myVDid());
       // m1, m4 и m5 не удаляет никто, кроме владельца (ему это даёт общее правило isSuper).
       // Занятое руководящее место не удаляется: его освобождают, имя становится «Вакансия». Карточки «Члены партии» удаляются как раньше.
-      allow delete: if !techSeat() && !(id in ['m1', 'm4', 'm5']) && resource.data.get('rank', 0) < 100
+      allow delete: if !techSeat() && !(id in ['m1', 'm4', 'm5', 'm12']) && resource.data.get('rank', 0) < 100
         && (id.matches('^p_.*') || resource.data.get('group', '') == 'Члены партии'
             || (resource.data.get('name', '') is string && (resource.data.get('name', '') == 'Вакансия' || resource.data.get('name', '').lower() == 'вакансия')))
         && ((myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100))

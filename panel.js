@@ -165,7 +165,7 @@ const actorName=()=>{const did=myDidP(),ms=(D().members||[]).filter(x=>did&&x.di
 async function rankNote(did,kind,text){did=String(did||'');if(!did||did===myDidP())return;const f=F();try{await f.addDoc(f.collection(db(),'rankNotes'),{did,kind,text:String(text).slice(0,300),by:FB().user.uid,byName:actorName().slice(0,160),at:f.serverTimestamp(),read:false})}catch(e){console.warn('rankNote',e.code||e)}}
 window.VPPKA_RANKNOTE=rankNote;window.VPPKA_ACTOR=actorName;
 // ---------- звание члена партии: кнопка + выбор (только Председатель ЦК, его заместители и владелец сайта) ----------
-const RK_OWNER_DID='646280678736003073',RK_SEATS=['m1','m4','m5'];
+const RK_OWNER_DID='646280678736003073',RK_SEATS=['m1','m4','m5','m12'];
 const rkAdminDids=()=>[RK_OWNER_DID,...RK_SEATS.map(s=>String(((xMem().find(x=>x.id===s))||{}).discordId||'')).filter(Boolean)];
 const rkAdmin=()=>{const u=(FB()||{}).user,did=myDidP();return !!u&&!!did&&rkAdminDids().includes(did)};
 // обладатели мест руководства (не «Члены партии», не вакансия) — по Discord ID и по ФИО
@@ -319,8 +319,10 @@ const isOwnerP=()=>rank()>=1000||!!(FB().power&&FB().power.owner);
 const isSuper=()=>isOwnerP();
 const myDidA=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||((FB().user&&FB().user.email)||'').split('@')[0]||'');
 const seatDid=id=>String((((D().members)||[]).find(x=>x.id===id)||{}).discordId||'');
-// Председатель ЦК = discord на members/m1, замы = m4 и m5. Начальник техотдела = владелец (isSuper).
-const isPostAdmin=()=>{if(isSuper())return true;const did=myDidA();return !!did&&['m1','m4','m5'].some(s=>seatDid(s)===did)};
+// Председатель ЦК = discord на members/m1, замы = m4 и m5, зам. начальника техотдела = m12. Начальник техотдела = владелец (isSuper).
+const isPostAdmin=()=>{if(isSuper())return true;const did=myDidA();return !!did&&['m1','m4','m5','m12'].some(s=>seatDid(s)===did)};
+// Только зам. начальника техотдела (m12, без мест m1/m4/m5): не меняет своё место и места владельца (как в firestore.rules).
+const isTechDepOnly=()=>{if(isSuper())return false;const did=myDidA();return !!did&&seatDid('m12')===did&&!['m1','m4','m5'].some(s=>seatDid(s)===did)};
 const isChairP=()=>isSuper()||(!!myDidA()&&seatDid('m1')===myDidA());
 const isLdrPost=m=>!!m&&m.group!=='Члены партии'&&!String(m.id||'').startsWith('p_');
 function isVacName(name){return /^вакансия$/i.test(String(name||'').trim())}
@@ -328,7 +330,7 @@ function occupiedSeat(m){return isLdrPost(m)&&!!String(m.name||'').trim()&&!isVa
 const isTechPost=m=>!!m&&(m.id==='m11'||m.role==='Начальник технического отдела');
 const coreSeat=id=>id==='m1'||id==='m4'||id==='m5';
 // Места замов (m4, m5) переназначает только председатель (m1) или владелец. m1/m4/m5 не удаляет никто, кроме владельца.
-const canTouch=m=>{if(!isLdrPost(m))return false;if(isSuper())return true;if(isTechPost(m)||(m.rank??0)>=100)return false;if(coreSeat(m.id))return isChairP();return isPostAdmin()||chair()||tier()>=5};
+const canTouch=m=>{if(!isLdrPost(m))return false;if(isSuper())return true;if(isTechPost(m)||(m.rank??0)>=100)return false;if(isTechDepOnly()&&(m.id==='m12'||String(m.discordId||'')===RK_OWNER_DID))return false;if(coreSeat(m.id))return isChairP();return isPostAdmin()||chair()||tier()>=5};
 const canAssign=m=>canTouch(m);
 const nzName=s=>String(s||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
 function claimKey(name){const s=String(name||'').trim().replace(/\s+/g,' ');if(!s||s.length>100||/[\\/]/.test(s)||s==='.'||s==='..')return '';return s}
