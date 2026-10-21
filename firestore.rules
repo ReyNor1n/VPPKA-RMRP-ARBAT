@@ -375,7 +375,10 @@ service cloud.firestore {
     // ---------- мероприятия: читают все, правит ступень 4+ ----------
     match /events/{id} {
       function validEv(d) {
-        return d.keys().hasOnly(['title','at','place','desc','image','createdBy','updatedAt','discordMessageId','att','status','endedAt','endedBy'])
+        return d.keys().hasOnly(['title','at','place','desc','image','createdBy','updatedAt','discordMessageId','att','status','endedAt','endedBy','hidden','hiddenBy','hiddenAt'])
+          && (!('hidden' in d) || d.hidden is bool)
+          && (!('hiddenBy' in d) || (d.hiddenBy is string && d.hiddenBy.size() <= 128))
+          && (!('hiddenAt' in d) || d.hiddenAt is timestamp)
           && (!('att' in d) || (d.att is list && d.att.size() <= 150))
           && (!('status' in d) || d.status == 'ended')
           && (!('endedBy' in d) || (d.endedBy is string && d.endedBy.size() > 0 && d.endedBy.size() <= 128))
@@ -398,6 +401,7 @@ service cloud.firestore {
       }
       function resumeOk() {
         return evActor()
+          && (isOwner() || !evLocked())
           && resource.data.get('status', '') == 'ended'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','endedAt','endedBy'])
           && !('status' in request.resource.data)
@@ -406,11 +410,43 @@ service cloud.firestore {
       }
       allow read: if true;
       allow create: if myTier() >= 4 && validEv(request.resource.data);
+      // v221: завершённое с отметками (evLocked) не «возобновить, стереть отметки, удалить» — снять статус может только владелец.
+      function evLocked() { return resource.data.get('status', '') == 'ended' && resource.data.get('att', []).size() > 0; }
       allow update: if (myTier() >= 4 && validEv(request.resource.data)
           && !(resource.data.get('status', '') == 'ended'
-               && request.resource.data.diff(resource.data).affectedKeys().hasAny(['att'])))
+               && request.resource.data.diff(resource.data).affectedKeys().hasAny(['att']))
+          && (isOwner() || !evLocked() || request.resource.data.get('status', '') == 'ended'))
         || endOk() || resumeOk();
-      allow delete: if myTier() >= 4;
+      // v221: мероприятие с посещаемостью не пропадает бесследно.
+      //  * завершённое с отметками — удаляет только владелец (остальным — «Скрыть», поле hidden);
+      //  * ступень 4+ удаляет только вместе с копией в eventsArchive/{id} (та же пачка, копия — точный снимок);
+      //  * без копии (старый код сайта) — только ещё не прошедшее и без отметок мероприятие (отмена плана).
+      function evHasAtt() { return resource.data.get('att', []).size() > 0; }
+      function evArchived() {
+        return existsAfter(/databases/$(database)/documents/eventsArchive/$(id))
+          && getAfter(/databases/$(database)/documents/eventsArchive/$(id)).data.by == request.auth.uid;
+      }
+      allow delete: if isOwner()
+        || (myTier() >= 4
+            && !(resource.data.get('status', '') == 'ended' && evHasAtt())
+            && (evArchived()
+                || (!evHasAtt() && resource.data.get('status', '') != 'ended' && resource.data.at > request.time.toMillis())));
+    }
+
+    // ---------- v221: корзина мероприятий — неизменяемые копии удалённых; удаляет (в т.ч. при «Восстановить») только владелец ----------
+    match /eventsArchive/{id} {
+      allow read: if myTier() >= 4;
+      allow create: if myTier() >= 4
+        && request.resource.data.keys().hasOnly(['ev','by','at','title'])
+        && request.resource.data.keys().hasAll(['ev','by','at','title'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.at == request.time
+        && exists(/databases/$(database)/documents/events/$(id))
+        && request.resource.data.ev == get(/databases/$(database)/documents/events/$(id)).data
+        && request.resource.data.title == get(/databases/$(database)/documents/events/$(id)).data.title
+        && !existsAfter(/databases/$(database)/documents/events/$(id));
+      allow update: if false;
+      allow delete: if isOwner();
     }
 
     // ---------- новости ----------
@@ -835,6 +871,10 @@ service cloud.firestore {
     }
     // Суперпользователь (владелец / начальник техотдела) может читать и менять любой документ.
     // Остальным эта строка ничего не даёт: их по-прежнему пускают только правила выше.
-    match /{document=**} { allow read, write: if isSuper(); }
+    // v221: исключение — корзина мероприятий неизменяема и для владельца (удалить/«Восстановить» — правило выше).
+    match /{document=**} {
+      allow read: if isSuper();
+      allow write: if isSuper() && document[0] != 'eventsArchive';
+    }
   }
 }
