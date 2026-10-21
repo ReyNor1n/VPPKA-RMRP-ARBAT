@@ -29,12 +29,12 @@ const unreadTotal=()=>Object.values(chats).filter(c=>((c.unread||{})[me]||0)>0).
 function thumb(src){return new Promise(r=>{if(!src)return r('');const im=new Image();im.onload=()=>{const k=160/Math.max(im.width,im.height,160),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.8))};im.onerror=()=>r('');im.src=src})}
 window.VPPKA_PUBMAP=()=>pub;window.VPPKA_PUBSELF=()=>pubSelf();
 async function pubSelf(){const a=window.VPPKA_AUTH,pf=a&&a.profile;if(!pf||isOwn||me===KEYMASTER||window.VPPKA_HIDDEN({uid:me,discordId:pf.discordId}))return;
- const n=(cardName(pf.discordId)||pf.fio||pf.displayName||pf.discordId||'').slice(0,40),ph=(()=>{const g=pf.avatar||pf.photo||'';return /^data:image\/gif;/.test(g)&&g.length<=100000?g:null})()||await thumb(pf.avatar||pf.photo),old=pub[me];if(old&&old.n===n&&(old.ph||'')===ph&&old.did===pf.discordId)return;
+ const n=(cardName(pf.discordId)||pf.fio||pf.displayName||pf.discordId||'').slice(0,40),g0=await window.VPPKA_PH.get(pf.avatar||pf.photo||'','t').catch(()=>''),ph=(()=>{const g=g0||'';return /^data:image\/gif;/.test(g)&&g.length<=100000?g:null})()||await thumb(g0),old=pub[me];if(old&&old.n===n&&(old.ph||'')===ph&&old.did===pf.discordId)return;
  const d={n,did:String(pf.discordId||'').slice(0,64),t:F().serverTimestamp()};if(ph)d.ph=ph;try{await F().setDoc(F().doc(db(),'pub',me),d)}catch(e){console.warn('pub',e.code||e)}}
 // владелец/ступень 5 дополняют справочник теми, кто ещё не заходил после обновления
 async function backfill(){const pw=FB().power||{};if(!(pw.owner||(pw.tier||0)>=5))return;try{const s=await F().getDocs(F().collection(db(),'users'));
  for(const d of s.docs){const u=d.data();if(pub[d.id]||d.id===me||d.id===KEYMASTER||window.VPPKA_HIDDEN({uid:d.id,discordId:u.discordId})||!u.discordId)continue;
-  const x={n:(cardName(u.discordId)||u.displayName||u.discordId).slice(0,40),did:String(u.discordId).slice(0,64),t:F().serverTimestamp()};const ph=await thumb(u.photo);if(ph)x.ph=ph;
+  const x={n:(cardName(u.discordId)||u.displayName||u.discordId).slice(0,40),did:String(u.discordId).slice(0,64),t:F().serverTimestamp()};const ph=await thumb(await window.VPPKA_PH.get(u.photo||'','t').catch(()=>''));if(ph)x.ph=ph;
   await F().setDoc(F().doc(db(),'pub',d.id),x).catch(e=>console.warn('pub fill',e.code))}}catch(e){}}
 function start(){const f=F(),d=db();let first=true;
  subs.push(f.onSnapshot(f.collection(d,'pub'),s=>{pub={};s.docs.forEach(x=>{if(x.id!==OWNER&&x.id!==KEYMASTER)pub[x.id]=x.data()});if(first){first=false;pubSelf();rnStart();setTimeout(rnStart,5000);setTimeout(backfill,3000);if(['party','member'].includes(location.hash.slice(1).split('/')[0])&&window.route){const y=scrollY;window.route();scrollTo(0,y)}}paint()},e=>console.warn('pub',e.code)));
