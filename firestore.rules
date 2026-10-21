@@ -165,7 +165,9 @@ service cloud.firestore {
 
     // ---------- служебное: owners и вебхуки только из консоли; список должностей пишут назначающие ----------
     match /config/{d} {
-      allow get: if (signedIn() && d == 'owners') || (d == 'discord' && myTier() >= 4) || (d == 'ldrSeats' && rankAdmin());
+      // discordTargets (v209): подписи «своих строк» каналов для «Куда отправить в Discord» — пишет только бот, без вебхуков
+      allow get: if (signedIn() && d == 'owners') || (d == 'discord' && myTier() >= 4) || (d == 'ldrSeats' && rankAdmin())
+        || (d == 'discordTargets' && myTier() >= 4);
       // Список Discord тех, кто занимает руководящие места. Пишут те же, кто назначает: целиком поле dids.
       function didsOk() {
         return request.resource.data.dids is list && request.resource.data.dids.size() <= 80
@@ -181,6 +183,22 @@ service cloud.firestore {
         && (!('appsWebhook' in request.resource.data) || request.resource.data.appsWebhook.matches('^https://(discord|discordapp)[.]com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+$'))
         && (!('roleIds' in request.resource.data) || (request.resource.data.roleIds is list && request.resource.data.roleIds.size() <= 10));
       allow list: if false;
+    }
+
+    // ---------- отправка новости/созыва в «свою строку» канала Discord (v209) ----------
+    // Публикующий (ступень 4+, как для news/notifications) ставит заявку; бот берёт текст из самого документа ref,
+    // проверяет строку и пишет итог (status, err, doneAt) сервисным ключом. Свою заявку автор может прочитать.
+    match /discordOut/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['kind','ref','target','by','at'])
+        && request.resource.data.keys().hasAll(['kind','ref','target','by','at'])
+        && request.resource.data.kind in ['news','notice','cancel']
+        && request.resource.data.ref is string && request.resource.data.ref.matches('^[A-Za-z0-9_-]{1,64}$')
+        && request.resource.data.target is string && request.resource.data.target.matches('^c_[a-z0-9]{4,24}$')
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.at == request.time
+        && myTier() >= 4;
+      allow get: if signedIn() && resource.data.by == request.auth.uid;
+      allow list, update, delete: if false;
     }
 
     // ---------- уведомления (созывы, объявления) ----------
