@@ -1,7 +1,7 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=216';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=225';
 import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=216';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -263,13 +263,13 @@ function onInput(e){if(!onAdmin()||!canAdmin())return;
  if(el.dataset.aft==='json'){try{setPath(state.edit.data,path,el.value.trim()?JSON.parse(el.value):null);state.msg=''}catch(err){const m=document.getElementById('ad-msg');state.msg='JSON: '+err.message;if(m){m.textContent=state.msg;m.className='aerr'}return}}
  else setPath(state.edit.data,path,readControl(el));
  if(el.dataset.aft==='textarea'){const lb=el.parentElement&&el.parentElement.querySelector('.af-lb');if(lb)lb.textContent=el.value}
- if(el.dataset.aft==='image'){const img=el.parentElement&&el.parentElement.querySelector('.af-prev');const v=el.value.trim();if(img){if(v){img.hidden=false;img.src=v}else img.remove()}else if(v){el.insertAdjacentHTML('afterend',`<img class="af-prev" src="${esc(v)}" alt="">`)}}
+ if(el.dataset.aft==='image'){const img=el.parentElement&&el.parentElement.querySelector('.af-prev');const v=el.value.trim();if(img){if(v){img.hidden=false;img.src=window.VPPKA_PH.src(v,'f')||window.VPPKA_PH.BLANK}else img.remove()}else if(v){el.insertAdjacentHTML('afterend',`<img class="af-prev" src="${esc(v)}" alt="">`)}}
  touch();schedulePreview()}
 async function onChange(e){if(!onAdmin()||!canAdmin())return;
  if(state.tab==='dch'&&superOn()&&e.target.dataset&&(e.target.dataset.dch||e.target.dataset.dchid)){dchChange(e.target,refresh);return}
  if(e.target.id==='ad-expert'){if(!superOn())return;if(!state.edit)return;if(e.target.checked){state.expert=true;refresh();return}try{const obj=JSON.parse(document.getElementById('ad-json').value);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw new Error('Нужен объект JSON.');state.edit.data=obj;state.expert=false;state.fieldErr={};touch();refresh()}catch(err){say('JSON: '+err.message);refresh()}return}
  const file=e.target.closest&&e.target.closest('[data-affile]');if(!file||!file.files||!file.files[0]||!state.edit)return;
- try{const url=await fileToData(file.files[0]);setPath(state.edit.data,JSON.parse(file.dataset.affile),url);touch();refresh();schedulePreview()}catch(err){say(err.message||String(err));refresh()}}
+ try{let url=await fileToData(file.files[0]);const pk=JSON.parse(file.dataset.affile).filter(x=>typeof x==='string').pop();if(['members','news','users'].includes(state.tab)&&/^(photo|photos|image|avatar)$/.test(pk||''))url=await window.VPPKA_PH.up(url);setPath(state.edit.data,JSON.parse(file.dataset.affile),url);touch();refresh();schedulePreview()}catch(err){say(err.message||String(err));refresh()}}
 async function ensure(){if(!onAdmin()||!canAdmin())return;fixTab();if(!state.booted){state.booted=true;if(superOn())loadTpls()}if(isContent(state.tab)){if(!state.edit&&!state.loading)openContent(state.tab)}else if(state.tab==='dch'){if(superOn())dchLoad(refresh)}else if(state.tab!=='raw'){if(!state.rows&&!state.loading)openList(state.tab)}}
 // auth.js вызывает route() после refreshPower, уже после install(). Пока power.owner ещё не выставлен, ensure выходит сразу — ждём флаг и грузим раздел, не затирая открытую правку.
 let armToken=0;

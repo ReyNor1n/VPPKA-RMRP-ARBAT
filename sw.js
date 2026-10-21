@@ -1,5 +1,5 @@
-const CACHE='vppka-v197';
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','index.html','style.css','app.js','content.json','img/emblem.png']).catch(()=>{})))});
+const CACHE='vppka-v198';
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','index.html','style.css','ph.js','app.js','content.json','img/emblem.png']).catch(()=>{})))});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE&&n!=='vppka-banners').map(n=>caches.delete(n)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);
  if(r.method!=='GET'||u.origin!==location.origin||/\.(mp3|ogg|m4a|wav)$/i.test(u.pathname)||r.headers.has('range')||/admin\.html$/.test(u.pathname)||/\/(robots\.txt|sitemap\.xml|favicon\.ico)$/.test(u.pathname))return;
