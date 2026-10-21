@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey } from './firebase-config.js?v=223';
+import { firebaseConfig, appCheckSiteKey } from './firebase-config.js?v=228';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -153,10 +153,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.i
  document.addEventListener('change',async ev=>{const t=ev.target;if(!['r-ph','p-ph','p-av','p-ld'].includes(t.id))return;const nm=document.getElementById(t.id+'-nm');if(nm)nm.textContent=t.files[0]?.name||'Файл не выбран';const pv=document.getElementById(t.id+'-pv');try{const u=await photoData(t.files[0]);if(pv&&u){pv.removeAttribute('data-ph');pv.src=u;pv.hidden=false;}}catch(e){err(e.message)}});
  paintAuth();
  if(['login','register','account'].includes(location.hash.slice(1)))route();
- const [{initializeApp},A_,F_]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
+ // v228: App Check (reCAPTCHA Enterprise). Модуль грузится вместе с остальными, инициализация — сразу после initializeApp и ДО getAuth/getFirestore,
+// поэтому все запросы к Auth и Firestore (вход, регистрация, кабинет, панель, чат и т. д. — всё идёт через этот app) несут токен App Check.
+// На localhost/127.0.0.1 выключен (эмулятор и локальная отладка: ключ разрешён только для vppka-arbat-rmrp.ru).
+const acOn=!!appCheckSiteKey&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+ const [{initializeApp},A_,F_,AC]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js'),acOn?import(B+'firebase-app-check.js').catch(e=>{console.warn('App Check',e);return null}):null]);
  A=A_;F=F_;const app=initializeApp(firebaseConfig);
-// v223: App Check (reCAPTCHA v3). Пока appCheckSiteKey пуст — выключен. Инициализируется до первых запросов к Auth и Firestore.
-if(appCheckSiteKey&&location.hostname!=='localhost'){try{const AC=await import(B+'firebase-app-check.js');AC.initializeAppCheck(app,{provider:new AC.ReCaptchaV3Provider(appCheckSiteKey),isTokenAutoRefreshEnabled:true})}catch(e){console.warn('App Check',e)}}
+if(AC){try{window.VPPKA_APPCHECK=AC.initializeAppCheck(app,{provider:new AC.ReCaptchaEnterpriseProvider(appCheckSiteKey),isTokenAutoRefreshEnabled:true})}catch(e){console.warn('App Check',e)}}
 auth=A.getAuth(app);db=F.getFirestore(app);
  if(location.hostname==='localhost'&&/[?&]emu\b/.test(location.search)){A.connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true});F.connectFirestoreEmulator(db,'127.0.0.1',8080);}
  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest&&e.target.closest('.auth')){const b=document.querySelector('.auth .btn');b&&b.click();}});
