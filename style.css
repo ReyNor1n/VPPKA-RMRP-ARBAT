@@ -693,3 +693,8 @@ html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
 /* v213: вход через Discord без пароля */
 .dl-or{display:flex;align-items:center;gap:10px;margin:18px 0 12px;color:var(--mut,#999);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.dl-or:before,.dl-or:after{content:'';flex:1;border-top:1px solid #ffffff22}
 .dl-hint{margin-top:8px}.dl-box{margin-top:12px;padding:12px 14px;border:1px solid #5865F2;background:#5865F214;font-size:14px;line-height:1.5}.dl-box.bad{border-color:var(--red);background:#ff2a3a14}.dl-box p{margin:6px 0 0}.dl-code-row{font-size:15px}.dl-code{font-size:22px;letter-spacing:.25em;color:#fff;margin-left:6px}
+
+/* v216: регистрация через Discord, условия */
+.rg-tabs{display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap}.rg-t{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:transparent;border:1px solid #ffffff2e;color:var(--mut,#bbb);cursor:pointer;font:600 13px 'Exo 2',sans-serif;letter-spacing:.04em}.rg-t.on{border-color:#5865F2;color:#fff;background:#5865F21f}.rg-t *{pointer-events:none}
+#rg[data-m=pw] .rg-dc,#rg[data-m=dc] .rg-pw{display:none!important}
+.dcl-terms{margin:12px 0;padding:10px 14px;border-left:3px solid #5865F2;background:#5865F20f;font-size:13px;line-height:1.55}.dcl-terms ul{margin:6px 0 0;padding-left:18px}.dcl-terms li{margin:2px 0}.dcl-terms p{margin:6px 0 0}

@@ -21,7 +21,7 @@ const HIDDEN={
  user:['createdAt','keyHash','vcode'],
  chat:['participants','createdBy','updatedAt','lastMessage','unread','names']
 };
-const LABELS={name:'Название',short:'Краткое название',slogan:'Лозунг',motto:'Девиз',ideology:'Идеология',server:'Сервер',logo:'Эмблема',banner:'Баннер',seal:'Печать',footer:'Подвал',heroTitle:'Заголовок',heroText:'Текст',stats:'Показатели',value:'Значение',label:'Подпись',trio:'Тройка на главной',trioLeft:'Подпись слева',trioRight:'Подпись справа',trioBottom:'Нижняя цитата',photo:'Фото',memberId:'Идентификатор места',title:'Заголовок',text:'Текст',goals:'Цели',membership:'О членстве',date:'Дата',sections:'Разделы',items:'Пункты',chapters:'Главы',articles:'Статьи',note:'Примечание',outro:'Заключение',intro:'Вступление',docs:'Документы',url:'Ссылка',links:'Ссылки',role:'Должность',group:'Партийный орган',bio:'Биография',quote:'Цитата',joined:'Дата вступления',birth:'Возраст / дата рождения',city:'Город',achievements:'Достижения',discord:'Discord',forum:'Форум',contact:'Контакт',rank:'Уровень',order:'Порядок',discordId:'Discord ID',tier:'Ступень',reportsTo:'Подчиняется',duties:'Обязанности',image:'Изображение',photos:'Фотографии',videos:'Видео',pinned:'Закрепить',align:'Выравнивание',place:'Место',desc:'Описание',at:'Дата и время',status:'Статус',options:'Варианты',deadline:'Окончание',closed:'Закрыто',type:'Тип',when:'Когда',kind:'Вид',mime:'Формат',did:'Discord ID',answers:'Анкета',fio:'ФИО',passport:'Паспорт',source:'Источник',reason:'Почему наша партия',partyRank:'Звание (число)',partyRole:'Звание',rejectReason:'Причина отказа',displayName:'Имя',fio:'ФИО'};
+const LABELS={name:'Название',short:'Краткое название',slogan:'Лозунг',motto:'Девиз',ideology:'Идеология',server:'Сервер',logo:'Эмблема',banner:'Баннер',seal:'Печать',footer:'Подвал',dcRegTerms:'Условия регистрации через Discord',dcLoginTerms:'Условия входа через Discord',heroTitle:'Заголовок',heroText:'Текст',stats:'Показатели',value:'Значение',label:'Подпись',trio:'Тройка на главной',trioLeft:'Подпись слева',trioRight:'Подпись справа',trioBottom:'Нижняя цитата',photo:'Фото',memberId:'Идентификатор места',title:'Заголовок',text:'Текст',goals:'Цели',membership:'О членстве',date:'Дата',sections:'Разделы',items:'Пункты',chapters:'Главы',articles:'Статьи',note:'Примечание',outro:'Заключение',intro:'Вступление',docs:'Документы',url:'Ссылка',links:'Ссылки',role:'Должность',group:'Партийный орган',bio:'Биография',quote:'Цитата',joined:'Дата вступления',birth:'Возраст / дата рождения',city:'Город',achievements:'Достижения',discord:'Discord',forum:'Форум',contact:'Контакт',rank:'Уровень',order:'Порядок',discordId:'Discord ID',tier:'Ступень',reportsTo:'Подчиняется',duties:'Обязанности',image:'Изображение',photos:'Фотографии',videos:'Видео',pinned:'Закрепить',align:'Выравнивание',place:'Место',desc:'Описание',at:'Дата и время',status:'Статус',options:'Варианты',deadline:'Окончание',closed:'Закрыто',type:'Тип',when:'Когда',kind:'Вид',mime:'Формат',did:'Discord ID',answers:'Анкета',fio:'ФИО',passport:'Паспорт',source:'Источник',reason:'Почему наша партия',partyRank:'Звание (число)',partyRole:'Звание',rejectReason:'Причина отказа',displayName:'Имя',fio:'ФИО'};
 const f=(key,type,label,o={})=>({key,type,label,...o});
 const obj=fields=>({type:'object',fields});
 const today=()=>new Date().toISOString().slice(0,10);
@@ -38,7 +38,9 @@ const BASE={
   f('logo','image','Эмблема',{upload:1}),
   f('banner','image','Баннер',{upload:1}),
   f('seal','image','Печать',{upload:1}),
-  f('footer','textarea','Текст подвала')
+  f('footer','textarea','Текст подвала'),
+  f('dcRegTerms','textarea','Условия регистрации через Discord (по пункту на строку; пусто — текст по умолчанию)'),
+  f('dcLoginTerms','textarea','Условия входа через Discord (по пункту на строку; пусто — текст по умолчанию)')
  ]),
  home:obj([
   f('heroTitle','text','Заголовок главной'),

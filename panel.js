@@ -28,7 +28,7 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
 
- <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=213').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
+ <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=216').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
  <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
  ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
 
@@ -282,7 +282,7 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
    // Отправка в Discord: своя строка из «Каналы Discord» — через бота (discordOut); иначе вебхук новостей, как раньше
    let dtNote='';const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=213');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=216');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    else try{const c=await f.getDoc(f.doc(db(),'config','discord'));const w=c.exists()&&c.data().webhook;if(w){const PING='1559635259635531947';const body={username:'ВППКА «Коммунисты Арбата»',content:'<@&'+PING+'>',allowed_mentions:{parse:[],roles:[PING]},embeds:[{title:('📰 Новость: '+n.title).slice(0,256),description:(n.text||'').replace(/\[фото:\d+\]/gi,'').slice(0,4000)||undefined,url:'https://vppka-arbat-rmrp.ru/#news',color:0xE32B2B,footer:{text:'vppka-arbat-rmrp.ru'},timestamp:new Date().toISOString()}]};await fetch(w,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});} }catch(e){console.warn('discord news',e)}
    editNews=null;await done('Сохранено.'+dtNote);}
   if(id==='pm-cancel'){editMem=null;window.route();}
