@@ -698,3 +698,11 @@ html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
 .rg-tabs{display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap}.rg-t{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:transparent;border:1px solid #ffffff2e;color:var(--mut,#bbb);cursor:pointer;font:600 13px 'Exo 2',sans-serif;letter-spacing:.04em}.rg-t.on{border-color:#5865F2;color:#fff;background:#5865F21f}.rg-t *{pointer-events:none}
 #rg[data-m=pw] .rg-dc,#rg[data-m=dc] .rg-pw{display:none!important}
 .dcl-terms{margin:12px 0;padding:10px 14px;border-left:3px solid #5865F2;background:#5865F20f;font-size:13px;line-height:1.55}.dcl-terms ul{margin:6px 0 0;padding-left:18px}.dcl-terms li{margin:2px 0}.dcl-terms p{margin:6px 0 0}
+
+/* v224: статик на карточках и «О себе» */
+.mc-st,.pm-st{display:block;font:12px Oxanium,monospace;color:var(--gold);letter-spacing:.03em;margin:4px 0 2px}
+.mcard .mc-bio{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.about-t{white-space:pre-line;overflow-wrap:anywhere}
+.about-blk h3{margin:14px 0 6px;font-size:15px}
+#c-about{width:100%;resize:vertical;min-height:110px}
+.gold-card .mc-st,.gold-card .pm-st{color:#fff6d0;text-shadow:0 1px 2px #000}.silver-card .mc-st{color:#fff;text-shadow:0 1px 2px #000}
