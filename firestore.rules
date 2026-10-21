@@ -811,6 +811,20 @@ service cloud.firestore {
       allow get, delete: if id.matches('^[0-9a-f]{40}$');
       allow list, update: if false;
     }
+    // v213: вход через Discord без пароля. Браузер (можно без входа) кладёт запрос со случайным id (128 бит, 32 hex):
+    // Discord ID, код для сверки (4 цифры, показан на сайте и в ЛС), status 'pending'. Бот (сервисный ключ) шлёт в ЛС
+    // кнопки «Подтвердить вход / Это не я» и по подтверждению пишет в этот же документ одноразовый custom token.
+    // Читать — только зная id (get), перечислять нельзя; менять статус/токен клиенту нельзя; удалить — зная id.
+    match /loginRequests/{id} {
+      allow create: if id.matches('^[0-9a-f]{32}$')
+        && request.resource.data.keys().hasOnly(['did','code','status','t'])
+        && request.resource.data.keys().hasAll(['did','code','status','t'])
+        && request.resource.data.did is string && request.resource.data.did.matches('^[0-9]{15,21}$')
+        && request.resource.data.code is string && request.resource.data.code.matches('^[0-9]{4}$')
+        && request.resource.data.status == 'pending' && request.resource.data.t == request.time;
+      allow get, delete: if id.matches('^[0-9a-f]{32}$');
+      allow list, update: if false;
+    }
     // Тексты страниц (вместо правки content.json с сайта). Нет документа — сайт берёт content.json.
     match /content/{id} {
       allow read: if true;
