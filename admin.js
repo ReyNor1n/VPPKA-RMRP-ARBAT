@@ -153,6 +153,7 @@ async function removeMember(f,id){const ref=f.doc(db(),'members',id);const prev=
  if(was&&(String(id).startsWith('p_')||was.group==='Члены партии')){const key=claimKey(was.name);const b=f.writeBatch(db());b.delete(ref);if(key){const c=await f.getDoc(f.doc(db(),'memClaim',key));if(c.exists()&&c.data()&&c.data().memberId===id)b.delete(c.ref)}await b.commit();if(window.VPPKA_ARCHIVE_APPS)await window.VPPKA_ARCHIVE_APPS({...was,id})}
  else await f.deleteDoc(ref);return ldrDoc(id,was)}
 function guardDelete(col,id,data){
+ if(col==='events')return true; // v221: подтверждение вводом названия — в VPPKA_EV_DEL (events.js)
  if(col==='members'&&isProtected(id)){const why=id==='m11'?'начальник технического отдела':id==='m1'?'председатель ЦК':'заместитель председателя ЦК';return confirm('Место '+id+' защищено ('+why+'). Удалить его может только владелец. Удалить?')}
  if(col==='members'&&data&&data.role==='Начальник технического отдела')return confirm('Это должность начальника технического отдела. Удалить?');
  return confirm('Удалить '+col+'/'+id+'?');
@@ -200,7 +201,7 @@ async function delDoc(col,id){
  const row=(state.rows||[]).find(r=>r.id===id);const data=row?row.data:(state.edit&&state.edit.id===id?state.edit.data:null);
  if(!superOn()&&!rowCaps(col,id,data).del){say('Нет прав на удаление.');refresh();return}
  if(!guardDelete(col,id,data))return;const f=F();
- try{if(data&&superOn())await pushHist(col,id,data);let ldr=false;if(col==='members'){ldr=await removeMember(f,id);if(ldr){const list=seatList(id,null,true);if(list){if(superOn())await syncSeats(list);else try{await syncSeats(list)}catch(err){}}}}else await f.deleteDoc(f.doc(db(),col,id));
+ try{if(data&&superOn())await pushHist(col,id,data);let ldr=false;if(col==='members'){ldr=await removeMember(f,id);if(ldr){const list=seatList(id,null,true);if(list){if(superOn())await syncSeats(list);else try{await syncSeats(list)}catch(err){}}}}else if(col==='events'){if(!window.VPPKA_EV_DEL||!(await window.VPPKA_EV_DEL(id))){refresh();return}}else await f.deleteDoc(f.doc(db(),col,id));
   if(state.rows)state.rows=state.rows.filter(r=>r.id!==id);if(state.edit&&state.edit.id===id){state.edit=null;state.dirty=false}say('Удалено.',true);if((col==='members'||col==='news')&&window.VPPKA_RELOAD)window.VPPKA_RELOAD()}
  catch(err){say(errText(err))}refresh()}
 function parentOf(path){const idx=path[path.length-1];let cur=state.edit.data;for(let i=0;i<path.length-1;i++){cur=cur==null?null:cur[path[i]]}return {arr:cur,idx}}
@@ -244,7 +245,7 @@ async function onClick(e){
   if(col==='config'&&id==='owners'&&b.id!=='ad-col-load'){say('config/owners с сайта не меняется: иначе можно потерять право владельца.');refresh();return}
   const f=F();
   try{if(b.id==='ad-col-load'){const s=await f.getDoc(f.doc(db(),col,id));state.raw.text=JSON.stringify(plain(s.exists()?s.data():{}),null,2);say(s.exists()?'Прочитано.':'Документа нет. Пустой объект.',true)}
-   else if(b.id==='ad-col-del'){if(!guardDelete(col,id,null))return;if(col==='members'){const ldr=await removeMember(f,id);if(ldr){const list=seatList(id,null,true);if(list)await syncSeats(list)}}else await f.deleteDoc(f.doc(db(),col,id));say('Удалено.',true)}
+   else if(b.id==='ad-col-del'){if(!guardDelete(col,id,null))return;if(col==='members'){const ldr=await removeMember(f,id);if(ldr){const list=seatList(id,null,true);if(list)await syncSeats(list)}}else if(col==='events'){if(!window.VPPKA_EV_DEL||!(await window.VPPKA_EV_DEL(id)))return}else await f.deleteDoc(f.doc(db(),col,id));say('Удалено.',true)}
    else{let obj;try{obj=JSON.parse(state.raw.text||'{}')}catch(err){say('JSON: '+err.message);refresh();return}if(!obj||typeof obj!=='object'||Array.isArray(obj)){say('Нужен объект JSON.');refresh();return}const body=revive(obj,f);if(col==='members'){const ldr=await putMember(f,id,body);if(ldr){const list=seatList(id,plain(body),false);if(list)await syncSeats(list)}}else await f.setDoc(f.doc(db(),col,id),body);say('Сохранено.',true)}}
   catch(err){say(errText(err))}refresh()}
 }
