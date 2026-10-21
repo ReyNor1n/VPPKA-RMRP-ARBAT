@@ -463,6 +463,10 @@ service cloud.firestore {
 
     // ---------- новости ----------
     match /news/{id} {
+      // v227: ссылки в новостях — только https:// (свои фото: ph:<id>, data:image/…, img/…); javascript:, data:text/…, http: — отказ
+      function newsUrl(u) { return u is string && u.size() <= 300 && u.matches('https://[^ "<>]+'); }
+      function newsImg(u) { return u is string && (u.matches('https://[^ "<>]+') || u.matches('ph:[A-Za-z0-9]{20}')
+        || u.matches('data:image/(png|jpeg|jpg|gif|webp|bmp|avif);base64,[A-Za-z0-9+/=]*') || u.matches('img/[^: "<>]+')); }
       function validNews(d) {
         // pushSent и discordMessageId ставит бот/рассылка; при правке с сайта их можно только сохранить как есть
         return d.keys().hasOnly(['title','text','image','photos','videos','date','author','createdAt','updatedAt','pinned','likeCount','align','pushSent','discordMessageId'])
@@ -471,8 +475,14 @@ service cloud.firestore {
           && (!('align' in d) || d.align in ['center'])
           && (!('likeCount' in d) || d.likeCount is int)
           && (!('pinned' in d) || d.pinned is bool)
-          && (!('photos' in d) || (d.photos is list && d.photos.size() <= 4))
-          && (!('videos' in d) || (d.videos is list && d.videos.size() <= 5))
+          && (!('photos' in d) || (d.photos is list && d.photos.size() <= 4
+                && (d.photos.size() < 1 || newsImg(d.photos[0])) && (d.photos.size() < 2 || newsImg(d.photos[1]))
+                && (d.photos.size() < 3 || newsImg(d.photos[2])) && (d.photos.size() < 4 || newsImg(d.photos[3]))))
+          && (!('videos' in d) || (d.videos is list && d.videos.size() <= 5
+                && (d.videos.size() < 1 || newsUrl(d.videos[0])) && (d.videos.size() < 2 || newsUrl(d.videos[1]))
+                && (d.videos.size() < 3 || newsUrl(d.videos[2])) && (d.videos.size() < 4 || newsUrl(d.videos[3]))
+                && (d.videos.size() < 5 || newsUrl(d.videos[4]))))
+          && (!('image' in d) || newsImg(d.image))
           && reqStr(d, 'title', 200) && reqStr(d, 'text', 20000)
           && d.get('date', '') is string && d.get('date', '').matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
           && optStr(d, 'image', 900000)
