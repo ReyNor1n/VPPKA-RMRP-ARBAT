@@ -32,7 +32,7 @@ function pubAuthor(d){try{const me=(FB()||{}).user||{},did=String(me.email||'').
  const L=M.filter(x=>/^\d{15,21}$/.test(did)&&String(x.discordId||'')===did&&x.name&&x.name!=='Вакансия'&&x.role&&!String(x.id).startsWith('p_')).sort((a,b)=>(Number(b.rank)||0)-(Number(a.rank)||0)),m=L[0]||M.find(x=>/^\d{15,21}$/.test(did)&&String(x.discordId||'')===did&&x.role);
  return m?m.role:(d.authorName||'')}catch(e){return d.authorName||''}}
 // v212: «Куда отправить в Discord» — своя строка владельца, отправляет бот (discord-targets.js); выбор живёт между перерисовками
-const DT={v:''};const TG=()=>import('./discord-targets.js?v=212');
+const DT={v:''};const TG=()=>import('./discord-targets.js?v=213');
 function fillDT(){const h=document.getElementById('nb-dt');if(!h||!canPost())return;TG().then(m=>m.fillTarget('nb-dt','nb-dtsel','notices',DT.v)).catch(()=>{})}
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='nb-dtsel')DT.v=e.target.value});
 // Отправка созыва/объявления в Discord (вебхук хранится в config/discord, читают ступень 4+ и владелец).
