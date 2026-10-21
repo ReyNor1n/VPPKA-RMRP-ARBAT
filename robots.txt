@@ -2,6 +2,9 @@
 # Разделы сайта — это #-адреса одной страницы (index.html); закрыть можно только настоящие файлы.
 User-agent: *
 Allow: /
+# Иконки открыты: Яндекс берёт /favicon.ico и картинку от 120×120.
+Allow: /favicon.ico
+Allow: /img/icons/
 Disallow: /admin.html
 Disallow: /tools/
 Disallow: /firestore.rules
