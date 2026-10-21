@@ -2,7 +2,7 @@
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
 import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=207';
-import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=208';
+import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=212';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
@@ -249,7 +249,7 @@ async function onClick(e){
   catch(err){say(errText(err))}refresh()}
 }
 function onInput(e){if(!onAdmin()||!canAdmin())return;
- if(state.tab==='dch'&&superOn()&&e.target.dataset&&e.target.dataset.dchid){dchChange(e.target,refresh);return}
+ if(state.tab==='dch'&&superOn()&&e.target.dataset&&(e.target.dataset.dchid||e.target.dataset.dchlab)){dchChange(e.target,refresh);return}
  if(e.target.id==='ad-q'){state.q=e.target.value;const host=document.getElementById('ad-list');if(host)host.innerHTML=rowsHTML();return}
  if(e.target.id==='ad-docid'&&state.edit){state.edit.id=e.target.value;return}
  if(e.target.id==='ad-json'&&state.edit){try{const obj=JSON.parse(e.target.value);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw new Error('x');state.edit.data=obj;state.msg='';touch();schedulePreview()}catch(err){state.msg='JSON: '+err.message;const m=document.getElementById('ad-msg');if(m){m.textContent=state.msg;m.className='aerr'}}return}

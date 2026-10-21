@@ -28,6 +28,7 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
 
+ <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=212').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
  <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
  ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
 
@@ -270,7 +271,7 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest('button')
   if(id==='pn-cancel'){editNews=null;window.route();}
   if(d.ne){editNews=(D().news||[]).find(x=>x.id===d.ne);window.route();}
   if(d.nd&&confirm('Удалить новость?')){await f.deleteDoc(f.doc(db(),'news',d.nd));await done('Новость удалена.');}
-  if(id==='pn-save'){const o=editNews||{};const n={title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
+  if(id==='pn-save'){const o=editNews||{};let nid='';const n={title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
 // auto-insert unused photo tags if none present
 if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');if(fl&&fl.files.length){for(let i=1;i<=fl.files.length;i++)n.text+='\n\n[фото:'+i+']';}}
    if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');b.disabled=true;const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
@@ -278,10 +279,12 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    const legacy=ph.filter(u=>!String(u).startsWith('data:'));ph=ph.filter(u=>String(u).startsWith('data:'));if(legacy[0])n.image=legacy[0];if(ph.length)n.photos=ph;
    const vids=v('pn-v').split(/\s+/).map(x=>x.trim()).filter(Boolean);const bad=vids.filter(x=>!VOK(x)||x.length>300);if(bad.length){b.disabled=false;return msg('Неподдерживаемая ссылка на видео: '+bad[0]);}if(vids.length>5){b.disabled=false;return msg('Не больше 5 видео.');}if(vids.length)n.videos=vids;
    if(JSON.stringify(n).length>950000){b.disabled=false;return msg('Новость слишком большая — уберите одно фото.');}
-   if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();await f.addDoc(f.collection(db(),'news'),n);}
-   // Отправка в Discord (тот же вебхук, что созывы/объявления)
-   try{const c=await f.getDoc(f.doc(db(),'config','discord'));const w=c.exists()&&c.data().webhook;if(w){const PING='1559635259635531947';const body={username:'ВППКА «Коммунисты Арбата»',content:'<@&'+PING+'>',allowed_mentions:{parse:[],roles:[PING]},embeds:[{title:('📰 Новость: '+n.title).slice(0,256),description:(n.text||'').replace(/\[фото:\d+\]/gi,'').slice(0,4000)||undefined,url:'https://vppka-arbat-rmrp.ru/#news',color:0xE32B2B,footer:{text:'vppka-arbat-rmrp.ru'},timestamp:new Date().toISOString()}]};await fetch(w,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});} }catch(e){console.warn('discord news',e)}
-   editNews=null;await done('Сохранено.');}
+   if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
+   // Отправка в Discord: своя строка из «Каналы Discord» — через бота (discordOut); иначе вебхук новостей, как раньше
+   let dtNote='';const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
+   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=212');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   else try{const c=await f.getDoc(f.doc(db(),'config','discord'));const w=c.exists()&&c.data().webhook;if(w){const PING='1559635259635531947';const body={username:'ВППКА «Коммунисты Арбата»',content:'<@&'+PING+'>',allowed_mentions:{parse:[],roles:[PING]},embeds:[{title:('📰 Новость: '+n.title).slice(0,256),description:(n.text||'').replace(/\[фото:\d+\]/gi,'').slice(0,4000)||undefined,url:'https://vppka-arbat-rmrp.ru/#news',color:0xE32B2B,footer:{text:'vppka-arbat-rmrp.ru'},timestamp:new Date().toISOString()}]};await fetch(w,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});} }catch(e){console.warn('discord news',e)}
+   editNews=null;await done('Сохранено.'+dtNote);}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}
   if(d.mx){const m=(D().members||[]).find(x=>x.id===d.mx);if(!m)return;
