@@ -679,3 +679,7 @@ html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
 
 /* v206: окно «Укажите статик» */
 #st-ov,#np-ov{z-index:9999}#st-ov .st-md{max-width:440px}#st-ov .st-act{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}#st-ov .st-n{font-size:.85em;margin-top:10px}
+/* v208: админ-панель «Каналы Discord» */
+.dch-row select,.dch-row input[type=text]{width:100%;box-sizing:border-box;background:#07080b;color:#eee;border:1px solid rgba(255,255,255,.16);padding:8px 10px;font:15px/1.45 "Exo 2",sans-serif;margin-top:4px}
+.dch-row{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}.dch-row small{display:block;margin-top:4px}
+.dch-st{display:inline-block;margin-top:6px;font-size:13px}.dch-st.good{color:var(--cy)}.dch-st.bad{color:var(--red)}.dch-st.wait{color:var(--gold,#e6b450)}
