@@ -414,11 +414,6 @@ service cloud.firestore {
     }
 
     // ---------- новости ----------
-    // v217: ❤️ из Discord от людей без аккаунта на сайте — только число (anon), пишет бот (Admin SDK); читать всем
-    match /newsHearts/{id} {
-      allow read: if true;
-      allow write: if false;
-    }
     match /news/{id} {
       function validNews(d) {
         // pushSent и discordMessageId ставит бот/рассылка; при правке с сайта их можно только сохранить как есть
