@@ -113,12 +113,14 @@ service cloud.firestore {
       // новый аккаунт (v207): регистрация без кода из Discord. Профиль создаёт только сам пользователь (uid),
       // Discord ID = логин аккаунта (validUser: email == discordId@vppka.local, а email в Firebase Auth уникален),
       // ключ (keyHash/rank/roleName) — только настоящий (validKey), обязательно ФИО.
-      // Discord ID руководства (места, распорядители званий, владелец) без кода не занять: такой профиль — только с кодом от бота.
+      // Discord ID руководства (места, распорядители званий, владелец) без кода не занять: такой профиль — только с кодом от бота
+      // или после входа/регистрации через Discord (v216: custom token бота с claim dv=true — Discord ID подтверждён в ЛС).
       allow create: if signedIn() && request.auth.uid == uid && validUser(request.resource.data) && validKey(request.resource.data)
         && validFio(request.resource.data)
         && ((!('vcode' in request.resource.data)
-              && !(request.resource.data.discordId in rkAdminDids())
-              && !(request.resource.data.discordId in get(ldrSeatsPath()).data.get('dids', [])))
+              && (request.auth.token.get('dv', false) == true
+                || (!(request.resource.data.discordId in rkAdminDids())
+                  && !(request.resource.data.discordId in get(ldrSeatsPath()).data.get('dids', [])))))
           || (request.resource.data.get('vcode', '') is string && request.resource.data.get('vcode', '').matches('^[A-Z0-9]{8}$')
             && exists(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode))
             && get(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode)).data.exp > request.time));
@@ -811,14 +813,15 @@ service cloud.firestore {
       allow get, delete: if id.matches('^[0-9a-f]{40}$');
       allow list, update: if false;
     }
-    // v213: вход через Discord без пароля. Браузер (можно без входа) кладёт запрос со случайным id (128 бит, 32 hex):
+    // v213/v216: вход и регистрация (kind 'reg') через Discord без пароля. Браузер (можно без входа) кладёт запрос со случайным id (128 бит, 32 hex):
     // Discord ID, код для сверки (4 цифры, показан на сайте и в ЛС), status 'pending'. Бот (сервисный ключ) шлёт в ЛС
     // кнопки «Подтвердить вход / Это не я» и по подтверждению пишет в этот же документ одноразовый custom token.
     // Читать — только зная id (get), перечислять нельзя; менять статус/токен клиенту нельзя; удалить — зная id.
     match /loginRequests/{id} {
       allow create: if id.matches('^[0-9a-f]{32}$')
-        && request.resource.data.keys().hasOnly(['did','code','status','t'])
+        && request.resource.data.keys().hasOnly(['did','code','status','t','kind'])
         && request.resource.data.keys().hasAll(['did','code','status','t'])
+        && (!('kind' in request.resource.data) || request.resource.data.kind in ['login','reg'])
         && request.resource.data.did is string && request.resource.data.did.matches('^[0-9]{15,21}$')
         && request.resource.data.code is string && request.resource.data.code.matches('^[0-9]{4}$')
         && request.resource.data.status == 'pending' && request.resource.data.t == request.time;
