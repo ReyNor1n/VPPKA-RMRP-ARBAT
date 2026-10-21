@@ -31,8 +31,9 @@ function panelHtml(){const A=canApps(),s1=seen('n');
 function pubAuthor(d){try{const me=(FB()||{}).user||{},did=String(me.email||'').split('@')[0];const M=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[];
  const L=M.filter(x=>/^\d{15,21}$/.test(did)&&String(x.discordId||'')===did&&x.name&&x.name!=='Вакансия'&&x.role&&!String(x.id).startsWith('p_')).sort((a,b)=>(Number(b.rank)||0)-(Number(a.rank)||0)),m=L[0]||M.find(x=>/^\d{15,21}$/.test(did)&&String(x.discordId||'')===did&&x.role);
  return m?m.role:(d.authorName||'')}catch(e){return d.authorName||''}}
-// Отправка созыва/объявления в Discord (вебхук хранится в config/discord, читают ступень 4+ и владелец)
-async function toDiscord(d,cancel){try{const c=await F().getDoc(F().doc(db(),'config','discord'));const w=c.exists()&&c.data().webhook;if(!w)return 'вебхук не настроен.';
+// Отправка созыва/объявления в Discord (вебхук хранится в config/discord, читают ступень 4+ и владелец).
+// noticeWebhook — свой вебхук созывов: бот направляет его в канал из «Каналы Discord» → «Куда отправлять созывы и объявления?».
+async function toDiscord(d,cancel){try{const c=await F().getDoc(F().doc(db(),'config','discord'));const w=c.exists()&&(c.data().noticeWebhook||c.data().webhook);if(!w)return 'вебхук не настроен.';
  const fl=[];if(d.when)fl.push({name:'Когда',value:String(d.when).slice(0,1000)});
  {const au=pubAuthor(d);if(au)fl.push({name:cancel?'Отменил':'Опубликовал',value:au.slice(0,1000),inline:false})}
  const PING='1559635259635531947';// роль «Член партии» (есть у всех членов, включая руководство)
