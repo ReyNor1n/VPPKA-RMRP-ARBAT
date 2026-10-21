@@ -52,7 +52,7 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/applications/$(request.auth.uid)).data.status in ['accepted','member']));
     }
     function myRank() { return !signedIn() ? 0 : (isOwner() ? 1000 : keyRank()); }
-    // аккаунт подтверждён: профиль users/{uid} существует (создать его можно только с кодом от бота в ЛС Discord)
+    // аккаунт подтверждён: профиль users/{uid} существует (с v207 — создаётся при регистрации без кода, Discord ID = логин)
     function verified() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
     // ---------- звания членов партии: менять могут только Председатель ЦК (m1), его заместители (m4, m5) и владелец сайта ----------
     // кто есть кто — по документам мест руководства (members/m1, m4, m5), а не по данным клиента
@@ -105,11 +105,23 @@ service cloud.firestore {
           && request.auth.token.email == d.discordId + '@vppka.local';
       }
       allow read: if signedIn() && (request.auth.uid == uid || isOwner() || canMembers() || myTier() >= 5);
-      // новый аккаунт: обязателен код подтверждения Discord, выданный ботом в ЛС (verifyCodes/{discordId}_{code})
+      // ФИО персонажа (v207): 2–4 слова, буквы (кириллица/латиница) и дефис, до 100 символов
+      function validFio(d) {
+        return d.get('fio', '') is string && d.get('fio', '').size() <= 100
+          && d.get('fio', '').matches('^[А-ЯЁа-яёA-Za-z]+(-[А-ЯЁа-яёA-Za-z]+)*( [А-ЯЁа-яёA-Za-z]+(-[А-ЯЁа-яёA-Za-z]+)*){1,3}$');
+      }
+      // новый аккаунт (v207): регистрация без кода из Discord. Профиль создаёт только сам пользователь (uid),
+      // Discord ID = логин аккаунта (validUser: email == discordId@vppka.local, а email в Firebase Auth уникален),
+      // ключ (keyHash/rank/roleName) — только настоящий (validKey), обязательно ФИО.
+      // Discord ID руководства (места, распорядители званий, владелец) без кода не занять: такой профиль — только с кодом от бота.
       allow create: if signedIn() && request.auth.uid == uid && validUser(request.resource.data) && validKey(request.resource.data)
-        && request.resource.data.get('vcode', '') is string && request.resource.data.get('vcode', '').matches('^[A-Z0-9]{8}$')
-        && exists(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode))
-        && get(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode)).data.exp > request.time;
+        && validFio(request.resource.data)
+        && ((!('vcode' in request.resource.data)
+              && !(request.resource.data.discordId in rkAdminDids())
+              && !(request.resource.data.discordId in get(ldrSeatsPath()).data.get('dids', [])))
+          || (request.resource.data.get('vcode', '') is string && request.resource.data.get('vcode', '').matches('^[A-Z0-9]{8}$')
+            && exists(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode))
+            && get(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode)).data.exp > request.time));
       allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo','avatar','fio','birth','passport'])
         && validUser(request.resource.data)
