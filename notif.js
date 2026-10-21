@@ -60,7 +60,11 @@ function paint(){const b=el();if(!b)return;b.style.display=uid?'':'none';if(!uid
 function stop(){unsub.forEach(f=>{try{f()}catch(e){}});unsub=[];news=[];notes=[];apps=[]}
 function start(){const f=F(),d=db();
  unsub.push(f.onSnapshot(f.query(f.collection(d,'news'),f.orderBy('createdAt','desc'),f.limit(20)),s=>{news=s.docs.map(x=>({...x.data(),id:x.id}));if(open)markTab();paint()},e=>console.warn('notif news',e.code)));
- unsub.push(f.onSnapshot(f.query(f.collection(d,'notifications'),f.orderBy('createdAt','desc'),f.limit(30)),s=>{notes=s.docs.map(x=>({...x.data(),id:x.id}));if(open&&tab==='n')markTab();paint()},e=>console.warn('notif notes',e.code)));
+ // v223: личные уведомления (назначение/снятие) по правилам читает только адресат — два запроса: общие типы и свои (to = мой Discord ID).
+ // Без orderBy (не нужен составной индекс): документов немного, сортировка и обрезка — на клиенте.
+ const NP={pub:[],own:[]};const setN=()=>{const m=new Map();[...NP.pub,...NP.own].forEach(x=>m.set(x.id,x));notes=[...m.values()].sort((a,b)=>ms(b.createdAt)-ms(a.createdAt)).slice(0,30);if(open&&tab==='n')markTab();paint()};
+ unsub.push(f.onSnapshot(f.query(f.collection(d,'notifications'),f.where('type','in',['news','convocation','other'])),s=>{NP.pub=s.docs.map(x=>({...x.data(),id:x.id}));setN()},e=>console.warn('notif notes',e.code)));
+ {const em=String((FB().user&&FB().user.email)||''),me=/^\d{15,21}@vppka\.local$/.test(em)?em.split('@')[0]:'';if(me)unsub.push(f.onSnapshot(f.query(f.collection(d,'notifications'),f.where('to','==',me)),s=>{NP.own=s.docs.map(x=>({...x.data(),id:x.id}));setN()},e=>console.warn('notif own',e.code)))}
  if(canApps())unsub.push(f.onSnapshot(f.query(f.collection(d,'applications'),f.where('status','==','new')),async s=>{const H=window.VPPKA_HIDDEN||(()=>false);
   apps=s.docs.map(x=>({...x.data(),id:x.id})).filter(a=>!H({discordId:a.discordId,uid:a.uid})).sort((a,b)=>ms(b.createdAt)-ms(a.createdAt));
   for(const a of apps)if(a.uid&&a.photo===undefined){try{const u=await f.getDoc(f.doc(d,'users',a.uid));a.photo=u.exists()&&u.data().photo||''}catch(e){a.photo=''}}
