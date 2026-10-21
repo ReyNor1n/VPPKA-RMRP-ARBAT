@@ -307,7 +307,7 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
   if(d.aa||d.ar||d.am){const aid=d.aa||d.ar||d.am,a=apps.find(x=>x.id===aid),st=d.aa?'accepted':d.ar?'rejected':'member';
    if(d.am){const r=parseInt(v('ak-'+aid),10);if(!(r>=0&&r<=maxR()))return msg(`Уровень должен быть от 0 до ${maxR()}.`);
     const fio=String(a.answers.fio||'').trim().replace(/\s+/g,' ').slice(0,100);const dup=partyDup(fio,a.discordId)||(a.uid&&(D().members||[]).find(x=>x.id==='p_'+a.uid));const pid=dup?dup.id:(a.uid?'p_'+a.uid:'p_'+aid);
-    const card={name:fio,role:v('ar-'+aid).trim().slice(0,120)||'Член партии',group:'Члены партии',discord:String(a.answers.discord||'').slice(0,200),joined:new Date().toLocaleDateString('ru-RU'),rank:r,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};if(a.discordId)card.discordId=String(a.discordId).slice(0,64);
+    const card={name:fio,role:v('ar-'+aid).trim().slice(0,120)||'Член партии',group:'Члены партии',discord:String(a.answers.discord||'').slice(0,200),joined:await keepJoined(a.discordId,fio),rank:r,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};if(a.discordId)card.discordId=String(a.discordId).slice(0,64);
     if(dup)await f.setDoc(f.doc(db(),'members',pid),{...(dup.photo?{photo:dup.photo}:{}),...card});else await createPartyCard(pid,card);await window.VPPKA_RELOAD();}
    await f.updateDoc(f.doc(db(),'applications',aid),{status:st,reviewedBy:FB().user.uid,reviewedAt:f.serverTimestamp(),reviewerRole:String(FB().power.roleName||'').slice(0,60)});
    a.status=st;window.route();msg('Статус заявки: '+STATUS[st]);rosterSync().catch(e=>console.warn('roster',e.code||e));}
@@ -393,6 +393,21 @@ async function asgOpen(pid){asgPos=(D().members||[]).find(m=>m.id===pid);if(!can
   document.getElementById('asg-l').innerHTML=asgList('')}catch(e){document.getElementById('asg-l').innerHTML='';document.getElementById('asg-e').textContent=e.code==='permission-denied'?'Нет доступа к списку членов партии: правила Firestore не разрешают чтение. Владельцу нужно опубликовать актуальный firestore.rules в консоли Firebase.':'Не удалось загрузить список: '+(e.code||e.message)}}
 const KEEP=['role','group','rank','tier','order','reportsTo','duties'];
 const pick=(m,ks)=>Object.fromEntries(ks.filter(k=>m[k]!=null).map(k=>[k,m[k]]));
+// v220: «Дата вступления» следует за человеком при назначении, снятии и переносе карточек — самая ранняя из
+// известных: его другие карточки (и только что освобождённые места), дата принятия заявки, иначе сегодня.
+// От неё считается окно «Активности» (events.js joinMs) и «с …» в «Членах партии».
+const jParse=s=>{const x=String(s||'').match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);return x?Date.UTC(+x[3],+x[2]-1,+x[1]):0};
+const jFmt=t=>{const d=new Date(t);return String(d.getUTCDate()).padStart(2,'0')+'.'+String(d.getUTCMonth()+1).padStart(2,'0')+'.'+d.getUTCFullYear()};
+const jTs=t=>!t?0:t.toMillis?t.toMillis():t.toDate?+t.toDate():typeof t==='number'?t:(t.seconds||0)*1000;
+const jDay=ms=>new Date(ms).toLocaleDateString('ru-RU',{timeZone:'Europe/Volgograd'});
+function earliestJoined(ds){const ts=(ds||[]).map(jParse).filter(Boolean);return ts.length?jFmt(Math.min(...ts)):''}
+const goneJoin={};const rememberJoin=m=>{const d=String(m&&m.discordId||'');if(/^\d{15,21}$/.test(d)&&m.joined){const j=earliestJoined([goneJoin[d],m.joined]);if(j)goneJoin[d]=j}};
+async function keepJoined(did,name){did=String(did||'');const ds=[goneJoin[did]];
+ for(const m of (D().members||[])){if(!m.name||isVacName(m.name))continue;if((did&&String(m.discordId||'')===did)||(!did&&name&&nzName(m.name)===nzName(name)))ds.push(m.joined)}
+ if(/^\d{15,21}$/.test(did)){try{const f=F(),q=await f.getDocs(f.query(f.collection(db(),'applications'),f.where('discordId','==',did)));
+  for(const x of q.docs){const a=x.data()||{};if(!['accepted','member'].includes(a.status))continue;const t=jTs(a.reviewedAt||a.createdAt);if(t)ds.push(jDay(t))}}catch(e){if(e.code!=='permission-denied')console.warn('keepJoined',e.code||e)}}
+ return earliestJoined(ds)||jDay(Date.now())}
+window.VPPKA_JOIN={earliestJoined,keepJoined};
 async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if(!u||!p)return;const f=F(),ms=D().members||[];
  const same=p.discordId&&u.discordId&&p.discordId===u.discordId;if(same){const el=document.getElementById('asg-e');if(el)el.textContent='Этот человек уже на этой должности.';return}
  const held=ms.filter(m=>m.id!==p.id&&isLdrPost(m)&&!/^Вакансия/i.test(m.name||'')&&u.discordId&&m.discordId===u.discordId);
@@ -402,7 +417,8 @@ async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if
  const note=async(m,kind,text)=>{try{await seatNote(m,kind,text)}catch(e){noteErr=e.code||e.message;console.warn('seatNote',noteErr)}};
  try{if(!canAssign(p))throw new Error('нет прав на эту должность');
   if(displaced)await note(displaced,'recall',`Вас сняли с должности «${p.role}». Решение: ${who}.`);
-  const d={...pick(p,KEEP),name:String(nm).slice(0,100),discordId:u.discordId||'',discord:/^\d{15,21}$/.test(u.discordId)?'https://discord.com/users/'+u.discordId:'',joined:new Date().toLocaleDateString('ru-RU'),...meta};
+  if(displaced)rememberJoin(displaced);
+  const d={...pick(p,KEEP),name:String(nm).slice(0,100),discordId:u.discordId||'',discord:/^\d{15,21}$/.test(u.discordId)?'https://discord.com/users/'+u.discordId:'',joined:await keepJoined(u.discordId,nm),...meta};
   if(u.photo)d.photo=u.photo;
   await f.setDoc(f.doc(db(),'members',p.id),d);
   if(displaced){rankNote(displaced.discordId,'down',`Вы сняты с должности «${p.role}». Решение: ${who}.`);window.VPPKA_RH&&window.VPPKA_RH(displaced.discordId,'down',p.role,'Снят(а) с должности',displaced.name,'').catch(()=>{})}
@@ -410,7 +426,7 @@ async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if
   await note({id:p.id,role:p.role,discordId:u.discordId},'appoint',`Вас назначили на должность «${p.role}». Назначил: ${who}.`);
   rankNote(u.discordId,'assign',`Вас назначили на должность «${p.role}». Назначил: ${who}.`);
   window.VPPKA_RH&&window.VPPKA_RH(u.discordId,'assign','',p.role,nm,held.length?`Другие должности сохранены: ${held.map(x=>x.role).join(', ')}`:'').catch(e=>console.warn('rankHist',e.code||e));
-  asgClose();await window.VPPKA_RELOAD();location.hash='#member/'+p.id;window.route();
+  asgClose();await window.VPPKA_RELOAD();if(displaced&&tier()>=4)try{await rosterSync();await window.VPPKA_RELOAD()}catch(e){console.warn('roster',e.code||e)}location.hash='#member/'+p.id;window.route();
   alert(`«${nm}» назначен(а): ${p.role}.`+(noteErr?' Уведомление или список должностей не записались ('+noteErr+') — опубликуйте firestore.rules.':'')+(mt(p)?` Ступень ключа по должности: ${mt(p)} — выдайте или обновите ключ, если нужно.`:''))}
  catch(e){const el=document.getElementById('asg-e');if(el)el.textContent='Ошибка: '+(e.code==='permission-denied'?'недостаточно прав':(e.message||e.code))}}
 function postPanel(){if(!(isPostAdmin()||tier()>=5||chair()))return '';const ms=(D().members||[]).filter(canTouch);
@@ -443,11 +459,15 @@ async function unseat(id){if(unseatBusy)return;const m=(D().members||[]).find(x=
  unseatBusy=true;const f=F();let noteErr='';
  try{if(/^\d{15,21}$/.test(String(m.discordId||''))){try{await seatNote(m,'recall',`Вас сняли с должности «${role}». Решение: ${who}.`)}catch(e){noteErr=e.code||e.message;console.warn('seatNote',noteErr)}
   }
+  rememberJoin(m);
   await f.setDoc(f.doc(db(),'members',m.id),{...pick(m,KEEP),name:'Вакансия',bio:'Должность вакантна.',updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});
   // Личное сообщение и история — только после того, как место действительно освобождено (иначе при отказе человеку приходит ложное «Вы сняты»).
   if(/^\d{15,21}$/.test(String(m.discordId||''))){rankNote(m.discordId,'down',`Вы сняты с должности «${role}». Решение: ${who}.`);window.VPPKA_RH&&window.VPPKA_RH(m.discordId,'down',role,'Снят(а) с должности',m.name,'').catch(()=>{})}
   try{await writeLdrSeats((D().members||[]).map(x=>x.id===m.id?{...x,name:'Вакансия',discordId:''}:x))}catch(e){noteErr=noteErr||(e.code||e.message);console.warn('ldrSeats',e.code||e)}
-  if(window.VPPKA_RELOAD)await window.VPPKA_RELOAD();msg(`«${m.name}» снят(а) с должности «${role}».`+(noteErr?' Уведомление или список должностей не записались ('+noteErr+') — опубликуйте firestore.rules.':''))}
+  if(window.VPPKA_RELOAD)await window.VPPKA_RELOAD();
+  // Не осталось ни одной карточки — сразу возвращаем его в «Члены партии» с прежней датой вступления (иначе пропадёт до следующей синхронизации).
+  if(tier()>=4)try{await rosterSync();if(window.VPPKA_RELOAD)await window.VPPKA_RELOAD()}catch(e){console.warn('roster',e.code||e)}
+  msg(`«${m.name}» снят(а) с должности «${role}».`+(noteErr?' Уведомление или список должностей не записались ('+noteErr+') — опубликуйте firestore.rules.':''))}
  catch(e){msg('Не удалось снять: '+(e.code==='permission-denied'?'нет прав (опубликуйте новые правила базы).':(e.code||e.message)))}
  finally{unseatBusy=false}}
 function installAssign(){const P=window.P,om=P.member;
@@ -474,7 +494,7 @@ async function rosterSync(){if(rsBusy||tier()<4)return;rsBusy=true;try{const f=F
   if(a.discordId&&Object.values(cur).some(x=>!String(x.id).startsWith('p_')&&x.group!=='Члены партии'&&x.discordId===a.discordId&&x.name&&!/^Вакансия/i.test(x.name)))continue;
   const id=a.uid?'p_'+a.uid:'p_'+d.id;if(cur[id])continue;
   const ts=a.reviewedAt||a.createdAt;const dt=ts&&ts.toDate?ts.toDate():null;
-  const m={name:fio,role:String(PR.includes(a.partyRole)?a.partyRole:prn(a.partyRank||1)).slice(0,120),group:'Члены партии',rank:0,joined:dt?dt.toLocaleDateString('ru-RU'):new Date().toLocaleDateString('ru-RU')};
+  const m={name:fio,role:String(PR.includes(a.partyRole)?a.partyRole:prn(a.partyRank||1)).slice(0,120),group:'Члены партии',rank:0,joined:earliestJoined([dt?jDay(+dt):'',a.discordId?goneJoin[String(a.discordId)]:''])||jDay(Date.now())};
   if(a.discordId)m.discordId=String(a.discordId).slice(0,64);
   if(a.uid){try{const u=await f.getDoc(f.doc(db(),'users',a.uid));if(u.exists()){const x=u.data();if(x.photo)m.photo=x.photo;if(!m.discordId&&x.discordId)m.discordId=String(x.discordId).slice(0,64)}}catch(e){}}
   m.updatedBy=FB().user.uid;m.updatedAt=f.serverTimestamp();await createPartyCard(id,m);cur[id]={...m,id}}
