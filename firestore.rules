@@ -53,7 +53,13 @@ service cloud.firestore {
     }
     function myRank() { return !signedIn() ? 0 : (isOwner() ? 1000 : keyRank()); }
     // аккаунт подтверждён: профиль users/{uid} существует (с v207 — создаётся при регистрации без кода, Discord ID = логин)
-    function verified() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    // v222: «аккаунт на сайте должен быть привязан к Discord» — Discord ID подтверждён ботом: claim dv (вход/регистрация через
+    // Discord) или отметка dvf/{uid} (код из ЛС). Проверенный аккаунт = профиль + привязка.
+    function linked() {
+      return signedIn() && (request.auth.token.get('dv', false) == true
+        || exists(/databases/$(database)/documents/dvf/$(request.auth.uid)));
+    }
+    function verified() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && linked(); }
     // ---------- звания членов партии: менять могут только Председатель ЦК (m1), его заместители (m4, m5) и владелец сайта ----------
     // кто есть кто — по документам мест руководства (members/m1, m4, m5), а не по данным клиента
     // Звания; applications.partyRank 1..5 = rkList()[partyRank - 1]. «Кандидат» упразднён 20.10.2026.
@@ -115,15 +121,12 @@ service cloud.firestore {
       // ключ (keyHash/rank/roleName) — только настоящий (validKey), обязательно ФИО.
       // Discord ID руководства (места, распорядители званий, владелец) без кода не занять: такой профиль — только с кодом от бота
       // или после входа/регистрации через Discord (v216: custom token бота с claim dv=true — Discord ID подтверждён в ЛС).
+      // v222: профиль — только с подтверждённым Discord ID (claim dv или dvf/{uid} с тем же Discord ID). Код vcode больше не принимается.
       allow create: if signedIn() && request.auth.uid == uid && validUser(request.resource.data) && validKey(request.resource.data)
-        && validFio(request.resource.data)
-        && ((!('vcode' in request.resource.data)
-              && (request.auth.token.get('dv', false) == true
-                || (!(request.resource.data.discordId in rkAdminDids())
-                  && !(request.resource.data.discordId in get(ldrSeatsPath()).data.get('dids', [])))))
-          || (request.resource.data.get('vcode', '') is string && request.resource.data.get('vcode', '').matches('^[A-Z0-9]{8}$')
-            && exists(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode))
-            && get(/databases/$(database)/documents/verifyCodes/$(request.resource.data.discordId + '_' + request.resource.data.vcode)).data.exp > request.time));
+        && validFio(request.resource.data) && !('vcode' in request.resource.data)
+        && (request.auth.token.get('dv', false) == true
+          || (exists(/databases/$(database)/documents/dvf/$(uid))
+            && get(/databases/$(database)/documents/dvf/$(uid)).data.get('did', '') == request.resource.data.discordId));
       allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo','avatar','fio','birth','passport'])
         && validUser(request.resource.data)
@@ -168,16 +171,18 @@ service cloud.firestore {
     // ---------- служебное: owners и вебхуки только из консоли; список должностей пишут назначающие ----------
     match /config/{d} {
       // discordTargets (v209): подписи «своих строк» каналов для «Куда отправить в Discord» — пишет только бот, без вебхуков
-      allow get: if (signedIn() && d == 'owners') || (d == 'discord' && myTier() >= 4) || (d == 'ldrSeats' && rankAdmin())
+      // v222: config/discord (URL вебхуков) — только владелец; публикующие отправляют через бота (discordOut b_news/b_notices)
+      allow get: if (signedIn() && d == 'owners') || (d == 'discord' && isOwner()) || (d == 'ldrSeats' && rankAdmin())
         || (d == 'discordTargets' && myTier() >= 4);
       // Список Discord тех, кто занимает руководящие места. Пишут те же, кто назначает: целиком поле dids.
       function didsOk() {
         return request.resource.data.dids is list && request.resource.data.dids.size() <= 80
           && (request.resource.data.dids.size() == 0 || (request.resource.data.dids[0] is string && request.resource.data.dids[0].size() <= 32));
       }
-      allow create: if d == 'ldrSeats' && rankAdmin()
+      // v222: список пишут только владелец и бот (Admin SDK держит его в соответствии с местами)
+      allow create: if d == 'ldrSeats' && isOwner()
         && request.resource.data.keys().hasOnly(['dids']) && didsOk();
-      allow update: if d == 'ldrSeats' && rankAdmin()
+      allow update: if d == 'ldrSeats' && isOwner()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['dids']) && didsOk();
       allow write: if d == 'discord' && isOwner()
         && request.resource.data.keys().hasOnly(['webhook','appsWebhook','roleIds'])
@@ -195,7 +200,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['kind','ref','target','by','at'])
         && request.resource.data.kind in ['news','notice','cancel']
         && request.resource.data.ref is string && request.resource.data.ref.matches('^[A-Za-z0-9_-]{1,64}$')
-        && request.resource.data.target is string && request.resource.data.target.matches('^c_[a-z0-9]{4,24}$')
+        // v222: b_news / b_notices — каналы «как обычно» (вебхуки config/discord видит только владелец, отправляет бот)
+        && request.resource.data.target is string && request.resource.data.target.matches('^(c_[a-z0-9]{4,24}|b_news|b_notices)$')
         && request.resource.data.by == request.auth.uid
         && request.resource.data.at == request.time
         && myTier() >= 4;
@@ -238,6 +244,9 @@ service cloud.firestore {
           && held.get('discordId','') == request.resource.data.to
           && held.get('group','') != 'Члены партии'
           && held.get('role','') != 'Начальник технического отдела'
+          // v222: тех. отдел и места владельца меняет только владелец
+          && (isSuper() || (held.get('group','') != 'Технический отдел' && held.get('discordId','') != '646280678736003073'
+              && !(request.resource.data.seat in ['m11','m12','m13','m14','m17'])))
           && (held.get('rank',0) < 100 || isSuper())
           && (request.resource.data.type == 'recall' || held.get('updatedBy','') == request.auth.uid);
       }
@@ -260,7 +269,7 @@ service cloud.firestore {
           && reqStr(a, 'source', 2000) && reqStr(a, 'reason', 2000) && optStr(a, 'bio', 4000);
       }
       // заявка с сайта: только вошедший, одна заявка на аккаунт (id документа = uid)
-      allow create: if signedIn() && id == request.auth.uid
+      allow create: if signedIn() && id == request.auth.uid && verified()
         && request.resource.data.keys().hasOnly(['answers','status','createdAt','uid','discordId'])
         && request.resource.data.keys().hasAll(['answers','status','createdAt','uid'])
         && request.resource.data.status == 'new'
@@ -543,7 +552,26 @@ service cloud.firestore {
           && request.resource.data.get('updatedBy', '') == request.auth.uid
           && !id.matches('^p_.*');
       }
-      allow create: if partyIdOk() && partyClaimOk() && !techRoleNew() && (tierEdit(request.resource.data) || vacCreateOk());
+      // v222 «только 7 доступ имеет право менять тех отдел»: места группы «Технический отдел» (m11–m14), m17 и любое место
+      // с Discord ID владельца назначает, снимает и меняет только владелец (ему всё даёт общее правило isSuper внизу).
+      // Держатель такого места может менять только своё фото (selfPhotoOk).
+      function lockedId() { return id in ['m11','m12','m13','m14','m17']; }
+      function lockedData(d) {
+        return d.get('group', '') == 'Технический отдел' || d.get('discordId', '') == '646280678736003073'
+          || d.get('role', '') == 'Начальник технического отдела';
+      }
+      // Одна дешёвая проверка для update (лимит 1000 выражений): место не закрыто ни до, ни после правки.
+      // Заменяет techSeat()/techRoleNew() и бывшее ограничение td (m12 не меняет своё место и места владельца).
+      function lockFree() {
+        let o = resource.data;
+        let n = request.resource.data;
+        return !lockedId()
+          && o.get('group', '') != 'Технический отдел' && n.get('group', '') != 'Технический отдел'
+          && o.get('discordId', '') != '646280678736003073' && n.get('discordId', '') != '646280678736003073'
+          && o.get('role', '') != 'Начальник технического отдела' && n.get('role', '') != 'Начальник технического отдела';
+      }
+      allow create: if !lockedId() && !lockedData(request.resource.data)
+        && partyIdOk() && partyClaimOk() && !techRoleNew() && (tierEdit(request.resource.data) || vacCreateOk());
       // назначение человека на должность (смена discordId): владелец и ступень 5, как раньше
       function assignOk() { return request.resource.data.get('discordId', '') == resource.data.get('discordId', '') || myTier() >= 5; }
       // звание (role) записи «Члены партии» (p_*) — только распорядители званий
@@ -627,15 +655,16 @@ service cloud.firestore {
       function updEntry(own, vd) {
         let ra = own || (vd != '' && vd in rkAdminDids());
         let chair = own || (deputySeat() && vd != '' && vd == seatDid('m1'));
-        let td = !own && vd != '' && vd == seatDid('m12') && !(vd in [seatDid('m1'), seatDid('m4'), seatDid('m5')]);
+        // v222: td (m12) больше не нужен — места тех. отдела и владельца закрыты lockFree()
         return !deputyReassignP(chair)
-          && (seatAssignOk(ra, chair, td) || rankChangeOk(ra) || selfPhotoOk()
+          && (seatAssignOk(ra, chair, false) || rankChangeOk(ra) || selfPhotoOk()
               || tierUpdOk(own ? 9 : keyTier(), own, ra) || chairEditOk());
       }
-      allow update: if !techSeat() && !techRoleNew() && updEntry(isOwner(), myVDid());
+      allow update: if (lockFree() && updEntry(isOwner(), myVDid()))
+        || ((lockedId() || lockedData(resource.data)) && selfPhotoOk());
       // m1, m4 и m5 не удаляет никто, кроме владельца (ему это даёт общее правило isSuper).
       // Занятое руководящее место не удаляется: его освобождают, имя становится «Вакансия». Карточки «Члены партии» удаляются как раньше.
-      allow delete: if !techSeat() && !(id in ['m1', 'm4', 'm5', 'm12']) && resource.data.get('rank', 0) < 100
+      allow delete: if !techSeat() && !lockedId() && !lockedData(resource.data) && !(id in ['m1', 'm4', 'm5', 'm12']) && resource.data.get('rank', 0) < 100
         && (id.matches('^p_.*') || resource.data.get('group', '') == 'Члены партии'
             || (resource.data.get('name', '') is string && (resource.data.get('name', '') == 'Вакансия' || resource.data.get('name', '').lower() == 'вакансия')))
         && ((myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100))
@@ -721,7 +750,7 @@ service cloud.firestore {
         && d.lastMessage.text is string && d.lastMessage.text.size() <= 2000
         && d.lastMessage.from == request.auth.uid && d.lastMessage.at == request.time; }
       allow read: if isPart() || (signedIn() && request.auth.uid == 'ZpVGAXbbg1a9I8kRsNEm0OU8QAt2');
-      allow create: if signedIn() && request.resource.data.keys().hasOnly(['participants','createdBy','updatedAt','lastMessage','unread','names'])
+      allow create: if verified() && request.resource.data.keys().hasOnly(['participants','createdBy','updatedAt','lastMessage','unread','names'])
         && request.resource.data.participants is list && request.resource.data.participants.size() == 2
         && request.auth.uid in request.resource.data.participants
         && request.resource.data.participants[0] < request.resource.data.participants[1]
@@ -742,7 +771,7 @@ service cloud.firestore {
       allow delete: if false;
       match /messages/{mid} {
         allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-        allow create: if signedIn() && request.auth.uid in getAfter(/databases/$(database)/documents/chats/$(chatId)).data.participants
+        allow create: if verified() && request.auth.uid in getAfter(/databases/$(database)/documents/chats/$(chatId)).data.participants
           && request.resource.data.keys().hasOnly(['from','text','at'])
           && request.resource.data.from == request.auth.uid && request.resource.data.at == request.time
           && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000;
@@ -863,6 +892,25 @@ service cloud.firestore {
         && request.resource.data.status == 'pending' && request.resource.data.t == request.time;
       allow get, delete: if id.matches('^[0-9a-f]{32}$');
       allow list, update: if false;
+    }
+    // ---------- v222: привязка Discord ----------
+    // dvf/{uid}: отметка «Discord ID аккаунта подтверждён» (бот: код из ЛС, вход/регистрация через Discord). Видит только сам.
+    match /dvf/{uid} { allow get: if signedIn() && request.auth.uid == uid; allow list, write: if false; }
+    // linkCodes/{uid}: хэш кода привязки — только бот
+    match /linkCodes/{uid} { allow read, write: if false; }
+    // linkReq/{uid}: сайт просит код (status 'pending') или отдаёт введённый код (status 'check'); итог пишет бот.
+    // Discord ID — только логин этого аккаунта ({did}@vppka.local).
+    match /linkReq/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.auth.token.email is string && request.auth.token.email.matches('^[0-9]{15,21}@vppka[.]local$')
+        && request.resource.data.keys().hasOnly(['did','status','t','code'])
+        && request.resource.data.did == request.auth.token.email.split('@')[0]
+        && request.resource.data.t == request.time
+        && ((request.resource.data.status == 'pending' && !('code' in request.resource.data))
+            || (request.resource.data.status == 'check' && resource != null && resource.data.get('status', '') in ['sent','bad']
+                && request.resource.data.code is string && request.resource.data.code.matches('^[0-9]{6}$')));
+      allow delete: if false;
     }
     // Тексты страниц (вместо правки content.json с сайта). Нет документа — сайт берёт content.json.
     match /content/{id} {
