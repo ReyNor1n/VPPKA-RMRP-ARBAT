@@ -62,12 +62,12 @@ window.VPPKA_PQ=q=>{q=String(q||'').toLowerCase().trim();let n=0;document.queryS
 const nw=n=>{const a=n%10,b=n%100;return a===1&&b!==11?'член':a>=2&&a<=4&&(b<12||b>14)?'члена':'членов'};
 
 // медиа новостей: фото (data URL/ссылки) и видео (YouTube, VK, Rutube, mp4)
-function vemb(u){let m;u=String(u||'');const fr=src=>`<div class="vid"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+function vemb(u){let m;u=String(u||'').trim();if(!(window.VPPKA_SAFE?window.VPPKA_SAFE.https(u):/^https:\/\/\S+$/i.test(u)))return u?`<p class="amut">▶ Видео: ${esc(u)}</p>`:'';const fr=src=>`<div class="vid"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
  if(m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/))return fr('https://www.youtube.com/embed/'+m[1]);
  if(m=u.match(/(?:vk\.com|vkvideo\.ru)\/.*video(-?\d+)_(\d+)/))return fr(`https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2`);
  if(m=u.match(/rutube\.ru\/(?:video|play\/embed)\/([0-9a-f]{32})/))return fr('https://rutube.ru/play/embed/'+m[1]);
  if(/^https:\/\/\S+\.(mp4|webm)(\?\S*)?$/i.test(u))return `<div class="vid"><video src="${esc(u)}" controls preload="metadata"></video></div>`;
- return /^https:/.test(u)?`<p><a href="${esc(u)}" target="_blank" rel="noopener">▶ Видео: ${esc(u)}</a></p>`:'';}
+ return /^https:\/\//i.test(u)?`<p><a href="${esc(u)}" target="_blank" rel="noopener">▶ Видео: ${esc(u)}</a></p>`:'';}
 const nrich=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
 const nbody=n=>{const P=nph(n),used=new Set();const parts=String(n.text||'').split('\n');let h='',buf=[];const flush=()=>{if(buf.length){h+=`<p class="lead">${buf.map(nrich).join('<br>')}</p>`;buf=[]}};
  for(const ln of parts){let m;if((m=ln.match(/^\s*\[фото:(\d+)\]\s*$/i))){flush();const u=P[+m[1]-1];if(u){used.add(+m[1]-1);{const a=`<a ${PHH(u)} target="_blank"><img ${PHA(u,'f')} alt="${esc(n.title||'')}" loading="lazy"></a>`;h=h.endsWith("</a></div>")&&h.lastIndexOf("ninl")>h.lastIndexOf("</p>")&&h.lastIndexOf("ninl")>h.lastIndexOf("</h3>")?h.slice(0,-6)+a+"</div>":h+`<div class="nphotos big ninl">${a}</div>`}}}

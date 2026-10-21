@@ -28,11 +28,16 @@ const io='IntersectionObserver' in window?new IntersectionObserver(es=>es.forEac
 function scan(root){(root.querySelectorAll?root:document).querySelectorAll('img[data-ph]:not([data-phs])').forEach(i=>{i.dataset.phs='1';if(i.dataset.phd)return;if(i.dataset.pk==='f'||!io)want(i);else io.observe(i)})}
 new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1){if(n.matches&&n.matches('img[data-ph]'))scan(n.parentNode||document);else if(n.querySelector&&n.querySelector('img[data-ph]'))scan(n)}}).observe(document.documentElement,{childList:true,subtree:true});
 // атрибут src для <img>: PHA(значение, 't' | 'f')
-window.PHA=(s,k)=>{s=String(s||'');k=k==='f'?'f':'t';const id=idOf(s);if(!id)return `src="${E(s)}"`;
+window.PHA=(s,k)=>{s=String(s||'');k=k==='f'?'f':'t';const id=idOf(s);if(!id)return /^\s*(javascript|vbscript|data(?!:image\/)):/i.test(s)?`src="${BLANK}"`:`src="${E(s)}"`;
  const d=known(id,k);if(d)return `src="${E(d)}" data-ph="${id}" data-pk="${k}" data-phd="1" data-phs="1"`;
  const tmp=k==='f'?thumbOf(id):'';return `src="${E(tmp||BLANK)}" data-ph="${id}" data-pk="${k}"`};
 // значение для href ссылки «открыть фото» (полный размер открывается по клику — см. обработчик ниже)
-window.PHH=s=>{s=String(s||'');return idOf(s)?`href="#" data-phopen="${E(s)}"`:`href="${E(s)}"`};
+// v227: ссылки — только обычные https://. Свои картинки: «ph:<id>», data:image/…, относительный путь img/….
+// Всё прочее (javascript:, data:text/html, vbscript:, http: и т. п.) ссылкой не становится.
+const SAFE_HTTPS=s=>/^https:\/\/[^\s"'<>\\]+$/i.test(String(s||''));
+const SAFE_MEDIA=s=>{s=String(s||'');return !!idOf(s)||SAFE_HTTPS(s)||/^data:image\/(png|jpe?g|gif|webp|bmp|avif);base64,[A-Za-z0-9+\/=\s]*$/i.test(s)||/^img\/[^:\s"'<>\\]+$/.test(s)};
+window.VPPKA_SAFE={https:SAFE_HTTPS,media:SAFE_MEDIA};
+window.PHH=s=>{s=String(s||'');return idOf(s)?`href="#" data-phopen="${E(s)}"`:SAFE_MEDIA(s)?`href="${E(s)}"`:`data-badurl="1"`};
 const VP=window.VPPKA_PH={isRef:s=>!!idOf(s),BLANK,
  src:(s,k)=>{const id=idOf(s);return id?(known(id,k==='f'?'f':'t')||''):String(s||'')},
  // данные картинки (data:…) по ссылке; обычные значения возвращаются как есть

@@ -4,12 +4,18 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const nrm=s=>String(s||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
 const MAX=5*1024*1024,CH=600000,VOL=0.05;
 let T=null,loading=null;const blobs={};
+// v227: ссылка на музыку — только https и только на сам аудиофайл. Страница звука myinstants.com (…/instant/…) — это HTML, не аудио.
+const MI_PAGE=/^https?:\/\/(www\.)?myinstants\.com\/([a-z]{2}\/)?instant\//i;
+const urlOk=u=>/^https:\/\/[^\s"'<>\\]+$/i.test(String(u||''))&&!MI_PAGE.test(String(u||''));
+// проверка, что браузер может играть ссылку как аудио (без CORS — обычный <audio>)
+const probe=u=>new Promise(res=>{const a=new Audio();let done=false;const fin=ok=>{if(done)return;done=true;clearTimeout(tm);a.removeAttribute('src');try{a.load()}catch(e){}res(ok)};
+ const tm=setTimeout(()=>fin(null),12000);a.preload='metadata';a.addEventListener('loadedmetadata',()=>fin(true),{once:true});a.addEventListener('error',()=>fin(false),{once:true});a.src=u});
 async function load(){if(T)return T;if(!FB()||!FB().db)return null;if(loading)return loading;loading=(async()=>{const s=await F().getDocs(F().collection(db(),'ldrMusic'));T={};s.forEach(d=>T[d.id]=d.data());return T})().catch(e=>{console.warn('ldrMusic',e.code||e);return null}).finally(()=>loading=null);return loading}
 // какой трек относится к текущей странице
 function trackFor(h){if(!T)return null;const [k,id]=h.replace(/^#/,'').split('/');if(k==='user'&&T[id])return [id,'user/'+id];
  if(k==='member'&&id){const ms=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[],m=ms.find(x=>x.id===id);if(!m)return null;
   const pm=(window.VPPKA_PUBMAP&&window.VPPKA_PUBMAP())||{};for(const [uid,t] of Object.entries(T)){if(nrm(t.name)===nrm(m.name)||(m.discordId&&pm[uid]&&pm[uid].did===m.discordId))return [uid,'member/'+id]}}return null}
-async function srcOf(uid){const t=T[uid];if(t.url)return t.url;if(blobs[uid+t.ver])return blobs[uid+t.ver];
+async function srcOf(uid){const t=T[uid];if(t.url){if(!urlOk(t.url))throw new Error('ссылка не на аудиофайл: '+t.url);return t.url}if(blobs[uid+t.ver])return blobs[uid+t.ver];
  const parts=[];for(let i=0;i<t.n;i++){const d=await F().getDoc(F().doc(db(),'ldrMusic',uid,'chunks',t.ver+'_'+i));if(!d.exists())throw new Error('нет части '+i);parts.push(d.data().d)}
  const bin=atob(parts.join(''));const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return blobs[uid+t.ver]=URL.createObjectURL(new Blob([u8],{type:t.mime||'audio/mpeg'}))}
 let busy='';async function apply(){const h=location.hash;if(!/^#(member|user)\//.test(h))return;await load();const r=trackFor(h);if(!r)return;const [uid,key]=r,M=window.VPPKA_MUSIC;
@@ -17,7 +23,7 @@ let busy='';async function apply(){const h=location.hash;if(!/^#(member|user)\//
  try{const src=await srcOf(uid);if(location.hash.replace(/^#/,'').split('/').slice(0,2).join('/')!==key)return;M[key]={src,start:0,vol:VOL,sig};window.VPPKA_MUSIC_SYNC&&window.VPPKA_MUSIC_SYNC();title(t)}catch(e){console.warn('музыка профиля',e)}finally{busy=''}}
 function title(t){return;const h=document.querySelector('.pg h1');if(!h||document.querySelector('.pmus-t'))return;const s=document.createElement('div');s.className='pmus-t';s.textContent=/^(https?:|www\.)|\.(mp3|ogg|wav)(\?|$)/i.test(String(t.title).trim())?'♪':'♪ '+t.title;h.after(s)}
 // ---- настройки (только руководство) ----
-function setHtml(t){return `<div class="phc" id="mus-box"><h4 class="phc-h">Музыка профиля</h4><small class="phc-hint">Играет, когда открывают вашу карточку (громкость 5%). Файл mp3/ogg до 5 МБ или прямая https-ссылка на аудио.${t?`<br>Сейчас: <b>${esc(t.title||(t.url?'ссылка':'файл'))}</b>`:''}</small>
+function setHtml(t){return `<div class="phc" id="mus-box"><h4 class="phc-h">Музыка профиля</h4><small class="phc-hint">Играет, когда открывают вашу карточку (громкость 5%). Файл mp3/ogg до 5 МБ или прямая https-ссылка на сам аудиофайл (.mp3/.ogg). С myinstants.com — ссылка из кнопки «Скачать», не адрес страницы.${t?`<br>Сейчас: <b>${esc(t.title||(t.url?'ссылка':'файл'))}</b>`:''}</small>
 <div class="phc-btns" style="margin-top:8px;flex-wrap:wrap"><label class="btn sm o"><input id="mus-f" type="file" accept="audio/mpeg,audio/ogg,.mp3,.ogg" style="display:none">Файл</label><input id="mus-u" class="inp" placeholder="или https://…/track.mp3" style="flex:1;min-width:180px" value="${esc(t&&t.url||'')}"></div>
 <div class="phc-btns" style="margin-top:8px"><input id="mus-t" class="inp" maxlength="100" placeholder="Название трека (необязательно)" style="flex:1" value="${esc(t&&t.title||'')}"><button class="btn sm" id="mus-go">Сохранить</button>${t?'<button class="btn sm o" id="mus-rm">Убрать</button>':''}</div><p class="aerr" id="mus-e"></p></div>`}
 async function inject(){const ld=document.getElementById('ld-e');if(!ld||document.getElementById('mus-box'))return;const u=FB()&&FB().user;if(!u||!(window.VPPKA_MYLDR&&window.VPPKA_MYLDR()))return;await load();if(document.getElementById('mus-box'))return;
@@ -31,7 +37,10 @@ async function save(rm){const pe=t=>{const e=document.getElementById('mus-e');if
    pe('Загрузка…');const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(file)});
    const ver=String(Date.now()),n=Math.ceil(b64.length/CH);for(let i=0;i<n;i++){await f.setDoc(f.doc(db(),'ldrMusic',u.uid,'chunks',ver+'_'+i),{d:b64.slice(i*CH,(i+1)*CH)});pe('Загрузка… '+Math.round((i+1)/n*100)+'%')}
    Object.assign(d,{ver,n,mime:/ogg/i.test(file.type+file.name)?'audio/ogg':'audio/mpeg',size:file.size})}
-  else if(url){if(!/^https:\/\/\S+$/.test(url)||url.length>600)return pe('Ссылка должна начинаться с https://');d.url=url}
+  else if(url){if(MI_PAGE.test(url))return pe('Это страница myinstants.com, а не сам аудиофайл. Откройте её, нажмите правой кнопкой на «Скачать» (Download) → «Копировать адрес ссылки» и вставьте ссылку вида https://www.myinstants.com/media/sounds/….mp3');
+   if(!/^https:\/\/[^\s"'<>\\]+$/i.test(url))return pe('Ссылка должна начинаться с https:// (http:, javascript:, data: и т. п. не допускаются).');if(url.length>600)return pe('Ссылка длиннее 600 символов.');
+   if(!old||old.url!==url){pe('Проверяю ссылку…');const ok=await probe(url);if(ok===false)return pe('По этой ссылке не аудиофайл — браузер не может его воспроизвести. Нужна прямая ссылка на .mp3/.ogg (открывается в браузере как плеер), а не на страницу сайта.')}
+   d.url=url}
   else if(old&&title!==undefined){Object.assign(d,Object.fromEntries(Object.entries(old).filter(([k])=>['url','ver','n','mime','size'].includes(k))))}
   else return pe('Выберите файл или вставьте ссылку.');
   await f.setDoc(ref,d);if(old&&old.ver&&old.ver!==d.ver)await delChunks(old);T=null;await load();pe('Сохранено.')}
