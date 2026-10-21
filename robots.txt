@@ -1,0 +1,12 @@
+# ВППКА «Коммунисты Арбата» — https://vppka-arbat-rmrp.ru/
+# Разделы сайта — это #-адреса одной страницы (index.html); закрыть можно только настоящие файлы.
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /tools/
+Disallow: /firestore.rules
+Disallow: /firebase.json
+Disallow: /app-version.json
+Disallow: /version.json
+
+Sitemap: https://vppka-arbat-rmrp.ru/sitemap.xml

@@ -102,8 +102,8 @@ service cloud.firestore {
               && d.get('roleName', null) == get(keyPath(d.keyHash)).data.roleName);
       }
       function validUser(d) {
-        return d.keys().hasOnly(['discordLink','discordId','displayName','createdAt','keyHash','rank','roleName','photo','avatar','fio','birth','passport','vcode'])
-          && optStr(d, 'fio', 100) && (!('birth' in d) || (d.birth is string && d.birth.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')))
+        return d.keys().hasOnly(['discordLink','discordId','displayName','createdAt','keyHash','rank','roleName','photo','avatar','fio','birth','passport','vcode','about'])
+          && optStr(d, 'fio', 100) && optStr(d, 'about', 1500) && (!('birth' in d) || (d.birth is string && d.birth.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')))
           && (!('passport' in d) || (d.passport is string && d.passport.matches('^[0-9]{3}-[0-9]{3}$')))
           && reqStr(d, 'discordId', 64) && optStr(d, 'discordLink', 200) && optStr(d, 'displayName', 40)
           && (!('photo' in d) || (d.photo is string && d.photo.size() <= 410000 && d.photo.matches('^data:image/(jpeg|gif);base64,.*')))
@@ -128,7 +128,7 @@ service cloud.firestore {
           || (exists(/databases/$(database)/documents/dvf/$(uid))
             && get(/databases/$(database)/documents/dvf/$(uid)).data.get('did', '') == request.resource.data.discordId));
       allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo','avatar','fio','birth','passport'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo','avatar','fio','birth','passport','about'])
         && validUser(request.resource.data)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['keyHash','rank','roleName'])
             || validKey(request.resource.data));
@@ -631,6 +631,16 @@ service cloud.firestore {
           && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy == request.auth.uid)
           && verified();
       }
+      // v224 «О себе»: человек на своей записи (discordId = логин, подтверждённый аккаунт) меняет только bio (до 1500 символов).
+      // Стоит последней веткой update (вне updEntry) — у правок руководства не съедает лимит 1000 выражений.
+      function selfBioOk() {
+        return resource.data.get('discordId', '') != ''
+          && request.auth.token.email == resource.data.discordId + '@vppka.local'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bio','updatedBy','updatedAt'])
+          && optStr(request.resource.data, 'bio', 1500)
+          && (!('updatedBy' in request.resource.data) || request.resource.data.updatedBy == request.auth.uid)
+          && verified();
+      }
       // ступень 4+: запись со ступенью ниже своей; смена человека (discordId) — ступень 5+; звание p_* — распорядители и только из rkList()
       function tierUpdOk(t, own, ra) {
         let lim = own ? 1000 : 100;
@@ -664,7 +674,8 @@ service cloud.firestore {
               || tierUpdOk(own ? 9 : keyTier(), own, ra) || chairEditOk());
       }
       allow update: if (lockFree() && updEntry(isOwner(), myVDid()))
-        || ((lockedId() || lockedData(resource.data)) && selfPhotoOk());
+        || ((lockedId() || lockedData(resource.data)) && selfPhotoOk())
+        || selfBioOk();
       // m1, m4 и m5 не удаляет никто, кроме владельца (ему это даёт общее правило isSuper).
       // Занятое руководящее место не удаляется: его освобождают, имя становится «Вакансия». Карточки «Члены партии» удаляются как раньше.
       allow delete: if !techSeat() && !lockedId() && !lockedData(resource.data) && !(id in ['m1', 'm4', 'm5', 'm12']) && resource.data.get('rank', 0) < 100
@@ -904,6 +915,12 @@ service cloud.firestore {
             || (request.resource.data.status == 'check' && resource != null && resource.data.get('status', '') in ['sent','bad']
                 && request.resource.data.code is string && request.resource.data.code.matches('^[0-9]{6}$')));
       allow delete: if false;
+    }
+    // v224: публичный статик карточки members/{mid} — pubStatik/{mid} = {s: '000-000'}. Читают все (и гости).
+    // Пишут только бот (сервисный аккаунт, копия users/{uid}/priv/p.passport) и владелец (общее правило isSuper).
+    // Сам priv/p (там же дата рождения) по-прежнему закрыт.
+    match /pubStatik/{mid} {
+      allow read: if true;
     }
     // Тексты страниц (вместо правки content.json с сайта). Нет документа — сайт берёт content.json.
     match /content/{id} {
