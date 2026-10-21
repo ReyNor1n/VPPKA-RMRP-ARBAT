@@ -31,10 +31,12 @@ const seatDidV=s=>String((((((window.VPPKA_DATA||{}).members)||[]).find(m=>m.id=
 function viewer(){const did=myDidV(),on=s=>!!did&&seatDidV(s)===did,ra=['m1','m4','m5','m12'].some(on);
  return {tier:pw().tier|0,ra,chair:on('m1'),td:on('m12')&&!['m1','m4','m5'].some(on)}}
 function liteCaps(tab){const c=LITE[tab];if(!c||tab!=='members')return c;const v=viewer();if(!v.ra&&v.tier<=5)return c;
- return {...c,hint:`Можно менять карточки со ступенью ниже ${v.tier} и уровнем ниже 100.`+(v.ra?' Вы назначаете и снимаете людей на руководящих местах и меняете звания членов партии (только из списка званий).':'')+(v.td?' Своё место m12 и места владельца (m11, m17) меняет только владелец.':'')+` Места m1${v.chair?'':', m4, m5'} и m11 меняет только владелец${v.chair?'':' или Председатель ЦК'}.`}}
+ return {...c,hint:`Можно менять карточки со ступенью ниже ${v.tier} и уровнем ниже 100.`+(v.ra?' Вы назначаете и снимаете людей на руководящих местах и меняете звания членов партии (только из списка званий).':'')+' Технический отдел (m11–m14), m17 и места владельца меняет только владелец.'+` Места m1${v.chair?'':', m4, m5'} меняет только владелец${v.chair?'':' или Председатель ЦК'}.`}}
 // Можно ли сохранить/удалить конкретную карточку состава (как в правилах members: tierUpdOk, seatAssignOk, delete).
+// v222 «только 7 доступ имеет право менять тех отдел»: тех. отдел (m11–m14), m17 и места владельца — только владелец (как в firestore.rules)
+const techLockedA=(id,d)=>['m11','m12','m13','m14','m17'].includes(id)||(d||{}).group==='Технический отдел'||String((d||{}).discordId||'')===OWNER_DID||(d||{}).role==='Начальник технического отдела';
 function memberCaps(id,d){d=d||{};if(superOn())return OWNER_CAPS;const v=viewer(),party=String(id).startsWith('p_')||d.group==='Члены партии';
- if(id==='m11'||d.role==='Начальник технического отдела'||(d.rank|0)>=100)return {};
+ if(techLockedA(id,d)||d.role==='Начальник технического отдела'||(d.rank|0)>=100)return {};
  if(['m1','m4','m5'].includes(id)&&!v.chair)return {}; // места председателя и замов — только председатель/владелец (как в панели)
  const tierOk=(d.tier|0)<v.tier&&v.tier>=4;
  const raOk=v.ra&&!party&&(!['m4','m5'].includes(id)||v.chair)&&!(v.td&&(id==='m12'||String(d.discordId||'')===OWNER_DID));
@@ -139,7 +141,8 @@ function ldrDoc(id,data){return !!data&&data.group!=='Члены партии'&&
 function ldrDids(list){const s=[],seen=new Set();for(const m of list||[]){if(!ldrDoc(m.id,m)||!m.name||/^Вакансия/i.test(m.name))continue;const d=String(m.discordId||'');if(!/^\d{15,21}$/.test(d)||seen.has(d))continue;seen.add(d);s.push(d)}return s}
 function withMember(id,data,removed){const base=[...(((window.VPPKA_DATA||{}).members)||[])];if(!base.length)return null;const i=base.findIndex(m=>m.id===id);if(removed){if(i>=0)base.splice(i,1);return base}const row={...(i>=0?base[i]:{}),...(data||{}),id};if(i>=0)base[i]=row;else base.push(row);return base}
 function seatList(id,data,removed){const live=withMember(id,data,removed);if(live)return live;if(!state.rows||!state.rows.length)return null;const base=state.rows.map(r=>({...r.data,id:r.id}));if(removed)return base.filter(m=>m.id!==id);const i=base.findIndex(m=>m.id===id);const row={...(i>=0?base[i]:{}),...(data||{}),id};if(i>=0)base[i]=row;else base.push(row);return base}
-async function syncSeats(list){if(!list)return;const f=F();if(window.VPPKA_SYNC_SEATS){await window.VPPKA_SYNC_SEATS(list);return}await f.setDoc(f.doc(db(),'config','ldrSeats'),{dids:ldrDids(list)},{merge:true})}
+// v222: config/ldrSeats пишут только владелец и бот (бот сверяет список с местами раз в минуту)
+async function syncSeats(list){if(!list||!superOn())return;const f=F();if(window.VPPKA_SYNC_SEATS){await window.VPPKA_SYNC_SEATS(list);return}await f.setDoc(f.doc(db(),'config','ldrSeats'),{dids:ldrDids(list)},{merge:true})}
 async function putMember(f,id,data){const ref=f.doc(db(),'members',id);const prev=await f.getDoc(ref);const was=prev.exists()?prev.data():null;const party=x=>!!x&&(x.group==='Члены партии'||String(id).startsWith('p_'));
  if(!prev.exists()&&(data.group==='Члены партии'||String(id).startsWith('p_'))){const key=claimKey(data.name);if(!key||data.group!=='Члены партии'||!String(id).startsWith('p_'))throw new Error('Карточка члена партии: идентификатор p_…, группа «Члены партии» и ФИО без «/».');
   const body={...data,name:key};const b=f.writeBatch(db());b.set(ref,body);b.set(f.doc(db(),'memClaim',key),{name:key,memberId:id,by:FB().user.uid});await b.commit()}
@@ -167,6 +170,7 @@ async function save(){
  const body=normalize(e.kind,e.data);
  const errs=validate(e.kind,body,{id,isNew:e.isNew});
  if(errs.length){state.fieldErr=errMap(errs);state.expert=false;say(errs[0].msg);refresh();return}
+ if(lite&&e.col==='members'&&techLockedA(id,body)){say('Технический отдел и места владельца меняет только владелец сайта.');refresh();return}
  if(needsTechConfirm(body,id)&&!confirm('Место m11 закреплено за начальником технического отдела. Сменить должность?'))return;
  if(e.col==='members'&&e.isNew&&isProtected(id)&&!confirm('Идентификатор '+id+' — защищённое место. Перезаписать документ?'))return;
  state.busy=true;say('Сохранение…');refresh();
@@ -180,7 +184,7 @@ async function save(){
    if(!id)throw new Error('Укажите идентификатор документа.');
    const payload={...body,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};
    const ldr=await putMember(f,id,payload);
-   if(ldr){const list=seatList(id,body,false);if(!list)note+=' Список должностей не обновлён: состав ещё не загружен.';else if(lite){try{await syncSeats(list)}catch(err){note+=' Список должностей обновит Председатель ЦК, его заместитель или владелец.'}}else await syncSeats(list)}
+   if(ldr){const list=seatList(id,body,false);if(!list)note+=' Список должностей не обновлён: состав ещё не загружен.';else if(lite){try{await syncSeats(list)}catch(err){}}else await syncSeats(list)}
    if(window.VPPKA_RELOAD)window.VPPKA_RELOAD();
   }else{
    const rev=revive(strip(body),f);

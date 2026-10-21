@@ -11,7 +11,7 @@ const HID=['646280678736003073','t3t4KPD2bDasFw1gPLWAA0W8jCL2'];window.VPPKA_HID
 window.VPPKA_SHOWMEM=x=>!!x&&(!window.VPPKA_HIDDEN(x)||x.group!=='Члены партии'||x.id==='p_Xglv_ypsOH3s7mW2UTXD');
 let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  const crumbs=t=>`<div class="crumbs"><a href="#home">Главная</a> / ${t}</div>`;
- const ERR={'auth/invalid-credential':'Неверный Discord или пароль.','auth/wrong-password':'Неверный пароль.','auth/user-not-found':'Пользователь с таким Discord не зарегистрирован.','auth/email-already-in-use':'Этот Discord уже зарегистрирован. Войдите.','auth/weak-password':'Пароль слишком простой (минимум 6 символов).','auth/too-many-requests':'Слишком много попыток. Попробуйте позже.','auth/network-request-failed':'Нет соединения с сервером.','permission-denied':'Нет доступа к профилю.'};
+ const ERR={'auth/invalid-credential':'Неверный Discord или пароль.','auth/wrong-password':'Неверный пароль.','auth/user-not-found':'Пользователь с таким Discord не зарегистрирован.','auth/email-already-in-use':'Аккаунт с этим Discord уже есть — войдите через Discord (кнопка «Войти через Discord» на странице входа).','auth/weak-password':'Пароль слишком простой (минимум 6 символов).','auth/too-many-requests':'Слишком много попыток. Попробуйте позже.','auth/network-request-failed':'Нет соединения с сервером.','permission-denied':'Нет доступа к профилю.'};
  const em=e=>ERR[e.code]||('Ошибка: '+(e.code||e.message));
  // discord.com/users/<id> | discordapp.com/users/<id> | @username | username
  function did(raw){const s=String(raw||'').trim();let m=s.match(/^(?:https?:\/\/)?(?:(?:www|ptb|canary)\.)?(?:discord(?:app)?\.com)\/users\/(\d{15,21})\/?(?:[?#].*)?$/i)||s.match(/^<@!?(\d{15,21})>$/)||s.match(/^(\d{15,21})$/);if(m)return m[1];
@@ -121,7 +121,9 @@ async function dlStart(d,kind){const reg=kind==='reg';const say=(h,bad)=>{const 
   if(id==='r-go'||id==='dr-go'){const dc=id==='dr-go',raw=v('r-d').trim(),d=did(raw),p=v('r-p');if(!d||!/^\d{15,21}$/.test(d))return err('Укажите числовой Discord ID или ссылку discord.com/users/….');
    if(!dc){if(p.length<6)return err('Пароль должен быть не короче 6 символов.');if(p!==v('r-p2'))return err('Пароли не совпадают.');}const fioR=normFio(v('r-n'));if(!fioR)return err(FIO_ERR);const ppv=normPP(v('r-pp'));if(!ppv)return err('Укажите номер паспорта (статик) — 6 цифр в формате 000-000, например 869-753.');if(!(document.getElementById('r-ph')||{}).files?.[0])return err('Загрузите фото персонажа из игры — это обязательно.');
    ev.target.disabled=true;const ph=await photoData((document.getElementById('r-ph')||{}).files?.[0]).catch(e=>{err(e.message);return null});if(!ph){if(ph==='')err('Загрузите фото персонажа из игры — это обязательно.');ev.target.disabled=false;return;}
-   regPP=ppv;regBusy=true;let c;if(dc){const ok=await dlStart(d,'reg');if(!ok||!auth.currentUser){regBusy=false;regPP='';ev.target.disabled=false;return;}c={user:auth.currentUser};}else c=await A.createUserWithEmailAndPassword(auth,mail(d),p);let ppmsg='';try{const pr=F.doc(db,'users',c.user.uid,'priv','p');const ex=await F.getDoc(pr).catch(()=>null);if(!(ex&&ex.exists()&&ex.data().passport))await F.setDoc(pr,{passport:ppv},{merge:true});priv={...((ex&&ex.exists()&&ex.data())||{}),passport:(ex&&ex.exists()&&ex.data().passport)||ppv};privT=1;}catch(e){console.warn('статик',e.code||e);ppmsg='Статик не сохранён — укажите его в кабинете.';}
+   regPP=ppv;regBusy=true;let c;if(dc){const ok=await dlStart(d,'reg');if(!ok||!auth.currentUser){regBusy=false;regPP='';ev.target.disabled=false;return;}c={user:auth.currentUser};}else{c=await A.createUserWithEmailAndPassword(auth,mail(d),p);
+    // v222: аккаунт должен быть привязан к Discord — код из ЛС бота до создания профиля (правила фазы 2 без привязки профиль не примут)
+    if(!(await checkLinked(c.user))&&!(await lkPrompt(true))){regBusy=false;regPP='';ev.target.disabled=false;return;}}let ppmsg='';try{const pr=F.doc(db,'users',c.user.uid,'priv','p');const ex=await F.getDoc(pr).catch(()=>null);if(!(ex&&ex.exists()&&ex.data().passport))await F.setDoc(pr,{passport:ppv},{merge:true});priv={...((ex&&ex.exists()&&ex.data())||{}),passport:(ex&&ex.exists()&&ex.data().passport)||ppv};privT=1;}catch(e){console.warn('статик',e.code||e);ppmsg='Статик не сохранён — укажите его в кабинете.';}
    profile={discordLink:raw.slice(0,200),discordId:d,displayName:fioR.slice(0,40),fio:fioR,createdAt:F.serverTimestamp()};if(ph)profile.photo=ph;
    let kmsg=ppmsg;const kk=v('r-k').trim();if(kk){const r=await checkKey(kk,d);if(r.ok)Object.assign(profile,{keyHash:r.h,rank:r.rank,roleName:r.roleName});else kmsg='Ключ не принят: '+r.msg;}
    try{await F.setDoc(F.doc(db,'users',c.user.uid),profile);}catch(e){console.warn('Профиль не сохранён',e);if(profile.keyHash&&!profile.photo){const {keyHash,rank,roleName,...rest}=profile;try{await F.setDoc(F.doc(db,'users',c.user.uid),rest);delete profile.keyHash;delete profile.rank;delete profile.roleName;kmsg=(kmsg?kmsg+' ':'')+'Ключ не применился — введите его ещё раз в кабинете.';}catch(e2){}}if(profile.photo){const {photo,...rest}=profile;try{await F.setDoc(F.doc(db,'users',c.user.uid),rest);delete profile.photo;kmsg=(kmsg?kmsg+' ':'')+'Фото пока не сохранено — загрузите его позже в кабинете.';}catch(e2){}}}profile.createdAt={toDate:()=>new Date()};await refreshPower();regBusy=false;if(profile.photo){syncAv();window.VPPKA_PUBSELF&&window.VPPKA_PUBSELF();syncPhoto(false).catch(e=>console.warn('автофото',e.code||e));}
@@ -209,9 +211,45 @@ async function dlStart(d,kind){const reg=kind==='reg';const say=(h,bad)=>{const 
  }
 
  async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=220').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=216').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=216').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=216').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=221').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=216').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=216').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=221').then(m=>m.install()).catch(e=>console.error('admin',e));
- // v207: аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
- let regBusy=false,noProfile=false;
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));if(DCL.enabled)dcReturn().catch(e=>console.warn('dcl',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=222').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=222').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=216').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=216').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=221').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=216').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=216').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=222').then(m=>m.install()).catch(e=>console.error('admin',e));
+// v207: аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
+let regBusy=false,noProfile=false;
+// v222 «Аккаунт на сайте должен быть привязан к дискорду». Привязан = вход/регистрация через Discord (claim dv) или
+// отметка dvf/{uid}, которую пишет бот после кода из ЛС. Код: сайт пишет linkReq/{uid} {did,status:'pending'} → бот шлёт
+// 6 цифр в ЛС (status 'sent') → сайт пишет {status:'check',code} → бот сверяет (ok | bad + left | locked | expired …).
+// Пока аккаунт не привязан — блокирующее окно «Привяжите Discord» (без «Позже», только «Выйти»).
+const LK_MSG={notmember:DL_MSG.notmember,dm_failed:DL_MSG.dm_failed,rate:'Слишком много запросов кода. Подождите пару минут и нажмите «Отправить код» ещё раз.',expired:'Код устарел. Нажмите «Отправить код» ещё раз.',locked:'Неверный код введён 5 раз. Запросите новый код.',mismatch:'Discord ID не совпадает с логином аккаунта.',bad_req:'Некорректный запрос. Нажмите «Отправить код» ещё раз.'};
+let lkDone=null,lkUn=null,lkTo=0;const cu=()=>auth&&auth.currentUser;
+async function checkLinked(u){if(!u)return false;try{const t=await u.getIdTokenResult();if(t&&t.claims&&t.claims.dv===true)return true}catch(e){}
+ try{return (await F.getDoc(F.doc(db,'dvf',u.uid))).exists()}catch(e){console.warn('dvf',e.code||e);return true}}
+function lkPrompt(reg){const u=cu();if(!u)return Promise.resolve(false);document.getElementById('np-ov')?.remove();document.getElementById('st-ov')?.remove();
+ let o=document.getElementById('lk-ov');if(o&&o._p)return o._p;
+ const d0=String(u.email||'').split('@')[0],okMail=/^\d{15,21}$/.test(d0)&&/@vppka\.local$/.test(String(u.email||''));
+ o=document.createElement('div');o.className='acc-ov lk-ov';o.id='lk-ov';
+ o.innerHTML=`<div class="acc-md st-md" role="dialog" aria-modal="true" aria-labelledby="lk-h"><h3 id="lk-h">Привяжите Discord</h3>`+(okMail
+  ?`<p class="amut">${reg?'Последний шаг регистрации. ':''}Аккаунт на сайте должен быть привязан к Discord. Бот ВППКА пришлёт 6-значный код в личные сообщения Discord-аккаунту <b>${esc(d0)}</b> — введите его ниже.</p><p><button class="btn" id="lk-send">Отправить код</button></p><label class="fl">Код из Discord<input id="lk-code" type="text" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code"></label><p class="aerr" id="lk-e"></p><div class="st-act"><button class="btn" id="lk-go" disabled>Подтвердить</button><button class="btn o" id="lk-out">Выйти</button></div><p class="amut st-n">Нужно состоять на Discord-сервере партии${DCL.invite?` (<a href="${esc(DCL.invite)}" target="_blank" rel="noopener">вступить</a>)`:''} и разрешить личные сообщения от участников сервера. Код действует 10 минут, 5 попыток. Пока Discord не привязан, сайтом пользоваться нельзя.</p>`
+  :`<p class="amut">Этот аккаунт создан не через Discord, и привязать его нельзя. Войдите через Discord (страница «Вход» → «Войти через Discord») или обратитесь к владельцу сайта.</p><div class="st-act"><button class="btn o" id="lk-out">Выйти</button></div>`)+`</div>`;
+ document.body.appendChild(o);o._p=new Promise(r=>{lkDone=r});
+ if(okMail){lkUn&&lkUn();lkUn=F.onSnapshot(F.doc(db,'linkReq',u.uid),x=>lkState(x.data()),e=>console.warn('linkReq',e.code||e))}
+ return o._p}
+function lkSay(t,ok){const e=document.getElementById('lk-e');if(e){e.textContent=t;e.style.color=ok?'var(--gold)':''}}
+function lkState(s){if(!s)return;const go=document.getElementById('lk-go'),snd=document.getElementById('lk-send');
+ if(s.status==='pending'||s.status==='check'){lkSay(s.status==='pending'?'Отправляем код…':'Проверяем код…',1);return}
+ clearTimeout(lkTo);if(snd)snd.disabled=false;
+ if(s.status==='ok'){lkFinish(true);return}
+ if(s.status==='sent'){if(go)go.disabled=false;if(snd)snd.textContent='Отправить код ещё раз';lkSay('Код отправлен: откройте личные сообщения от бота ВППКА в Discord.',1);setTimeout(()=>document.getElementById('lk-code')?.focus(),50);return}
+ if(s.status==='bad'){if(go)go.disabled=false;lkSay('Неверный код. Осталось попыток: '+(s.left??'?')+'.');return}
+ if(go)go.disabled=true;lkSay(LK_MSG[s.status]||('Ошибка: '+String(s.status||'')))}
+function lkFinish(ok){clearTimeout(lkTo);if(lkUn){lkUn();lkUn=null}document.getElementById('lk-ov')?.remove();const r=lkDone;lkDone=null;if(r)r(ok)}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='lk-code'){e.preventDefault();document.getElementById('lk-go')?.click()}});
+document.addEventListener('click',async ev=>{const id=ev.target.id;if(id!=='lk-send'&&id!=='lk-go'&&id!=='lk-out')return;
+ if(id==='lk-out'){lkFinish(false);try{await A.signOut(auth)}catch(e){}location.hash='#home';return}
+ const u=cu();if(!u)return;const d0=String(u.email||'').split('@')[0],ref=F.doc(db,'linkReq',u.uid);
+ try{if(id==='lk-send'){ev.target.disabled=true;lkSay('Отправляем код…',1);await F.setDoc(ref,{did:d0,status:'pending',t:F.serverTimestamp()});
+   clearTimeout(lkTo);lkTo=setTimeout(()=>{const b=document.getElementById('lk-send');if(b)b.disabled=false;lkSay('Бот пока не ответил. Подождите минуту и нажмите «Отправить код» ещё раз.')},45000);}
+  else{const c=String((document.getElementById('lk-code')||{}).value||'').replace(/\D/g,'');if(c.length!==6)return lkSay('Введите 6 цифр из сообщения бота.');
+   ev.target.disabled=true;await F.setDoc(ref,{did:d0,status:'check',code:c,t:F.serverTimestamp()});}}
+ catch(e){ev.target.disabled=false;lkSay(e.code==='permission-denied'?(id==='lk-go'?'Сначала нажмите «Отправить код» и дождитесь сообщения бота.':'Нет прав на запрос кода.'):'Не удалось: '+(e.code||e.message))}});
  function npPrompt(){if(!user||document.getElementById('np-ov'))return;const d0=String(user.email||'').split('@')[0];if(!/^\d{15,21}$/.test(d0))return;
   const o=document.createElement('div');o.className='acc-ov';o.id='np-ov';o.innerHTML=`<div class="acc-md st-md" role="dialog" aria-modal="true"><h3>Завершите регистрацию</h3><p class="amut">Профиль на сайте не был создан. Укажите ФИО персонажа, чтобы завершить регистрацию.</p><label class="fl">ФИО персонажа <span style="color:var(--red)">*</span><input id="np-in" type="text" maxlength="100" placeholder="Фамилия Имя Отчество" autocomplete="off"></label><p class="aerr" id="np-e"></p><div class="st-act"><button class="btn" id="np-go">Сохранить</button><button class="btn o" id="np-later">Позже</button></div></div>`;document.body.appendChild(o)}
  document.addEventListener('click',async ev=>{const id=ev.target.id;if(id!=='np-go'&&id!=='np-later')return;const o=document.getElementById('np-ov');if(id==='np-later'){o?.remove();return}
@@ -237,6 +275,9 @@ async function dlStart(d,kind){const reg=kind==='reg';const say=(h,bad)=>{const 
   catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер не принял статик (нет прав).':'Не удалось сохранить: '+(e.code||e.message))}});
  A.onAuthStateChanged(auth,async u=>{user=u;if(!regBusy||!u)profile=null;if(!u||!regPP){priv=null;privT=0;}document.getElementById('st-ov')?.remove();
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():(regBusy?profile:null);if(!s.exists()&&!regBusy)noProfile=true;else noProfile=false;}catch(e){console.warn(e)}}await refreshPower();
-  paintAuth();if(u)loadPriv();if(u&&noProfile)npPrompt();
-  if(['login','register','account','join','news','leadership','apps','members','party','member','home','admin',''].includes(location.hash.slice(1).split('/')[0]))route();});
+  if(!u&&document.getElementById('lk-ov'))lkFinish(false);
+  paintAuth();if(['login','register','account','join','news','leadership','apps','members','party','member','home','admin',''].includes(location.hash.slice(1).split('/')[0]))route();
+  // v222: без привязки Discord — сначала окно «Привяжите Discord» (код из ЛС бота), потом остальное (статик, «Завершите регистрацию»)
+  if(u&&!regBusy&&u.uid!==SVC_UID&&!(await checkLinked(u))){if(user!==u)return;const ok=await lkPrompt(false);if(!ok||user!==u)return;}
+  if(u&&user===u)loadPriv();if(u&&user===u&&noProfile)npPrompt();});
 }

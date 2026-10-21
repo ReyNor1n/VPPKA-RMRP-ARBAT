@@ -28,11 +28,11 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
 
- <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=216').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
+ <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=222').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
  <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
  ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
 
-function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m=>(T>=4&&mt(m)<T&&(m.rank??0)<R)||isCh(m)),m=editMem||{rank:10};
+function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m=>((T>=4&&mt(m)<T&&(m.rank??0)<R)||isCh(m))&&(isSuper()||!techLocked(m))),m=editMem||{rank:10};
  return `<div class="kpanel kpm"><div class="kp-h"><span>// ПАНЕЛЬ</span> <a class="kpm-apps" href="#apps">Заявки в партию →</a></div><details class="kpm-d"${editMem?' open':''}><summary>${editMem&&editMem.id?'✎ Редактировать участника':'+ Добавить участника'}</summary>`+
  `<div class="kp-f kp-grid">${MFIELDS.map(([k,l,t])=>t?`<label class="fl kp-w">${l}<textarea id="pm-${k}" rows="3">${esc(m[k])}</textarea></label>`:`<label class="fl${['joined','birth'].includes(k)?' kp-s':''}">${l}<input id="pm-${k}" value="${esc(m[k])}"></label>`).join('')}
  <label class="fl kp-s">Уровень (0–${R-1}) *<input id="pm-rank" type="number" min="0" max="${R-1}" value="${esc(m.rank??0)}"${isCh(m)?' disabled':''}></label><label class="fl kp-s">Ступень (0–${Math.max(0,T-1)})<input id="pm-tier" type="number" min="0" max="${Math.max(0,T-1)}" value="${esc(mt(m))}"${isCh(m)?' disabled':''}></label><label class="fl kp-s">Порядок<input id="pm-order" type="number" value="${esc(m.order??'')}"></label>
@@ -280,24 +280,25 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    const vids=v('pn-v').split(/\s+/).map(x=>x.trim()).filter(Boolean);const bad=vids.filter(x=>!VOK(x)||x.length>300);if(bad.length){b.disabled=false;return msg('Неподдерживаемая ссылка на видео: '+bad[0]);}if(vids.length>5){b.disabled=false;return msg('Не больше 5 видео.');}if(vids.length)n.videos=vids;
    if(JSON.stringify(n).length>950000){b.disabled=false;return msg('Новость слишком большая — уберите одно фото.');}
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
-   // Отправка в Discord: своя строка из «Каналы Discord» — через бота (discordOut); иначе вебхук новостей, как раньше
+   // Отправка в Discord: своя строка из «Каналы Discord» или канал новостей «как обычно» — через бота (discordOut)
    let dtNote='';const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=216');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
-   else try{const c=await f.getDoc(f.doc(db(),'config','discord'));const w=c.exists()&&c.data().webhook;if(w){const PING='1559635259635531947';const body={username:'ВППКА «Коммунисты Арбата»',content:'<@&'+PING+'>',allowed_mentions:{parse:[],roles:[PING]},embeds:[{title:('📰 Новость: '+n.title).slice(0,256),description:(n.text||'').replace(/\[фото:\d+\]/gi,'').slice(0,4000)||undefined,url:'https://vppka-arbat-rmrp.ru/#news/'+nid,color:0xE32B2B,footer:{text:'vppka-arbat-rmrp.ru'},timestamp:new Date().toISOString()}]};await fetch(w,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});} }catch(e){console.warn('discord news',e)}
+   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=222');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   // v222: «как обычно» — тоже через бота (b_news): вебхуки config/discord видит только владелец
+   else{try{const m=await import('./discord-targets.js?v=222');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    editNews=null;await done('Сохранено.'+dtNote);}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}
-  if(d.mx){const m=(D().members||[]).find(x=>x.id===d.mx);if(!m)return;
+  if(d.mx){const m=(D().members||[]).find(x=>x.id===d.mx);if(!m)return;if(!isSuper()&&techLocked(m))return msg('Технический отдел и места владельца меняет только владелец сайта.');
    if(coreSeat(m.id)&&!isSuper())return msg('Должности председателя и его заместителей может удалить только владелец сайта.');
    if(occupiedSeat(m))return msg('Занятое место нельзя удалить. Снимите человека с должности — место останется вакантным.');
    if(!confirm(isVacName(m.name)?`Удалить вакансию «${m.role||m.name}»?\n\nМесто исчезнет из состава.`:'Удалить участника из состава?'))return;
    if(String(m.id).startsWith('p_')||m.group==='Члены партии')await deletePartyCard(m);
    else{await f.deleteDoc(f.doc(db(),'members',m.id));if(isLdrPost(m)){try{await writeLdrSeats((D().members||[]).filter(x=>x.id!==m.id))}catch(e){console.warn('ldrSeats',e.code||e)}}}
    await done('Удалено.');}
-  if(d.mu||d.md){const m=(D().members||[]).find(x=>x.id===(d.mu||d.md));const r=(m.rank??0)+(d.mu?10:-10);const nr=Math.max(0,Math.min(maxR(),r));
+  if(d.mu||d.md){const m=(D().members||[]).find(x=>x.id===(d.mu||d.md));if(!m)return;if(!isSuper()&&techLocked(m))return msg('Технический отдел и места владельца меняет только владелец сайта.');const r=(m.rank??0)+(d.mu?10:-10);const nr=Math.max(0,Math.min(maxR(),r));
    const {id:_,...rest}=m;await f.setDoc(f.doc(db(),'members',m.id),{...rest,rank:nr,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});await done(`${m.name}: уровень ${nr}.`);}
   if(id==='add-vac'){const f=F();await f.addDoc(f.collection(db(),'members'),{name:'Вакансия',role:'Вакансия',group:'Центральный Комитет',rank:0,tier:0,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});await done('Вакансия добавлена.');}
-  if(id==='pm-save'){const o=editMem||{};const m={};MFIELDS.forEach(([k])=>{const x=v('pm-'+k).trim();if(x)m[k]=x});if(!m.name)return msg('Укажите имя.');
+  if(id==='pm-save'){const o=editMem||{};const m={};MFIELDS.forEach(([k])=>{const x=v('pm-'+k).trim();if(x)m[k]=x});if(!m.name)return msg('Укажите имя.');if(!isSuper()&&(techLocked(o)||techLocked(m)))return msg('Технический отдел и места владельца меняет только владелец сайта.');
    if(o.id&&isCh(o)){m.rank=o.rank;if(o.tier!=null)m.tier=o.tier;}else{m.rank=parseInt(v('pm-rank'),10);const t=parseInt(v('pm-tier')||'0',10);if(!(t>=0&&t<tier()))return msg(`Ступень должна быть от 0 до ${tier()-1}.`);if(t)m.tier=t;}if(!(o.id&&isCh(o))&&!(m.rank>=0&&m.rank<=maxR()))return msg(`Уровень должен быть от 0 до ${maxR()}.`);const ord=parseInt(v('pm-order'),10);if(!isNaN(ord))m.order=ord;
    b.disabled=true;const ph=await imgVal('pm-photo','pm-file',o.photo);if(ph)m.photo=ph;m.updatedBy=FB().user.uid;m.updatedAt=f.serverTimestamp();
    if(!o.id){const dup=m.name!=='Вакансия'&&partyDup(m.name,'');if(dup){b.disabled=false;return msg('Такой человек уже есть в составе ('+dup.name+', '+dup.id+'). Новую карточку создавать не нужно — измените существующую.')}}
@@ -334,7 +335,11 @@ function occupiedSeat(m){return isLdrPost(m)&&!!String(m.name||'').trim()&&!isVa
 const isTechPost=m=>!!m&&(m.id==='m11'||m.role==='Начальник технического отдела');
 const coreSeat=id=>id==='m1'||id==='m4'||id==='m5';
 // Места замов (m4, m5) переназначает только председатель (m1) или владелец. m1/m4/m5 не удаляет никто, кроме владельца.
-const canTouch=m=>{if(!isLdrPost(m))return false;if(isSuper())return true;if(isTechPost(m)||(m.rank??0)>=100)return false;if(isTechDepOnly()&&(m.id==='m12'||String(m.discordId||'')===RK_OWNER_DID))return false;if(coreSeat(m.id))return isChairP();return isPostAdmin()||chair()||tier()>=5};
+// v222 «только 7 доступ имеет право менять тех отдел»: места тех. отдела (m11–m14), m17 и места владельца — только владелец (как в firestore.rules)
+const TECH_LOCK=['m11','m12','m13','m14','m17'];
+const techLocked=m=>!!m&&(TECH_LOCK.includes(m.id)||m.group==='Технический отдел'||String(m.discordId||'')===RK_OWNER_DID||m.role==='Начальник технического отдела');
+window.VPPKA_TECHLOCKED=techLocked;
+const canTouch=m=>{if(!isLdrPost(m))return false;if(isSuper())return true;if(techLocked(m))return false;if(isTechPost(m)||(m.rank??0)>=100)return false;if(isTechDepOnly()&&(m.id==='m12'||String(m.discordId||'')===RK_OWNER_DID))return false;if(coreSeat(m.id))return isChairP();return isPostAdmin()||chair()||tier()>=5};
 const canAssign=m=>canTouch(m);
 const nzName=s=>String(s||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
 function claimKey(name){const s=String(name||'').trim().replace(/\s+/g,' ');if(!s||s.length>100||/[\\/]/.test(s)||s==='.'||s==='..')return '';return s}
@@ -360,7 +365,8 @@ async function savePartyEdit(o,data){const f=F();const oldKey=claimKey(o.name),l
   if(c.exists()&&c.data()&&c.data().memberId===o.id){if(!leaving&&!newKey)throw new Error('Некорректное имя');const body=!leaving&&newKey?{...data,name:newKey}:data;const b=f.writeBatch(db());b.set(f.doc(db(),'members',o.id),body);b.delete(cref);if(newKey)b.set(f.doc(db(),'memClaim',newKey),{name:newKey,memberId:o.id,by:FB().user.uid});await b.commit();return}}
  await f.setDoc(f.doc(db(),'members',o.id),data)}
 function ldrDids(list){const s=new Set();for(const m of list||[]){if(!isLdrPost(m)||!m.name||/^Вакансия/i.test(m.name))continue;const d=String(m.discordId||'');if(/^\d{15,21}$/.test(d))s.add(d)}return [...s]}
-async function writeLdrSeats(list){const f=F();await f.setDoc(f.doc(db(),'config','ldrSeats'),{dids:ldrDids(list)},{merge:true})}
+// v222: config/ldrSeats пишут только владелец и бот (бот сверяет список с местами раз в минуту)
+async function writeLdrSeats(list){if(!isSuper())return;const f=F();await f.setDoc(f.doc(db(),'config','ldrSeats'),{dids:ldrDids(list)},{merge:true})}
 window.VPPKA_SYNC_SEATS=writeLdrSeats;
 function whoLabel(){const did=myDidA();if(window.VPPKA_HIDDEN&&window.VPPKA_HIDDEN({uid:FB().user&&FB().user.uid,discordId:did}))return 'Начальник технического отдела';return actorName()||'Руководство партии'}
 async function seatNote(m,kind,text){const did=String(m&&m.discordId||'');if(!/^\d{15,21}$/.test(did)||!m.id)return;const f=F();await f.addDoc(f.collection(db(),'notifications'),{type:kind,title:(kind==='recall'?'Снятие: ':'Назначение: ')+String(m.role||'должность').slice(0,80),text:String(text).slice(0,300),to:did,seat:String(m.id).slice(0,40),author:FB().user.uid,authorName:whoLabel().slice(0,160),createdAt:f.serverTimestamp()})}
@@ -409,6 +415,7 @@ async function keepJoined(did,name){did=String(did||'');const ds=[goneJoin[did]]
  return earliestJoined(ds)||jDay(Date.now())}
 window.VPPKA_JOIN={earliestJoined,keepJoined};
 async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if(!u||!p)return;const f=F(),ms=D().members||[];
+ if(!isSuper()&&(techLocked(p)||String(u.discordId||'')===RK_OWNER_DID)){const el=document.getElementById('asg-e');if(el)el.textContent='Технический отдел и места владельца меняет только владелец сайта.';return}
  const same=p.discordId&&u.discordId&&p.discordId===u.discordId;if(same){const el=document.getElementById('asg-e');if(el)el.textContent='Этот человек уже на этой должности.';return}
  const held=ms.filter(m=>m.id!==p.id&&isLdrPost(m)&&!/^Вакансия/i.test(m.name||'')&&u.discordId&&m.discordId===u.discordId);
  const displaced=p.discordId&&p.discordId!==u.discordId&&p.name&&!/^Вакансия/i.test(p.name)?p:null;const nm=u.displayName||u.discordId;const who=whoLabel();
@@ -432,7 +439,7 @@ async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if
 function postPanel(){if(!(isPostAdmin()||tier()>=5||chair()))return '';const ms=(D().members||[]).filter(canTouch);
  return `<div class="kpanel kpm"><div class="kp-h"><span>// ДОЛЖНОСТИ</span><h2>Назначения и вакансии</h2></div><div class="kp-f"><p class="amut">Назначить члена партии на руководящую должность или снять человека с занятого места: место остаётся, другие должности этого человека сохраняются. Удалить можно только пустую вакансию.</p>
  <label class="fl">Новая вакансия — название должности<input id="vac-role" maxlength="120" placeholder="Например: Член ЦК"></label>
- <label class="fl">Орган<select id="vac-group"><option>Центральный Комитет</option><option>Контрольно-ревизионная комиссия</option><option>Отделения</option><option>Технический отдел</option></select></label>
+ <label class="fl">Орган<select id="vac-group"><option>Центральный Комитет</option><option>Контрольно-ревизионная комиссия</option><option>Отделения</option>${isSuper()?'<option>Технический отдел</option>':''}</select></label>
  <p class="aerr" id="vac-msg"></p><button class="btn" id="vac-add">Добавить вакансию</button></div>
  ${ms.map(m=>{const vac=isVacName(m.name),del=vac&&(isSuper()||!coreSeat(m.id))?` <button class="btn sm o" data-postdel="${esc(m.id)}">Удалить</button>`:'',off=!vac?` <button type="button" class="btn sm danger" data-unseat="${esc(m.id)}">Снять с должности</button>`:'';
   return `<div class="kl-r${vac?' kl-v':''}"><span class="kl-n"><b>${esc(m.name)}</b> <small>${esc(m.role)}</small> <small>${esc(m.group||'')}</small></span><span class="kl-a"><button class="btn sm" data-asgopen="${esc(m.id)}">Назначить</button>${off}${del}</span></div>`}).join('')}</div>`}
