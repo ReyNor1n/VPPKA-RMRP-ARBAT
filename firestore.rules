@@ -211,8 +211,11 @@ service cloud.firestore {
 
     // ---------- уведомления (созывы, объявления) ----------
     match /notifications/{id} {
-      // созывы и объявления видны всем (баннер на главной), прочее — вошедшим
-      allow read: if signedIn() || resource.data.type in ['convocation','other'];
+      // созывы и объявления видны всем (баннер на главной), новости — вошедшим.
+      // v223: личные уведомления (назначение/снятие, поле to) — только адресату (логин {to}@vppka.local); владельцу — общее правило isSuper.
+      allow get, list: if resource.data.type in ['convocation','other']
+        || (signedIn() && resource.data.type == 'news')
+        || (signedIn() && request.auth.token.email == resource.data.to + '@vppka.local');
       // тип проверяется первым: для личных уведомлений (appoint/recall) ключ не читается — экономит лимит обращений
       allow create: if request.resource.data.type in ['news','convocation','other']
         && request.resource.data.keys().hasOnly(['type','title','text','when','author','authorName','createdAt'])
@@ -836,13 +839,6 @@ service cloud.firestore {
         allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
       }
     }
-    // подтверждение Discord: запрос кода (бот отправляет код в ЛС и пишет status)
-    match /verifyReq/{id} {
-      allow get: if true;
-      allow create: if request.resource.data.keys().hasOnly(['did','t','status'])
-        && request.resource.data.did is string && request.resource.data.did.matches('^[0-9]{15,21}$')
-        && request.resource.data.status == 'new' && request.resource.data.t == request.time;
-    }
     // avatars/{uid}: полноразмерная аватарка для больших профилей; видят вошедшие, меняет только сам пользователь
     // запрос синхронизации профиля → карточки (обрабатывает бот)
     match /syncReq/{uid} {
@@ -865,34 +861,31 @@ service cloud.firestore {
     }
     // mem/{uid}: отметка «член партии» (пишет только admin SDK)
     match /mem/{uid} { allow get: if signedIn() && request.auth.uid == uid; allow list, write: if false; }
-    // verifyCodes: только admin SDK (бот); правила users проверяют наличие через exists()
-    match /verifyCodes/{id} { allow read, write: if false; }
-    // oauthReq: вход через Discord. Браузер кладёт одноразовый код OAuth2 в документ со случайным ID (40 hex),
-    // бот обменивает его и пишет результат (custom token) в тот же документ. Список запрещён — читать можно только зная ID.
-    match /oauthReq/{id} {
-      allow create: if id.matches('^[0-9a-f]{40}$')
-        && request.resource.data.keys().hasOnly(['code','redirect','status','t'])
-        && request.resource.data.code is string && request.resource.data.code.size() <= 100
-        && request.resource.data.redirect in ['https://vppka-arbat-rmrp.ru/']
-        && request.resource.data.status == 'new' && request.resource.data.t == request.time;
-      allow get, delete: if id.matches('^[0-9a-f]{40}$');
-      allow list, update: if false;
-    }
-    // v213/v216: вход и регистрация (kind 'reg') через Discord без пароля. Браузер (можно без входа) кладёт запрос со случайным id (128 бит, 32 hex):
-    // Discord ID, код для сверки (4 цифры, показан на сайте и в ЛС), status 'pending'. Бот (сервисный ключ) шлёт в ЛС
-    // кнопки «Подтвердить вход / Это не я» и по подтверждению пишет в этот же документ одноразовый custom token.
-    // Читать — только зная id (get), перечислять нельзя; менять статус/токен клиенту нельзя; удалить — зная id.
+    // v213/v216: вход и регистрация (kind 'reg') через Discord без пароля. Браузер (без входа) кладёт запрос со случайным id
+    // (128 бит, 32 hex): Discord ID, status 'pending'. v223: бот шлёт 6-значный код в ЛС (хэш — в loginCodes/{id}, видит только бот),
+    // человек вводит его на сайте (status 'check' + code), бот сверяет (5 попыток, 5 минут) и пишет custom token.
+    // Владельцу и ступени 5+ бот отвечает 'pwonly' — только вход по паролю. Кнопок «Подтвердить вход» больше нет.
+    // v223 фаза 3: старых запросов с 4-значным кодом (кнопка «Подтвердить вход») больше нет.
+    // Читать — только зная id (get), перечислять нельзя; удалить — зная id.
     match /loginRequests/{id} {
       allow create: if id.matches('^[0-9a-f]{32}$')
         && request.resource.data.keys().hasOnly(['did','code','status','t','kind'])
-        && request.resource.data.keys().hasAll(['did','code','status','t'])
+        && request.resource.data.keys().hasAll(['did','status','t'])
         && (!('kind' in request.resource.data) || request.resource.data.kind in ['login','reg'])
         && request.resource.data.did is string && request.resource.data.did.matches('^[0-9]{15,21}$')
-        && request.resource.data.code is string && request.resource.data.code.matches('^[0-9]{4}$')
+        && !('code' in request.resource.data)
         && request.resource.data.status == 'pending' && request.resource.data.t == request.time;
+      // ввод кода из ЛС: только status и code, после того как бот отправил код (sent) или отклонил прошлый ввод (bad)
+      allow update: if id.matches('^[0-9a-f]{32}$')
+        && resource.data.get('status', '') in ['sent','bad']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','code'])
+        && request.resource.data.status == 'check'
+        && request.resource.data.code is string && request.resource.data.code.matches('^[0-9]{6}$');
       allow get, delete: if id.matches('^[0-9a-f]{32}$');
-      allow list, update: if false;
+      allow list: if false;
     }
+    // loginCodes/{id}: хэш кода входа — только бот
+    match /loginCodes/{id} { allow read, write: if false; }
     // ---------- v222: привязка Discord ----------
     // dvf/{uid}: отметка «Discord ID аккаунта подтверждён» (бот: код из ЛС, вход/регистрация через Discord). Видит только сам.
     match /dvf/{uid} { allow get: if signedIn() && request.auth.uid == uid; allow list, write: if false; }
