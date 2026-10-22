@@ -56,7 +56,7 @@ const state={tab:'site',edit:null,rows:null,hist:[],tpls:{},q:'',msg:'',msgOk:fa
 function plain(v){if(v&&typeof v.toDate==='function')return {_time:v.toDate().toISOString()};if(Array.isArray(v))return v.map(plain);if(v&&typeof v==='object')return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,plain(x)]));return v}
 function revive(v,f){if(Array.isArray(v))return v.map(x=>revive(x,f));if(v&&typeof v==='object'){if(typeof v._time==='string'&&Object.keys(v).length===1&&v._time)return f.Timestamp.fromDate(new Date(v._time));return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,revive(x,f)]))}return v}
 function strip(v){if(Array.isArray(v))return v.map(strip);if(v&&typeof v==='object'){if(typeof v._time==='string')return v;const o={};for(const [k,x] of Object.entries(v))if(x!==undefined)o[k]=strip(x);return o}return v}
-function errText(e){if(!e)return 'Ошибка';if(e.code==='permission-denied')return 'Нет прав. Опубликуйте firestore.rules.';return e.message||e.code||String(e)}
+function errText(e){if(!e)return 'Ошибка';if(e.code==='permission-denied')return 'Нет прав. Обратитесь к владельцу сайта.';return e.message||e.code||String(e)}
 function say(t,ok){state.msg=t||'';state.msgOk=!!ok}
 function page(title,body){return `<div class="crumbs"><a href="#home">Главная</a> / Администрирование</div><div class="pg"><h1>${esc(title)}</h1>${body}</div>`}
 function tabs(){return `<div class="adm-tabs">${TABS_NOW().map(([id,t])=>`<button type="button" data-adtab="${id}" class="${state.tab===id?'on':''}">${esc(t)}</button>`).join('')}</div>`}
