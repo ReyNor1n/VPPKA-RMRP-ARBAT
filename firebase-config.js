@@ -8,6 +8,7 @@ export const firebaseConfig = {
   appId: "1:446917562781:web:e09ce5e57187ca6b96df74"
 };
 
-// v223: App Check (reCAPTCHA v3). Ключ САЙТА (публичный) из консоли reCAPTCHA / Firebase App Check → вписать сюда.
-// Пусто — App Check на сайте выключен (ничего не ломается). Секретный ключ сюда НЕ вписывать.
-export const appCheckSiteKey = '';
+// v228: App Check — reCAPTCHA Enterprise (Firebase → App Check → веб-приложение → reCAPTCHA Enterprise).
+// Это КЛЮЧ САЙТА (публичный, тот же, что в App Check). Секретный/устаревший legacy-ключ сюда НЕ вписывать.
+// Пусто — App Check на сайте выключен (ничего не ломается).
+export const appCheckSiteKey = '6LfzMPotAAAAAFmBLMLPxIiVYpbIPuxHT7rUdZnn';
