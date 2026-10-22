@@ -309,7 +309,7 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
   if(d.aa||d.ar||d.am){const aid=d.aa||d.ar||d.am,a=apps.find(x=>x.id===aid),st=d.aa?'accepted':d.ar?'rejected':'member';
    if(d.am){const r=parseInt(v('ak-'+aid),10);if(!(r>=0&&r<=maxR()))return msg(`Уровень должен быть от 0 до ${maxR()}.`);
     const fio=String(a.answers.fio||'').trim().replace(/\s+/g,' ').slice(0,100);const dup=partyDup(fio,a.discordId)||(a.uid&&(D().members||[]).find(x=>x.id==='p_'+a.uid));const pid=dup?dup.id:(a.uid?'p_'+a.uid:'p_'+aid);
-    const card={name:fio,role:v('ar-'+aid).trim().slice(0,120)||'Член партии',group:'Члены партии',discord:String(a.answers.discord||'').slice(0,200),joined:await keepJoined(a.discordId,fio),rank:r,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};if(a.discordId)card.discordId=String(a.discordId).slice(0,64);
+    const card={name:fio,role:v('ar-'+aid).trim().slice(0,120)||'Член партии',group:'Члены партии',discord:/^\d{15,21}$/.test(String(a.discordId||''))?'https://discord.com/users/'+a.discordId:String(a.answers.discord||'').slice(0,200),joined:await keepJoined(a.discordId,fio),rank:r,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()};if(a.discordId)card.discordId=String(a.discordId).slice(0,64);
     if(dup)await f.setDoc(f.doc(db(),'members',pid),{...(dup.photo?{photo:dup.photo}:{}),...card});else await createPartyCard(pid,card);await window.VPPKA_RELOAD();}
    await f.updateDoc(f.doc(db(),'applications',aid),{status:st,reviewedBy:FB().user.uid,reviewedAt:f.serverTimestamp(),reviewerRole:String(FB().power.roleName||'').slice(0,60)});
    a.status=st;window.route();msg('Статус заявки: '+STATUS[st]);rosterSync().catch(e=>console.warn('roster',e.code||e));}
