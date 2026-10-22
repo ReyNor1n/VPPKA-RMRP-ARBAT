@@ -7,8 +7,6 @@ Allow: /favicon.ico
 Allow: /img/icons/
 Disallow: /admin.html
 Disallow: /tools/
-Disallow: /firestore.rules
-Disallow: /firebase.json
 Disallow: /app-version.json
 Disallow: /version.json
 
