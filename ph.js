@@ -1,8 +1,10 @@
+// v230: загрузки считаются в phq/{uid} (до 20 за 10 минут); старые фото, на которые больше ничего не ссылается, бот удаляет через час.
 // v225: фото отдельно от карточек. В карточке (members.photo, users.photo/avatar, ldrPhotos.d, avatars.d, news.photos)
 // вместо base64 лежит ссылка «ph:<id>»: полный размер — photos/{id}.d, миниатюра для списков — photoThumbs/{id}.d.
 // Списки берут миниатюру, когда картинка подъезжает к экрану; профиль — полный размер только при открытии.
 // Старые base64 и обычные ссылки (img/…, https://…) показываются как раньше.
 (()=>{
+const PHQ_WIN=600000,PHQ_MAX=20;
 const RE=/^ph:([A-Za-z0-9]{20})$/,BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const T=new Map(),FU=new Map(),LS='vpph1:';
@@ -47,8 +49,16 @@ const VP=window.VPPKA_PH={isRef:s=>!!idOf(s),BLANK,
  thumb:d=>mkThumb(d),
  // загрузка: base64 → photos/{id} + photoThumbs/{id}, возвращает «ph:<id>». Не вышло — исходный base64 (как раньше).
  up:async(d,uid)=>{d=String(d||'');if(!/^data:image\//.test(d))return d;try{const {F,db,user}=await fb();const by=uid||(user&&user.uid);if(!by)throw new Error('нет входа');
-   const t=await mkThumb(d),ref=F.doc(F.collection(db,'photos')),id=ref.id;const b=F.writeBatch(db);
-   b.set(ref,{d,by,at:F.serverTimestamp()});b.set(F.doc(db,'photoThumbs',id),{d:t,by,at:F.serverTimestamp()});await b.commit();
+   const t=await mkThumb(d),ref=F.doc(F.collection(db,'photos')),id=ref.id;
+   // v230: счётчик загрузок phq/{uid} (не больше PHQ_MAX за PHQ_WIN) пишется тем же пакетом — его проверяют правила базы.
+   const q=F.doc(db,'phq',by);let qd=null;try{const s=await F.getDoc(q);qd=s.exists()?s.data():null}catch(e){}
+   const age=qd&&qd.at&&qd.at.toMillis?Date.now()-qd.at.toMillis():Infinity;
+   const tries=!qd||age>PHQ_WIN+60000?[1]:age<PHQ_WIN-60000?[0]:[0,1];let err=null;
+   for(const fresh of tries){const b=F.writeBatch(db);
+    b.set(ref,{d,by,at:F.serverTimestamp()});b.set(F.doc(db,'photoThumbs',id),{d:t,by,at:F.serverTimestamp()});
+    if(fresh)b.set(q,{at:F.serverTimestamp(),n:1,last:id});else b.update(q,{n:F.increment(1),last:id});
+    try{await b.commit();err=null;break}catch(e){err=e}}
+   if(err)throw err;
    FU.set(id,d);T.set(id,t);lsPut(id,t);return 'ph:'+id}catch(e){console.warn('фото: отдельное хранение не удалось, сохраняю как раньше',e.code||e);return d}}};
 // миниатюра: до 400 px по длинной стороне, JPEG 0.8; GIF до 120 000 символов остаётся анимированным
 function mkThumb(d){return new Promise(res=>{if(/^data:image\/gif;/.test(d)&&d.length<=120000)return res(d);const im=new Image();
