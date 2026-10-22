@@ -749,3 +749,34 @@ html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
  #pm-grid .pm-inf{margin-top:-40px;padding:0 9px 10px}#pm-grid .pm-n{font-size:13.5px}#pm-grid .pm-r{font-size:10px;letter-spacing:.05em}
  #pm-grid .pm-av.noph>b{font-size:40px}#pm-grid .g-dots{width:28px;height:28px}}
 @media(prefers-reduced-motion:reduce){#pm-grid .pm-card,#pm-grid .pm-av img{transition:none}#pm-grid .pm-card:hover,#pm-grid .pm-card:hover .pm-av img{transform:none!important}}
+/* v237: шторка «О партии» в меню, вкладки раздела, «Как вступить» */
+.ndd{position:relative;display:flex}
+.ndd-t{counter-increment:n;background:none;border:0;border-bottom:2px solid transparent;color:var(--mut);padding:14px 8px;font:12px Oxanium,monospace;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.ndd-t:before{content:counter(n,decimal-leading-zero)" ";color:var(--red)}
+.ndd-c{display:inline-block;width:6px;height:6px;margin:0 2px 3px 7px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);transition:transform .2s}
+.ndd-t:hover,.ndd.open .ndd-t,.ndd-t:focus-visible{color:#fff}.ndd-t.on{color:#fff;border-bottom-color:var(--red);box-shadow:0 6px 14px -8px var(--red)}
+.ndd.open .ndd-c{transform:rotate(-135deg);margin-bottom:0}
+.ndd-m{display:none;position:absolute;top:100%;left:0;min-width:260px;background:#0b0d12;border:1px solid var(--ln);border-top:2px solid var(--red);box-shadow:0 16px 32px #000c;z-index:30;padding:6px 0}
+.ndd.open .ndd-m{display:block}
+@media(hover:hover) and (min-width:769px){.ndd:hover .ndd-m{display:block}.ndd:hover .ndd-t{color:#fff}.ndd:hover .ndd-c{transform:rotate(-135deg);margin-bottom:0}}
+.nav .ndd-m a{display:block;counter-increment:none;padding:11px 18px;border-bottom:0;border-left:2px solid transparent;font-size:12px;letter-spacing:.06em;color:var(--mut);white-space:nowrap;box-shadow:none}
+.nav .ndd-m a:before{content:none}
+.nav .ndd-m a:hover,.nav .ndd-m a:focus-visible{color:#fff;background:#ff2a3a14;border-left-color:var(--red);outline:0}
+.nav .ndd-m a.on{color:#fff;border-left-color:var(--red);border-bottom-color:transparent}
+@media(max-width:768px){.ndd{display:block}
+ .ndd-t{display:flex;align-items:center;width:100%;min-height:50px;padding:0 8px;font-size:12px;letter-spacing:.08em;border-bottom:1px solid var(--ln);text-align:left}
+ .ndd-t:before{margin-right:8px}.ndd-c{margin-left:auto;width:8px;height:8px}
+ .ndd-t.on{border-bottom-color:var(--ln);border-left:3px solid var(--red);box-shadow:none}
+ .ndd-m{position:static;min-width:0;box-shadow:none;border:0;border-bottom:1px solid var(--ln);padding:0}
+ .ndd-c{margin-right:10px}.nav .ndd-m a{display:flex;align-items:center;min-height:46px;padding:0 14px 0 36px;font-size:12px;border-bottom:1px solid #1a1f29}
+ .nav .ndd-m a:last-child{border-bottom:0}}
+.ab-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 20px}
+.ab-tabs a{padding:8px 14px;border:1px solid var(--ln);background:#0b0e13;color:var(--mut);font:12px Oxanium,monospace;letter-spacing:.06em;text-transform:uppercase}
+.ab-tabs a:hover{color:#fff;border-color:var(--red)}.ab-tabs a.on{color:#fff;border-color:var(--red);background:#ff2a3a1c}
+@media(max-width:768px){.ab-tabs{flex-wrap:nowrap;overflow-x:auto;margin:0 0 14px;padding-bottom:4px;scrollbar-width:none}.ab-tabs::-webkit-scrollbar{display:none}.ab-tabs a{flex:0 0 auto;padding:8px 12px;font-size:11px}}
+.hj{list-style:none;margin:0;padding:0}
+.hj-s{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:18px 0;border-bottom:1px dashed var(--ln)}.hj-s:last-child{border-bottom:0;padding-bottom:0}.hj-s:first-child{padding-top:4px}
+.hj-n{width:42px;height:42px;display:grid;place-items:center;font:18px "Russo One";color:#fff;background:var(--red);clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);box-shadow:0 0 14px #ff2a3a55}
+.hj-s h3{margin:2px 0 6px;font-size:18px;color:#fff}.hj-s p{margin:0 0 8px}.hj-s ul{margin:0 0 8px}
+.hj-int ul{margin:0}.hj-cta{text-align:center}.hj-cta p{color:var(--mut)}.hj-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+@media(max-width:768px){.hj-s{grid-template-columns:34px 1fr;gap:12px}.hj-n{width:34px;height:34px;font-size:15px}.hj-s h3{font-size:16px}.hj-btns .btn{flex:1 1 100%}}
