@@ -176,22 +176,31 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  const fixU=u=>typeof u==='string'?u.replace(/^(?:https?:\/\/[^\/]+)?\/(?:vppka|VPPKA-RMRP-ARBAT)\/(?=img\/)/i,''):u;const fixD=o=>{if(o.image)o.image=fixU(o.image);if(o.photo)o.photo=fixU(o.photo);if(Array.isArray(o.photos))o.photos=o.photos.map(fixU);return o};
  // одна подписка вместо getDocs+onSnapshot: первый снимок используется как начальная загрузка (экономия чтений)
  let liveOn=false,liveRes=null;
- async function loadData(){if(liveOn){return}liveOn=true;await new Promise(res=>{liveRes=res;setTimeout(res,8000);liveSubs()});}
- const toD=()=>{const D={...(window.VPPKA_DATA||{})};if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));window.VPPKA_DATA=(D.news||D.members)?D:null};
+ async function loadData(){if(liveOn){return}liveOn=true;try{if(auth.authStateReady)await Promise.race([auth.authStateReady(),new Promise(r=>setTimeout(r,3000))])}catch(e){}await new Promise(res=>{liveRes=res;setTimeout(res,8000);liveSubs()});}
+ const toD=()=>{const D={...(window.VPPKA_DATA||{})};if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=memDocs().filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));window.VPPKA_DATA=(D.news||D.members)?D:null};
  window.VPPKA_RELOAD=async()=>{await loadData();toD();route();};
  let liveN=null,liveM=null,livePend=false,liveNew=new Set();
+ let liveMPub=false,mPub=null,mUid='',mUnsub=null,RESUBM=null;
+ const memDocs=()=>liveM.docs.map(d=>{const o=fixD({...d.data(),id:d.id});if(liveMPub){delete o.discord;delete o.discordId;delete o.updatedBy;if(o.pk)o.discordId=o.pk;o._pub=true}delete o.pk;return o});
+ window.VPPKA_MEMPUB=()=>liveMPub;
  // v224: публичный статик карточек — pubStatik/{memberId}.s (читают все, пишут бот и владелец). Не смешиваем с members:
  // карточки сохраняются целиком, и лишнее поле statik правила members не примут.
  let liveS={};window.VPPKA_STATIK=id=>liveS[id]||'';
  const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
  const liveApply=()=>{if(!liveN&&!liveM)return;if(busy()){livePend=true;return}livePend=false;const D={...(window.VPPKA_DATA||{})};
-  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=liveM.docs.map(d=>fixD({...d.data(),id:d.id})).filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
+  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=memDocs().filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
   window.VPPKA_DATA=(D.news||D.members)?D:null;const y=scrollY;route();scrollTo(0,y);
   liveNew.forEach(id=>document.querySelectorAll('a[href="#news/'+id+'"]').forEach(a=>{const it=a.closest('.it,.card,div');it&&it.classList.add('fresh')}));liveNew.clear();};
  document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
  function liveSubs(){let fn=true,fm=true;const ready=()=>{if(!fn&&!fm&&liveRes){toD();const r=liveRes;liveRes=null;r()}};
   F.onSnapshot(F.collection(db,'news'),s=>{if(fn){fn=false;liveN=s;ready();return}s.docChanges().forEach(c=>{if(c.type==='added')liveNew.add(c.doc.id)});liveN=s;liveApply()},e=>{console.warn('live news',e);fn=false;ready()});
-  F.onSnapshot(F.collection(db,'members'),s=>{if(fm){fm=false;liveM=s;ready();return}liveM=s;liveApply()},e=>{console.warn('live members',e);fm=false;ready()});
+  // v236: Discord видят только члены партии. members (с discordId) читают члены партии/руководство; гостям и беспартийным —
+  // зеркало membersPub без discord/discordId (его пишет бот). pk — псевдо-ID вместо discordId: группировка карточек одного человека.
+  const subM=pub=>{if(mUnsub)mUnsub();mPub=pub;mUid=auth.currentUser?auth.currentUser.uid:'';
+   mUnsub=F.onSnapshot(F.collection(db,pub?'membersPub':'members'),s=>{liveM=s;liveMPub=pub;if(fm){fm=false;ready();return}liveApply()},
+    e=>{if(!pub&&e&&e.code==='permission-denied'){subM(true);return}console.warn('live members',e);if(fm){fm=false;ready()}})};
+  RESUBM=u=>{const want=!u;if(want!==mPub||(u&&mPub&&u.uid!==mUid))subM(want)};
+  subM(!auth.currentUser);
   F.onSnapshot(F.collection(db,'pubStatik'),s=>{const o={};s.forEach(d=>{const v=d.data().s;if(typeof v==='string'&&/^\d{3}-\d{3}$/.test(v))o[d.id]=v});const ch=JSON.stringify(o)!==JSON.stringify(liveS);liveS=o;if(ch&&!fm)liveApply()},e=>console.warn('live pubStatik',e.code||e));}
  function liveStart(){}
  window.VPPKA_AUTH={get user(){return user},get priv(){return priv},get profile(){return profile},get power(){return power},
@@ -308,7 +317,7 @@ document.addEventListener('click',async ev=>{const id=ev.target.id;if(id!=='lk-s
    await F.setDoc(r,{passport:pp},{merge:true});priv={...cur,passport:pp};o?.remove();sessionStorage.removeItem('st_later');fillJoinPP();if(location.hash==='#account')window.route();F.setDoc(F.doc(db,'syncReq',user.uid),{t:F.serverTimestamp()}).catch(()=>{});}
   catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер не принял номер паспорта (нет прав).':'Не удалось сохранить: '+(e.code||e.message))}});
  A.onAuthStateChanged(auth,async u=>{user=u;lkOk=null;if(!regBusy||!u)profile=null;if(!u||!regPP){priv=null;privT=0;}document.getElementById('st-ov')?.remove();
-  if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():(regBusy?profile:null);if(!s.exists()&&!regBusy)noProfile=true;else noProfile=false;}catch(e){console.warn(e)}}await refreshPower();authReady=true;
+  if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():(regBusy?profile:null);if(!s.exists()&&!regBusy)noProfile=true;else noProfile=false;}catch(e){console.warn(e)}}await refreshPower();authReady=true;if(RESUBM&&user===u)RESUBM(u);
   if(!u&&document.getElementById('lk-ov'))lkFinish(false);
   paintAuth();if(['login','register','account','join','news','leadership','apps','members','party','member','home','admin',''].includes(location.hash.slice(1).split('/')[0]))route();
   // v222: без привязки Discord — сначала окно «Привяжите Discord» (код из ЛС бота), потом остальное (статик, «Завершите регистрацию»)
