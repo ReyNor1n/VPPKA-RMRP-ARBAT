@@ -342,13 +342,11 @@
     "birth": "",
     "rank": 100,
     "group": "Центральный Комитет",
-    "discord": "https://discord.com/users/1183072840774320220",
     "reportsTo": "Съезду Партии",
     "city": "",
     "joined": "19.10.2026",
     "contact": "",
     "order": 0,
-    "discordId": "1183072840774320220",
     "id": "m1"
    },
    {
@@ -359,7 +357,6 @@
     "rank": 90,
     "role": "Заместитель Председателя ЦК",
     "reportsTo": "Съезду Партии",
-    "discord": "https://discord.com/users/238637783810310146",
     "duties": [
      "Входит в состав Центрального Комитета как заместитель Председателя Партии",
      "Участвует в заседаниях ЦК и голосует по его решениям",
@@ -374,7 +371,6 @@
     "name": "Быков Виталий Андреевич",
     "photo": "img/members/m4.jpg",
     "tier": 5,
-    "discordId": "238637783810310146",
     "id": "m4",
     "contact": "",
     "birth": "",
@@ -392,7 +388,6 @@
     "bio": "",
     "joined": "19.10.2026",
     "order": 2,
-    "discordId": "294890089061023744",
     "duties": [
      "Входит в состав Центрального Комитета как заместитель Председателя Партии",
      "Участвует в заседаниях ЦК и голосует по его решениям",
@@ -405,7 +400,6 @@
      "Вместе с не менее чем 1/3 членов ЦК вправе потребовать созыва внеочередного заседания ЦК и внеочередного Съезда"
     ],
     "rank": 90,
-    "discord": "https://discord.com/users/294890089061023744",
     "photo": "img/members/m5.jpg",
     "id": "m5",
     "contact": "",
@@ -430,10 +424,8 @@
     "group": "Технический отдел",
     "joined": "17.10.2026",
     "order": 10,
-    "discord": "https://discord.com/users/646280678736003073",
     "name": "Ульянов Арсений Александрович",
     "tier": 7,
-    "discordId": "646280678736003073",
     "id": "m11",
     "bio": "",
     "contact": "",
@@ -441,10 +433,10 @@
     "city": "",
     "achievements": "",
     "forum": "",
-    "quote": ""
+    "quote": "",
+    "discordId": "646280678736003073"
    },
    {
-    "discordId": "1216600859513847829",
     "photo": "img/members/m2.jpg",
     "duties": [
      "Избирается Съездом в состав Центрального Комитета на 90 дней",
@@ -465,7 +457,6 @@
     "joined": "19.10.2026",
     "group": "Центральный Комитет",
     "role": "Член ЦК",
-    "discord": "https://discord.com/users/1216600859513847829",
     "id": "m2",
     "bio": "",
     "contact": "",
@@ -496,8 +487,6 @@
     "tier": 4,
     "joined": "19.10.2026",
     "role": "Член ЦК",
-    "discord": "https://discord.com/users/570130407086096394",
-    "discordId": "570130407086096394",
     "id": "m16",
     "bio": "",
     "contact": "",
@@ -513,7 +502,6 @@
     "order": 5,
     "joined": "19.10.2026",
     "group": "Центральный Комитет",
-    "discordId": "646280678736003073",
     "tier": 7,
     "photo": "img/members/m17.jpg",
     "name": "Ульянов Арсений Александрович",
@@ -528,7 +516,6 @@
      "Принимает решения о предвыборной агитации, публичных мероприятиях и акциях Партии",
      "Вместе с не менее чем 1/3 членов ЦК вправе потребовать созыва внеочередного заседания ЦК и внеочередного Съезда"
     ],
-    "discord": "https://discord.com/users/646280678736003073",
     "role": "Член ЦК",
     "id": "m17",
     "bio": "",
@@ -537,18 +524,17 @@
     "city": "",
     "achievements": "",
     "forum": "",
-    "quote": ""
+    "quote": "",
+    "discordId": "646280678736003073"
    },
    {
     "tier": 4,
     "order": 6,
-    "discordId": "457197373517725717",
     "name": "Циммерман Виктор Андреевич",
     "joined": "20.10.2026",
     "group": "Центральный Комитет",
     "reportsTo": "Съезду Партии",
     "role": "Член ЦК",
-    "discord": "https://discord.com/users/457197373517725717",
     "rank": 80,
     "photo": "img/members/m18.jpg",
     "duties": [
@@ -596,10 +582,8 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
-    "quote": "",
-    "discordId": ""
+    "quote": ""
    },
    {
     "name": "Ежов Сергей Андреевич",
@@ -624,10 +608,8 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "https://discord.com/users/1058023860894695585",
     "forum": "",
-    "quote": "",
-    "discordId": "1058023860894695585"
+    "quote": ""
    },
    {
     "rank": 70,
@@ -651,14 +633,11 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
     "quote": "",
-    "discordId": "",
     "tier": 0
    },
    {
-    "discordId": "",
     "name": "Вакансия",
     "order": 13,
     "group": "Технический отдел",
@@ -672,7 +651,6 @@
      "Рассматривает жалобы участников сервера и передаёт их руководству"
     ],
     "photo": "",
-    "discord": "",
     "joined": "",
     "rank": 70,
     "id": "m14",
@@ -709,10 +687,8 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
-    "quote": "",
-    "discordId": ""
+    "quote": ""
    },
    {
     "role": "Заместитель Председателя КРК",
@@ -740,10 +716,8 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
-    "quote": "",
-    "discordId": ""
+    "quote": ""
    },
    {
     "reportsTo": "Съезду и Председателю Партии",
@@ -770,10 +744,8 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
-    "quote": "",
-    "discordId": ""
+    "quote": ""
    },
    {
     "tier": 0,
@@ -800,10 +772,8 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
-    "quote": "",
-    "discordId": ""
+    "quote": ""
    },
    {
     "role": "Член партии",
@@ -811,7 +781,6 @@
     "joined": "20.10.2026",
     "rank": 0,
     "group": "Члены партии",
-    "discordId": "1001535841186893917",
     "id": "p_c3GWJe0NepOiift8tkpE",
     "photo": "",
     "bio": "",
@@ -819,7 +788,6 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
     "quote": "",
     "tier": 0,
@@ -829,8 +797,6 @@
     "rank": 0,
     "joined": "18.10.2026",
     "name": "Виктор Баринов",
-    "discordId": "343281046005219330",
-    "discord": "https://discord.com/users/343281046005219330",
     "group": "Члены партии",
     "role": "Член партии",
     "id": "p_ogEpvt4IjddzTHl1PQGW1KQohAY2",
@@ -846,11 +812,9 @@
     "order": 0
    },
    {
-    "discordId": "1270168778440839282",
     "joined": "18.10.2026",
     "role": "Член партии",
     "rank": 0,
-    "discord": "https://discordapp.com/users/1270168778440839282",
     "name": "Гордеев Владислав Евгеньевич",
     "group": "Члены партии",
     "id": "p_WcgJqiveBkd6nZcNWAuaVUQBJTr1",
@@ -870,10 +834,8 @@
     "name": "Драгунов Борис Михайлович",
     "photo": "img/members/p_rSjsain8xnbUQtxJMmMNlN6Wjrg2.jpg",
     "rank": 0,
-    "discordId": "720857922975957058",
     "role": "Член партии",
     "group": "Члены партии",
-    "discord": "https://discord.com/users/720857922975957058",
     "id": "p_rSjsain8xnbUQtxJMmMNlN6Wjrg2",
     "bio": "",
     "contact": "",
@@ -888,7 +850,6 @@
    {
     "role": "Член партии",
     "joined": "20.10.2026",
-    "discordId": "570130407086096394",
     "name": "Ермолаев Александр Сергеевич",
     "group": "Члены партии",
     "rank": 0,
@@ -899,7 +860,6 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
     "quote": "",
     "tier": 0,
@@ -918,17 +878,14 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
     "quote": "",
-    "discordId": "",
     "tier": 0,
     "order": 0
    },
    {
     "joined": "20.10.2026",
     "rank": 0,
-    "discordId": "421609176645763073",
     "group": "Члены партии",
     "name": "Иванов Даниил Юрьевич",
     "role": "Член партии",
@@ -939,20 +896,17 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
     "quote": "",
     "tier": 0,
     "order": 0
    },
    {
-    "discord": "https://discord.com/users/996139905967198329",
     "role": "Член партии",
     "joined": "17.10.2026",
     "name": "Каховский Артём Юрьевич",
     "rank": 0,
     "group": "Члены партии",
-    "discordId": "996139905967198329",
     "id": "p_42BhyVv7qkYn5Bm9Ownz",
     "photo": "",
     "bio": "",
@@ -971,7 +925,6 @@
     "group": "Члены партии",
     "name": "Матвеев Кирилл Александрович",
     "role": "Член партии",
-    "discordId": "1332982418453299211",
     "id": "p_UAOEkTAGskUv6OJRkO197ymhak32",
     "photo": "",
     "bio": "",
@@ -979,7 +932,6 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
     "quote": "",
     "tier": 0,
@@ -990,8 +942,6 @@
     "group": "Члены партии",
     "joined": "18.10.2026",
     "rank": 0,
-    "discord": "https://discord.com/users/1128648090044338357",
-    "discordId": "1128648090044338357",
     "name": "Печкин Максим Андреевич",
     "id": "p_ztjronY9qFVAye8k88ZStpIOb9j1",
     "photo": "",
@@ -1006,9 +956,7 @@
     "order": 0
    },
    {
-    "discord": "https://discord.com/users/1339606017901592668",
     "rank": 0,
-    "discordId": "1339606017901592668",
     "group": "Члены партии",
     "name": "Риккер Мира Владимировна",
     "joined": "17.10.2026",
@@ -1030,9 +978,7 @@
     "joined": "17.10.2026",
     "name": "Сафронов Владислав Сергеевич",
     "group": "Члены партии",
-    "discordId": "699959506767183912",
     "rank": 0,
-    "discord": "https://discord.com/users/699959506767183912",
     "id": "p_xNficr1VRSCDuo8BZoUX",
     "photo": "",
     "bio": "",
@@ -1046,7 +992,6 @@
     "order": 0
    },
    {
-    "discordId": "524666559898189824",
     "role": "Член партии",
     "name": "Траур Данил Александрович",
     "joined": "20.10.2026",
@@ -1059,7 +1004,6 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
     "quote": "",
     "tier": 0,
@@ -1067,11 +1011,9 @@
    },
    {
     "role": "Член партии",
-    "discord": "https://discord.com/users/457197373517725717",
     "group": "Члены партии",
     "joined": "17.10.2026",
     "name": "Циммерман Виктор Андреевич",
-    "discordId": "457197373517725717",
     "rank": 0,
     "photo": "img/members/p_z1izLmmpER5gdeiMyodQ.jpg",
     "id": "p_z1izLmmpER5gdeiMyodQ",
@@ -1089,9 +1031,7 @@
     "role": "Член партии",
     "joined": "18.10.2026",
     "photo": "img/members/p_uH0FAXm5ACcLmLFfnMPb2oYjaas2.jpg",
-    "discord": "https://discord.com/users/1252578273872056376",
     "name": "Шипов Анатолий Сергеевич",
-    "discordId": "1252578273872056376",
     "group": "Члены партии",
     "rank": 0,
     "id": "p_uH0FAXm5ACcLmLFfnMPb2oYjaas2",
@@ -1111,7 +1051,6 @@
     "joined": "20.10.2026",
     "rank": 0,
     "group": "Члены партии",
-    "discordId": "1030893785523159121",
     "id": "p_2s2SvJCL1U6xKQSUDiRH",
     "photo": "",
     "bio": "",
@@ -1119,7 +1058,6 @@
     "birth": "",
     "city": "",
     "achievements": "",
-    "discord": "",
     "forum": "",
     "quote": "",
     "tier": 0,
