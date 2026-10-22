@@ -709,3 +709,6 @@ html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
 
 /* v230: раздел «Ключи доступа» */
 .kx-tbl .kx-off{opacity:.55}.kx-tbl td{vertical-align:top}
+/* v232: «Вступить в партию» без регистрации — ошибка с «Регистрация» / «Войти» */
+#jg-ov{z-index:9999}.jg-md{max-width:440px}.jg-md .jg-e,.jgate .jg-e{font-weight:600;min-height:0}.jg-n{margin-top:6px}
+.jg-act{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.jgate{max-width:640px}.jgate h2{margin-bottom:10px}

@@ -184,7 +184,9 @@ auth=A.getAuth(app);db=F.getFirestore(app);
   F.onSnapshot(F.collection(db,'members'),s=>{if(fm){fm=false;liveM=s;ready();return}liveM=s;liveApply()},e=>{console.warn('live members',e);fm=false;ready()});
   F.onSnapshot(F.collection(db,'pubStatik'),s=>{const o={};s.forEach(d=>{const v=d.data().s;if(typeof v==='string'&&/^\d{3}-\d{3}$/.test(v))o[d.id]=v});const ch=JSON.stringify(o)!==JSON.stringify(liveS);liveS=o;if(ch&&!fm)liveApply()},e=>console.warn('live pubStatik',e.code||e));}
  function liveStart(){}
- window.VPPKA_AUTH={get user(){return user},get priv(){return priv},get profile(){return profile},get power(){return power},async submitApplication(answers){if(!user)throw new Error('Чтобы подать заявку, войдите или зарегистрируйтесь на сайте.');if(window.VPPKA_NEEDST()){throw new Error('сначала укажите номер паспорта (статик) — окно открыто.')}const ref=F.doc(db,'applications',user.uid);
+ window.VPPKA_AUTH={get user(){return user},get priv(){return priv},get profile(){return profile},get power(){return power},
+ // v232: можно ли подать заявку на вступление: loading (вход ещё проверяется) | guest (не вошёл) | noprofile (профиль не создан) | unlinked (Discord не привязан) | ok
+ get joinState(){return joinState()},finishReg(){if(user&&!profile)npPrompt()},linkDiscord(){const u=cu();if(u&&lkOk===false)lkPrompt(false)},async submitApplication(answers){if(!user)throw new Error('Чтобы вступить в партию, нужно зарегистрироваться на сайте.');if(!profile)throw new Error('сначала завершите регистрацию на сайте.');if(lkOk===false)throw new Error('сначала привяжите Discord к аккаунту на сайте.');if(window.VPPKA_NEEDST()){throw new Error('сначала укажите номер паспорта (статик) — окно открыто.')}const ref=F.doc(db,'applications',user.uid);
   let ex=null;try{ex=await F.getDoc(ref)}catch(e){}if(ex&&ex.exists()){const st=ex.data().status;if(st==='rejected'||st==='expelled')await F.deleteDoc(ref);else throw new Error(st==='new'?'Ваша заявка уже подана и ждёт рассмотрения.':'Заявка уже рассмотрена.')}
   const d={answers,status:'new',createdAt:F.serverTimestamp(),uid:user.uid};if(profile&&profile.discordId)d.discordId=profile.discordId;await F.setDoc(ref,d);}};
  window.VPPKA_FB={get F(){return F},get db(){return db},get user(){return user},get power(){return power}};
@@ -231,6 +233,11 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=230').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=225').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=216').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=216').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=225').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=227').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=230').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=230').then(m=>m.install()).catch(e=>console.error('admin',e));
 // v207: аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false;
+// v232: authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена
+var authReady=false,lkOk=null;
+var SVC_UID0='ZpVGAXbbg1a9I8kRsNEm0OU8QAt2';
+function joinState(){if(!authReady)return 'loading';if(!user)return 'guest';if(user.uid===SVC_UID0)return 'ok';if(lkOk===false)return 'unlinked';if(!profile)return regBusy?'loading':'noprofile';return 'ok'}
+const reJoin=()=>{if(location.hash.slice(1).split('/')[0]==='join')window.route()};
 // v222 «Аккаунт на сайте должен быть привязан к дискорду». Привязан = вход/регистрация через Discord (claim dv) или
 // отметка dvf/{uid}, которую пишет бот после кода из ЛС. Код: сайт пишет linkReq/{uid} {did,status:'pending'} → бот шлёт
 // 6 цифр в ЛС (status 'sent') → сайт пишет {status:'check',code} → бот сверяет (ok | bad + left | locked | expired …).
@@ -257,7 +264,7 @@ function lkState(s){if(!s)return;const go=document.getElementById('lk-go'),snd=d
  if(s.status==='sent'){if(go)go.disabled=false;if(snd)snd.textContent='Отправить код ещё раз';lkSay('Код отправлен: откройте личные сообщения от бота ВППКА в Discord.',1);setTimeout(()=>document.getElementById('lk-code')?.focus(),50);return}
  if(s.status==='bad'){if(go)go.disabled=false;lkSay('Неверный код. Осталось попыток: '+(s.left??'?')+'.');return}
  if(go)go.disabled=true;lkSay(LK_MSG[s.status]||('Ошибка: '+String(s.status||'')))}
-function lkFinish(ok){clearTimeout(lkTo);if(lkUn){lkUn();lkUn=null}document.getElementById('lk-ov')?.remove();const r=lkDone;lkDone=null;if(r)r(ok)}
+function lkFinish(ok){clearTimeout(lkTo);if(ok){lkOk=true;setTimeout(reJoin,0)}if(lkUn){lkUn();lkUn=null}document.getElementById('lk-ov')?.remove();const r=lkDone;lkDone=null;if(r)r(ok)}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='lk-code'){e.preventDefault();document.getElementById('lk-go')?.click()}});
 document.addEventListener('click',async ev=>{const id=ev.target.id;if(id!=='lk-send'&&id!=='lk-go'&&id!=='lk-out')return;
  if(id==='lk-out'){lkFinish(false);try{await A.signOut(auth)}catch(e){}location.hash='#home';return}
@@ -290,11 +297,11 @@ document.addEventListener('click',async ev=>{const id=ev.target.id;if(id!=='lk-s
    if(cur.passport){priv=cur;o?.remove();return}
    await F.setDoc(r,{passport:pp},{merge:true});priv={...cur,passport:pp};o?.remove();sessionStorage.removeItem('st_later');fillJoinPP();if(location.hash==='#account')window.route();F.setDoc(F.doc(db,'syncReq',user.uid),{t:F.serverTimestamp()}).catch(()=>{});}
   catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер не принял статик (нет прав).':'Не удалось сохранить: '+(e.code||e.message))}});
- A.onAuthStateChanged(auth,async u=>{user=u;if(!regBusy||!u)profile=null;if(!u||!regPP){priv=null;privT=0;}document.getElementById('st-ov')?.remove();
-  if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():(regBusy?profile:null);if(!s.exists()&&!regBusy)noProfile=true;else noProfile=false;}catch(e){console.warn(e)}}await refreshPower();
+ A.onAuthStateChanged(auth,async u=>{user=u;lkOk=null;if(!regBusy||!u)profile=null;if(!u||!regPP){priv=null;privT=0;}document.getElementById('st-ov')?.remove();
+  if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():(regBusy?profile:null);if(!s.exists()&&!regBusy)noProfile=true;else noProfile=false;}catch(e){console.warn(e)}}await refreshPower();authReady=true;
   if(!u&&document.getElementById('lk-ov'))lkFinish(false);
   paintAuth();if(['login','register','account','join','news','leadership','apps','members','party','member','home','admin',''].includes(location.hash.slice(1).split('/')[0]))route();
   // v222: без привязки Discord — сначала окно «Привяжите Discord» (код из ЛС бота), потом остальное (статик, «Завершите регистрацию»)
-  if(u&&!regBusy&&u.uid!==SVC_UID&&!(await checkLinked(u))){if(user!==u)return;const ok=await lkPrompt(false);if(!ok||user!==u)return;}
-  if(u&&user===u)loadPriv();if(u&&user===u&&noProfile)npPrompt();});
+  if(u&&!regBusy&&u.uid!==SVC_UID&&!(await checkLinked(u))){if(user!==u)return;lkOk=false;reJoin();const ok=await lkPrompt(false);if(!ok||user!==u)return;}
+  if(u&&user===u&&lkOk===null){lkOk=true}if(u&&user===u)loadPriv();if(u&&user===u&&noProfile)npPrompt();});
 }
