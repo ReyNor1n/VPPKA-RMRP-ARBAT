@@ -1,4 +1,4 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com/firebasejs/ https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' data: blob: https://*.googleapis.com https://www.google.com/recaptcha/ https://api.github.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://vk.com https://vkvideo.ru https://rutube.ru https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://vppca-rmrp.firebaseapp.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"><meta name="referrer" content="strict-origin-when-cross-origin"><style id="afb">html{display:none!important}</style><script src="guard.js?v=230"></script><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>Админ-панель ВППКА</title><link rel="icon" href="img/icons/favicon.ico?v=fav2" sizes="any"><link rel="icon" type="image/png" sizes="120x120" href="img/icons/favicon-120.png?v=fav3"><link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@400;600&family=Oxanium&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css?v=224">
 <style>.wrap{max-width:1000px;margin:auto;padding:24px}.box{background:linear-gradient(180deg,var(--p2),var(--p1));border:1px solid var(--ln);padding:22px;margin:16px 0;clip-path:var(--cut)}
 header{border-bottom:1px solid var(--ln)}.nav{display:flex;align-items:center;height:72px;max-width:1000px;margin:auto;padding:0 24px;position:static;border:0;background:none}.brand{display:flex;gap:12px;align-items:center;color:#fff;font:18px "Russo One"}.brand img{height:46px;filter:drop-shadow(0 0 10px #ff2a3a88)}
@@ -14,47 +14,9 @@ fieldset{border:1px solid var(--ln);margin:10px 0;padding:10px 14px}legend{font:
 <label>Репозиторий (владелец/имя)</label><input id="repo" value="ReyNor1n/VPPKA-RMRP-ARBAT">
 <label>Ветка</label><input id="branch" value="main">
 <label>Личный токен GitHub (fine-grained, права Contents: Read and write только на этот репозиторий)</label><input id="token" type="password">
-<div class="row" style="margin-top:12px"><button class="btn" onclick="login()">Войти</button><button class="btn sm" onclick="offline()">Локальный режим (без публикации, только экспорт файла)</button></div></div>
+<div class="row" style="margin-top:12px"><button class="btn" id="b-login">Войти</button><button class="btn sm" id="b-offline">Локальный режим (без публикации, только экспорт файла)</button></div></div>
 <div id="ed" style="display:none">
-<div class="box row"><button class="btn sm" onclick="publish()">💾 Опубликовать на сайт</button><button class="btn sm" onclick="preview()">👁 Предпросмотр</button><button class="btn sm" onclick="exportJson()">⬇ Скачать content.json</button>
-<label class="btn sm">⬆ Загрузить content.json<input type="file" accept=".json" hidden onchange="importJson(this)"></label><button class="del" onclick="logout()">Выйти</button></div>
+<div class="box row"><button class="btn sm" id="b-publish">💾 Опубликовать на сайт</button><button class="btn sm" id="b-preview">👁 Предпросмотр</button><button class="btn sm" id="b-export">⬇ Скачать content.json</button>
+<label class="btn sm">⬆ Загрузить content.json<input type="file" accept=".json" hidden id="b-import"></label><button class="del" id="b-logout">Выйти</button></div>
 <div class="box tabs" id="tabs"></div><div class="box" id="form"></div></div></div><div id="msg"></div>
-<script>
-const NAMES={site:'Общие настройки и ссылки',home:'Главная',about:'О партии',program:'Программа',charter:'Устав',leadership:'Руководство и состав',news:'Новости',legal:'Правовая база',contacts:'Контакты'};
-const LBL={id:'ID (латиница, не менять)',joined:'Дата вступления',birth:'Возраст / дата рождения (RP)',city:'Город / район',achievements:'Достижения и занимаемые должности',discord:'Discord',forum:'Ссылка на форум',quote:'Цитата',memberId:'ID участника из «Руководство и состав» (если указан — берутся его имя/фото)',trio:'Три лидера в треугольниках: 1 — левый, 2 — центральный, 3 — правый',trioLeft:'Текст в левом треугольнике',trioRight:'Текст в правом треугольнике',trioBottom:'Лозунг под треугольниками',name:'Название / имя',short:'Сокращение',slogan:'Лозунг',motto:'Девиз',ideology:'Идеология',joinUrl:'Ссылка на анкету вступления',server:'Сервер',logo:'Логотип',banner:'Баннер',seal:'Печать',footer:'Текст подвала',heroTitle:'Заголовок',heroText:'Текст',stats:'Цифры',value:'Значение',label:'Подпись',title:'Заголовок',text:'Текст',goals:'Цели',membership:'Членство',date:'Дата',sections:'Разделы',items:'Пункты',note:'Примечание',chapters:'Главы',articles:'Статьи',intro:'Вступление',members:'Члены партии',role:'Должность',group:'Группа (орган)',photo:'Фото',bio:'О себе',contact:'Контакт',image:'Картинка',docs:'Документы',url:'Ссылка',links:'Ссылки'};
-const TPL={trio:{memberId:'',name:'',role:'',photo:''},stats:{value:'',label:''},goals:'',sections:{title:'',items:['']},items:'',chapters:{title:'',articles:[{title:'Статья',text:''}]},articles:{title:'Статья',text:''},members:{id:'m'+Date.now().toString(36),name:'',role:'',group:'Центральный Комитет',photo:'',bio:'',contact:'',joined:'',birth:'',city:'',achievements:'',discord:'',forum:'',quote:''},news:{date:new Date().toISOString().slice(0,10),title:'',image:'',text:''},docs:{title:'',url:'',text:''},links:{title:'',url:''}};
-const IMG=['logo','banner','seal','photo','image'];let C,tab='leadership',G={},OFF=false;
-const $=id=>document.getElementById(id),msg=t=>{$('msg').textContent=t;$('msg').style.display='block';setTimeout(()=>$('msg').style.display='none',4000)};
-const api=(p,o={})=>fetch(`https://api.github.com/repos/${G.repo}/contents/${p}`,{...o,cache:'no-store',headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'}});
-const b64=s=>btoa(unescape(encodeURIComponent(s)));
-async function login(){G={repo:$('repo').value.trim(),branch:$('branch').value.trim()||'main',token:$('token').value.trim()};
- const r=await api('content.json?ref='+G.branch);if(!r.ok)return msg('Ошибка доступа: проверьте репозиторий и токен');
- const j=await r.json();G.sha=j.sha;C=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));localStorage.setItem('vppka_gh',JSON.stringify({repo:G.repo,branch:G.branch,token:G.token}));start();}
-async function offline(){OFF=true;C=JSON.parse(localStorage.getItem('vppka_draft')||'null')||await (await fetch('content.json?'+Date.now())).json();start();}
-function logout(){localStorage.removeItem('vppka_gh');location.reload();}
-function start(){$('login').style.display='none';$('ed').style.display='block';render();}
-function render(){$('tabs').innerHTML=Object.keys(NAMES).map(k=>`<button class="btn sm" style="${k==tab?'':'background:transparent;color:var(--cy)!important;outline:1px solid var(--cy)'}" onclick="tab='${k}';render()">${NAMES[k]}</button>`).join('');
- $('form').innerHTML='';$('form').append(field(C,tab,NAMES[tab]));}
-function save(){localStorage.setItem('vppka_draft',JSON.stringify(C));}
-function field(obj,key,label){const v=obj[key];
- if(Array.isArray(v)){const fs=document.createElement('fieldset');fs.innerHTML=`<legend>${label}</legend>`;
-  v.forEach((it,i)=>{const w=document.createElement('div');w.style.borderBottom='1px dashed #dcb';w.append(field(v,i,(typeof it=='object'?(it.name||it.title||'Элемент'):'Пункт')+' #'+(i+1)));
-   const r=document.createElement('div');r.className='row';
-   [['↑',()=>{if(i){[v[i-1],v[i]]=[v[i],v[i-1]]}}],['↓',()=>{if(i<v.length-1){[v[i+1],v[i]]=[v[i],v[i+1]]}}],['Удалить',()=>{if(confirm('Удалить?'))v.splice(i,1)}]].forEach(([t,f])=>{const b=document.createElement('button');b.className='del';b.textContent=t;b.onclick=()=>{f();save();render()};r.append(b)});w.append(r);fs.append(w)});
-  const a=document.createElement('button');a.className='add';a.textContent='+ Добавить';a.onclick=()=>{v.push(structuredClone(TPL[key]??(typeof v[0]=='object'?Object.fromEntries(Object.keys(v[0]).map(k=>[k,''])):'')));save();render()};fs.append(a);return fs;}
- if(v&&typeof v=='object'){const fs=document.createElement('fieldset');fs.innerHTML=`<legend>${label}</legend>`;Object.keys(v).forEach(k=>fs.append(field(v,k,LBL[k]||k)));return fs;}
- const w=document.createElement('div');w.innerHTML=`<label>${label}</label>`;const long=String(v).length>80||key=='text'||key=='bio'||key=='achievements';
- const inp=document.createElement(long?'textarea':'input');inp.value=v??'';if(long)inp.rows=Math.min(20,String(v).split('\n').length+2);inp.oninput=()=>{obj[key]=inp.value;save()};w.append(inp);
- if(IMG.includes(key)){const im=document.createElement('img');im.className='thumb';im.src=v||'';const f=document.createElement('input');f.type='file';f.accept='image/*';
-  f.onchange=async()=>{const file=f.files[0];if(!file)return;const data=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file)});
-   if(!OFF){const path='img/uploads/'+Date.now()+'-'+file.name.replace(/[^\w.-]/g,'_');const r=await api(path,{method:'PUT',body:JSON.stringify({message:'Upload '+path,content:data.split(',')[1],branch:G.branch})});if(!r.ok)return msg('Не удалось загрузить картинку');obj[key]=path;}
-   else obj[key]=data;inp.value=obj[key].slice(0,80);im.src=data;save();msg('Картинка добавлена')};w.append(f,im);}
- return w;}
-async function publish(){if(OFF)return msg('Локальный режим: скачайте content.json и загрузите его в репозиторий вручную');
- const cur=await (await api('content.json?ref='+G.branch)).json();if(G.sha&&cur.sha!==G.sha&&!confirm('Файл content.json на сайте изменился после вашего входа (другая вкладка или обновление сайта). Опубликовать ваши данные поверх? Рекомендуется «Отмена», затем выйти и войти заново.'))return;const r=await api('content.json',{method:'PUT',body:JSON.stringify({message:'Обновление контента через админку',content:b64(JSON.stringify(C,null,1)),sha:cur.sha,branch:G.branch})});
- if(r.ok)return msg('Опубликовано! Сайт обновится через 1–2 минуты');let t='';try{t=(await r.json()).message||''}catch(e){};msg('Ошибка публикации ('+r.status+'): '+({401:'токен неверный или истёк',403:'у токена нет права Contents: Read and write',404:'токен не имеет доступа к репозиторию ReyNor1n/VPPKA-RMRP-ARBAT',409:'конфликт версий, нажмите ещё раз',422:'GitHub отклонил данные'}[r.status]||t));}
-function preview(){localStorage.setItem('vppka_preview',JSON.stringify(C));window.open('index.html?preview=1','_blank');}
-function exportJson(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(C,null,1)],{type:'application/json'}));a.download='content.json';a.click();}
-function importJson(i){const fr=new FileReader();fr.onload=()=>{C=JSON.parse(fr.result);save();render();msg('Загружено')};fr.readAsText(i.files[0]);}
-const s=JSON.parse(localStorage.getItem('vppka_gh')||'null');if(s){$('repo').value=s.repo;$('branch').value=s.branch;$('token').value=s.token;}
-</script></body></html>
+<script src="admin-page.js?v=230"></script></body></html>

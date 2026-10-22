@@ -151,21 +151,27 @@ service cloud.firestore {
     }
 
     // ---------- ключи доступа: id = sha256(ключ) hex; ключ привязан к одному discordId ----------
+    // v230: выпуск и отзыв ключей — только ступень 7+ (владелец = 9) из раздела «Ключи доступа» админ-панели.
+    // Сам ключ не хранится: id = sha256(ключ). Новый ключ — только новый документ (createdBy = uid, createdAt = время сервера);
+    // изменить существующий можно только отозвать/вернуть (revoked, revokedAt) и подпись. Чтение по хэшу (вход по ключу) — как раньше.
     match /accessKeys/{h} {
       allow get: if signedIn();                 // нужно знать хэш, т.е. сам ключ
-      allow list: if myRank() >= 100;           // перечислять может только управляющий ключами
-      allow create, update: if myRank() >= 100 && isHash(h)
+      allow list: if myTier() >= 7;             // список (без ключей) — раздел «Ключи доступа»
+      allow create: if myTier() >= 7 && isHash(h)
         && request.resource.data.keys().hasOnly(['rank','roleName','discordId','label','createdBy','createdAt','revoked','revokedAt','canEditChairman','canViewMembers','tier'])
-        && (!('tier' in request.resource.data) || (request.resource.data.tier is int && request.resource.data.tier >= 0 && request.resource.data.tier <= 9))
+        && request.resource.data.tier is int && request.resource.data.tier >= 0 && request.resource.data.tier <= myTier()
         && (!('canEditChairman' in request.resource.data) || request.resource.data.canEditChairman is bool)
         && (!('canViewMembers' in request.resource.data) || request.resource.data.canViewMembers is bool)
-        && (!('revoked' in request.resource.data) || request.resource.data.revoked is bool)
-        && reqStr(request.resource.data, 'discordId', 64)
+        && request.resource.data.get('revoked', false) == false
+        && request.resource.data.discordId is string && request.resource.data.discordId.matches('^[0-9]{15,21}$')
         && request.resource.data.rank is int && request.resource.data.rank >= 1
         && request.resource.data.rank < myRank()
-        && reqStr(request.resource.data, 'roleName', 60) && optStr(request.resource.data, 'label', 100)
-        && (resource == null || resource.data.rank < myRank());
-      allow delete: if myRank() >= 100 && resource.data.rank < myRank();
+        && request.resource.data.createdBy == request.auth.uid && request.resource.data.createdAt == request.time
+        && reqStr(request.resource.data, 'roleName', 60) && optStr(request.resource.data, 'label', 100);
+      allow update: if myTier() >= 7 && resource.data.rank < myRank()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revoked','revokedAt','label'])
+        && request.resource.data.get('revoked', false) is bool && optStr(request.resource.data, 'label', 100);
+      allow delete: if myTier() >= 7 && resource.data.rank < myRank();
     }
 
     // ---------- служебное: owners и вебхуки только из консоли; список должностей пишут назначающие ----------
@@ -934,13 +940,28 @@ service cloud.firestore {
       return d.keys().hasOnly(['d','by','at']) && d.by == request.auth.uid && d.at == request.time
         && d.d is string && d.d.size() <= max && d.d.matches('^data:image/(jpeg|png|webp|gif);base64,.*');
     }
+    // v230: загрузивший может удалить своё фото (by == uid); владелец и бот — любое. Неиспользуемые фото старше часа удаляет бот.
+    // Счётчик загрузок phq/{uid} = {at, n, last}: не больше 20 за 10 минут; сайт v230 пишет его тем же пакетом, что и фото.
     match /photos/{id} {
       allow get: if true;
       allow create: if linked() && id.matches('^[A-Za-z0-9]{20}$') && photoOk(request.resource.data, 900000);
+      allow delete: if signedIn() && resource.data.get('by', '') == request.auth.uid;
     }
     match /photoThumbs/{id} {
       allow get: if true;
       allow create: if linked() && id.matches('^[A-Za-z0-9]{20}$') && photoOk(request.resource.data, 160000);
+      allow delete: if signedIn() && resource.data.get('by', '') == request.auth.uid;
+    }
+    function phqOk(d) {
+      return d.keys().hasOnly(['at','n','last']) && d.n is int && d.last is string && d.last.matches('^[A-Za-z0-9]{20}$');
+    }
+    match /phq/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid && phqOk(request.resource.data)
+        && request.resource.data.at == request.time && request.resource.data.n == 1;
+      allow update: if signedIn() && request.auth.uid == uid && phqOk(request.resource.data)
+        && ((resource.data.at < request.time - duration.value(10, 'm') && request.resource.data.at == request.time && request.resource.data.n == 1)
+          || (request.resource.data.at == resource.data.at && request.resource.data.n == resource.data.n + 1 && request.resource.data.n <= 20));
     }
     // Пишут только бот (сервисный аккаунт, копия users/{uid}/priv/p.passport) и владелец (общее правило isSuper).
     // Сам priv/p (там же дата рождения) по-прежнему закрыт.
