@@ -1,6 +1,7 @@
 :root{--bg:#07080b;--p1:#0e1117;--p2:#141821;--tx:#dfe6ee;--mut:#8792a2;--ln:#232a36;--red:#ff2a3a;--cy:#38e1ff;--gold:#d8b45a;--cut:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px)}
 *{box-sizing:border-box}
-body{margin:0;color:var(--tx);font:16px/1.65 "Exo 2",sans-serif;background:var(--bg);background-image:linear-gradient(#ffffff06 1px,transparent 1px),linear-gradient(90deg,#ffffff06 1px,transparent 1px);background-size:40px 40px}
+/* v240: approved classic Soviet star is the page backdrop; flat scrim keeps type readable without hiding the art */
+body{margin:0;color:var(--tx);font:16px/1.65 "Exo 2",sans-serif;background-color:var(--bg);background-image:linear-gradient(rgba(7,8,11,.18),rgba(7,8,11,.18)),url("img/bg-soviet-star.jpg");background-repeat:no-repeat;background-position:center center;background-size:cover;background-attachment:fixed}
 body:after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(transparent 0 2px,#00000022 2px 3px);z-index:0}
 /* content above global CRT; local scanlines on panels restore techno look */
 .util,.hd,.nav,main,footer{position:relative;z-index:1}
@@ -109,7 +110,7 @@ footer a{display:block;color:var(--mut);margin:4px 0}footer a:hover{color:#fff}f
 .kp-chk{display:flex;gap:8px;align-items:center}
 /* v27 mobile layout (<=768px) */
 @media(max-width:768px){
-html,body{overflow-x:hidden}body{font-size:16px;background-size:28px 28px}body:after,.blk:after,.card:after{display:none}
+html,body{overflow-x:hidden}body{font-size:16px;background-position:left center;background-size:cover;background-repeat:no-repeat;background-attachment:fixed}body:after,.blk:after,.card:after{display:none}
 .w{padding:0 14px}.util{display:none}
 .hd{position:sticky;top:0;z-index:40;background:#07080bf2;border-bottom:1px solid var(--ln);box-shadow:0 1px 0 #ff2a3a55}
 .hd .w{height:60px;padding-top:0;padding-bottom:0;gap:10px}.hd img{height:38px;filter:none}
