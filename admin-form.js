@@ -386,7 +386,7 @@ export function validate(kind,data,ctx={}){
   if(d.date&&!/^\d{4}-\d{2}-\d{2}$/.test(d.date))push(errs,['date'],'Дата новости: ГГГГ-ММ-ДД.');
   if(Array.isArray(d.photos)&&d.photos.length>4)push(errs,['photos'],'Не больше 4 фото.');
   if(Array.isArray(d.videos)&&d.videos.length>5)push(errs,['videos'],'Не больше 5 видео.');
-  // v227: ссылки в новостях — только обычные https:// (свои фото: ph:<id>, data:image/…, img/…)
+  // ссылки в новостях — только обычные https:// (свои фото: ph:<id>, data:image/…, img/…)
   if(d.image&&!mediaOk(d.image))push(errs,['image'],'Главное фото: ссылка должна начинаться с https:// (или загрузите файл). javascript:, data:, http: и т. п. не допускаются.');
   (Array.isArray(d.photos)?d.photos:[]).forEach((u,i)=>{if(!mediaOk(u))push(errs,['photos',i],'Фото '+(i+1)+': ссылка должна начинаться с https:// (или загрузите файл). javascript:, data:, http: и т. п. не допускаются.')});
   (Array.isArray(d.videos)?d.videos:[]).forEach((u,i)=>{if(!httpsOk(u))push(errs,['videos',i],'Видео '+(i+1)+': ссылка должна начинаться с https://. javascript:, data:, http: и т. п. не допускаются.');else if(u.length>300)push(errs,['videos',i],'Видео '+(i+1)+': ссылка длиннее 300 символов.')});

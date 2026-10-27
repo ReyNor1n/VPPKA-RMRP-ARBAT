@@ -27,11 +27,11 @@ function panelHtml(){const A=canApps(),s1=seen('n');
  if(tab==='a'&&A)return tabs+`<div class="nb-l">${apps.map(a=>{const x=a.answers||{};return `<a class="nb-it" href="#apps" data-app="${esc(a.id)}"><span class="nb-av">${a.photo?`<img ${PHA(a.photo,'t')} alt="">`:esc((x.fio||'?')[0])}</span><span class="nb-tx"><b>${esc(x.fio||'Без имени')}</b><small>Заявка · ${fdt(a.createdAt)}${a.source==='discord'?' · из Discord':''}</small><span class="nb-acts"><button class="btn sm" data-acc="${esc(a.id)}">Принять</button> <button class="btn sm o" data-rej="${esc(a.id)}">Отклонить</button></span></span></a>`}).join('')||'<p class="nb-e">Новых заявок нет.</p>'}</div>`;
  const form=canPost()?`<details class="nb-f"><summary>+ Созыв / объявление</summary><select id="nb-ty"><option value="convocation">Созыв (съезд, заседание)</option><option value="other">Объявление</option></select><input id="nb-ti" maxlength="200" placeholder="Заголовок"><input id="nb-wh" maxlength="100" placeholder="Когда (напр. 20.10, 19:00)"><textarea id="nb-tx" maxlength="2000" rows="2" placeholder="Текст (необязательно)"></textarea><div id="nb-dt"></div><button class="btn sm" id="nb-send">Отправить всем</button><small id="nb-er" class="aerr"></small></details>`:'';
  return tabs+form+`<div class="nb-l">${items().map(x=>`<${x.href?`a href="${x.href}"`:'div'} class="nb-it${x.t>s1?' new':''}"><span class="nb-tg nb-${x.cancelled?'cancel':x.type}">${x.cancelled?'Отменён':(TYPES[x.type]||'Объявление')}</span><span class="nb-tx"><b class="${x.cancelled?'nb-strike':''}">${esc(x.title)}</b>${x.cancelled?`<small class="nb-cr">❌ Созыв отменён${x.reason?': '+esc(x.reason):''}</small>`:''}${x.when?`<small>Когда: ${esc(x.when)}</small>`:''}${x.text?`<small>${esc(x.text)}</small>`:''}<small>${fdt(x.t?{seconds:x.t/1000}:null)}</small>${x.type==='convocation'&&!x.cancelled&&canPost()?`<button class="btn sm o nb-cx" data-cancel="${esc(x.id)}">Отменить</button>`:''}</span></${x.href?'a':'div'}>`).join('')||'<p class="nb-e">Уведомлений пока нет.</p>'}</div>`}
-// v212: «Куда отправить в Discord» — своя строка владельца, отправляет бот (discord-targets.js); выбор живёт между перерисовками
-const DT={v:''};const TG=()=>import('./discord-targets.js?v=222');
+// «Куда отправить в Discord» — своя строка владельца, отправляет бот (discord-targets.js); выбор живёт между перерисовками
+const DT={v:''};const TG=()=>import('./discord-targets.js?v=241');
 function fillDT(){const h=document.getElementById('nb-dt');if(!h||!canPost())return;TG().then(m=>m.fillTarget('nb-dt','nb-dtsel','notices',DT.v)).catch(()=>{})}
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='nb-dtsel')DT.v=e.target.value});
-// v222: созывы и объявления «как обычно» тоже отправляет бот (discordOut, канал b_notices): вебхуки config/discord видит только владелец.
+// созывы и объявления «как обычно» тоже отправляет бот (discordOut, канал b_notices): вебхуки config/discord видит только владелец.
 // Текст, автор (должность) и упоминание роли — в боте (outbox.build), как раньше делал сайт.
 async function cancelConv(id){const n=notes.find(x=>x.id===id);if(!n||!confirm(`Отменить созыв «${n.title}»?`))return;
  const reason=(prompt('Причина отмены (необязательно):','')||'').trim().slice(0,500);
@@ -60,7 +60,7 @@ function paint(){const b=el();if(!b)return;b.style.display=uid?'':'none';if(!uid
 function stop(){unsub.forEach(f=>{try{f()}catch(e){}});unsub=[];news=[];notes=[];apps=[]}
 function start(){const f=F(),d=db();
  unsub.push(f.onSnapshot(f.query(f.collection(d,'news'),f.orderBy('createdAt','desc'),f.limit(20)),s=>{news=s.docs.map(x=>({...x.data(),id:x.id}));if(open)markTab();paint()},e=>console.warn('notif news',e.code)));
- // v223: личные уведомления (назначение/снятие) по правилам читает только адресат — два запроса: общие типы и свои (to = мой Discord ID).
+ // личные уведомления (назначение/снятие) по правилам читает только адресат — два запроса: общие типы и свои (to = мой Discord ID).
  // Без orderBy (не нужен составной индекс): документов немного, сортировка и обрезка — на клиенте.
  const NP={pub:[],own:[]};const setN=()=>{const m=new Map();[...NP.pub,...NP.own].forEach(x=>m.set(x.id,x));notes=[...m.values()].sort((a,b)=>ms(b.createdAt)-ms(a.createdAt)).slice(0,30);if(open&&tab==='n')markTab();paint()};
  unsub.push(f.onSnapshot(f.query(f.collection(d,'notifications'),f.where('type','in',['news','convocation','other'])),s=>{NP.pub=s.docs.map(x=>({...x.data(),id:x.id}));setN()},e=>console.warn('notif notes',e.code)));

@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey } from './firebase-config.js?v=228';
+import { firebaseConfig, appCheckSiteKey } from './firebase-config.js?v=241';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -14,25 +14,23 @@ let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  const ERR={'auth/invalid-credential':'Неверный Discord или пароль. Если аккаунт создан ботом после вступления через Discord и пароль вы ещё не добавляли — нажмите «Войти через Discord».','auth/wrong-password':'Неверный пароль. Если аккаунт создан ботом после вступления через Discord и пароль вы ещё не добавляли — нажмите «Войти через Discord».','auth/user-not-found':'Пользователь с таким Discord не зарегистрирован.','auth/email-already-in-use':'Аккаунт с этим Discord уже есть — войдите через Discord (кнопка «Войти через Discord» на странице входа).','auth/weak-password':'Пароль слишком простой (минимум 8 символов, буквы и цифры).','auth/too-many-requests':'Слишком много попыток. Попробуйте позже.','auth/network-request-failed':'Нет соединения с сервером.','permission-denied':'Нет доступа к профилю.'};
  ERR['auth/password-does-not-meet-requirements']='Пароль слишком простой: минимум 8 символов, буквы и цифры.';
  const em=e=>ERR[e.code]||('Ошибка: '+(e.code||e.message));
- // v223: политика паролей (как в Firebase Auth): не короче 8 символов, есть буква и цифра
+ // Пароль: от 8 символов, буква и цифра (как в Firebase Auth).
  const hasPw=u=>!!u&&(u.providerData||[]).some(x=>x.providerId==='password');
  const pwBad=p=>p.length<8?'Пароль должен быть не короче 8 символов.':!/[0-9]/.test(p)?'Добавьте в пароль хотя бы одну цифру.':!/[A-Za-zА-Яа-яЁё]/.test(p)?'Добавьте в пароль хотя бы одну букву.':'';
  // discord.com/users/<id> | discordapp.com/users/<id> | @username | username
  function did(raw){const s=String(raw||'').trim();let m=s.match(/^(?:https?:\/\/)?(?:(?:www|ptb|canary)\.)?(?:discord(?:app)?\.com)\/users\/(\d{15,21})\/?(?:[?#].*)?$/i)||s.match(/^<@!?(\d{15,21})>$/)||s.match(/^(\d{15,21})$/);if(m)return m[1];
   m=s.replace(/^@/,'').toLowerCase();if(/^(?!.*\.\.)[a-z0-9_.]{2,32}$/.test(m))return m;return null;}
  const mail=id=>`${id}@vppka.local`;
- // v223: вход через Discord OAuth2 (oauthReq) удалён — он был выключен; вход через Discord — только кодом из ЛС бота (loginRequests).
+ // Вход через Discord — только кодом из личных сообщений бота (loginRequests).
  const DCL={invite:'https://discord.gg/AMx3X6w8KJ'};
  const rnd=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>b.toString(16).padStart(2,'0')).join('');
  const DC_SVG='<svg viewBox="0 0 127.14 96.36" width="22" height="17" aria-hidden="true"><path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg>';
- // v213: вход через Discord без пароля — запрос loginRequests/{128-битный id}; v223: бот шлёт код в ЛС, его вводят на сайте (см. dlStart).
- // v216: условия для входа/регистрации через Discord. Текст — content/site (поля dcRegTerms / dcLoginTerms, по строке на пункт; правит владелец в админке), иначе по умолчанию.
+ // Условия входа и регистрации через Discord: поля site.dcLoginTerms / dcRegTerms, иначе текст ниже.
  const DC_TERMS={reg:'Состоять на Discord-сервере партии — бот проверит это перед отправкой кода.\nРазрешить личные сообщения от участников сервера — туда придёт код подтверждения.\nУказать реальные ФИО и номер паспорта своего персонажа RMRP «Арбат».\nЗагрузить фото своего персонажа из игры.\nОдин аккаунт на человека.',login:'Состоять на Discord-сервере партии.\nРазрешить личные сообщения от участников сервера.'};
  const dcTerms=k=>{const site=(window.VPPKA_C&&window.VPPKA_C()||{}).site||{};const t=String(site[k==='reg'?'dcRegTerms':'dcLoginTerms']||DC_TERMS[k]).split('\n').map(x=>x.trim()).filter(Boolean);return `<div class="dcl-terms"><b>${k==='reg'?'Условия регистрации через Discord':'Для входа через Discord нужно'}:</b><ul>${t.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${DCL.invite?`<p class="amut">Сервер партии: <a href="${esc(DCL.invite)}" target="_blank" rel="noopener">${esc(DCL.invite.replace(/^https?:\/\//,''))}</a></p>`:''}</div>`};
  const DL_MSG={noacc:'Аккаунт с этим Discord не найден. <a href="#register/discord">Сначала зарегистрируйтесь</a>.',exists:'У вас уже есть аккаунт — <a href="#login">войдите</a> (через Discord или по паролю).',notmember:`Вы не состоите на Discord-сервере партии. ${DCL.invite?`<a href="${esc(DCL.invite)}" target="_blank" rel="noopener">Вступите на сервер</a> и повторите.`:'Вступите на сервер и повторите.'}`,denied:'Вход отклонён в Discord («Это не я»).',dm_failed:'Бот не смог написать вам в личные сообщения. Проверьте, что вы на сервере ВППКА и личные сообщения от участников сервера разрешены.',rate:'Слишком много запросов входа. Подождите пару минут.',expired:'Запрос устарел. Нажмите «Войти через Discord» ещё раз.',timeout:'Время вышло — нажмите «Войти через Discord» ещё раз.',bad:'Некорректный запрос.',bad_req:'Некорректный запрос.',pwonly:'Вход по старой кнопке для этого аккаунта отключён. Обновите страницу (Ctrl+F5) и войдите через Discord ещё раз — или по паролю.',locked:'Неверный код введён 5 раз. Нажмите «Войти через Discord» ещё раз.',update:'Обновите страницу (Ctrl+F5) и повторите вход.'};
-// v223: вход/регистрация через Discord — обратный код. Сайт кладёт loginRequests/{128-битный id} без кода; бот шлёт 6 цифр в ЛС
-// (status 'sent'); человек вводит их здесь (status 'check' + code); бот сверяет (5 попыток, 5 минут) и пишет одноразовый custom token.
-// Кнопки «Подтвердить вход» больше нет: чужой Discord без кода из его ЛС не войдёт. v229: по коду из ЛС входят все, включая владельца и ступень 5+ (пароль тоже работает); 'pwonly' бот шлёт только на старые кнопки v222.
+// Код из ЛС: сайт создаёт loginRequests/{id} без кода, бот присылает 6 цифр, человек вводит их
+// (5 попыток, 5 минут), бот отдаёт одноразовый токен. Без кода из своих ЛС войти нельзя.
 let dlRef=null,pwSug=false;
 async function dlStart(d,kind){const reg=kind==='reg';const box0=()=>document.getElementById('dl-box');const say=(h,bad)=>{const b=box0();if(b){b.hidden=false;b.className='dl-box'+(bad?' bad':'');b.innerHTML=h}};
   const id=rnd(16),ref=F.doc(db,'loginRequests',id);dlRef=ref;
@@ -109,12 +107,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.i
    const d={fio,birth,passport:pass};const del=F.deleteField();const u={fio:fio||del};if(p0.birth)u.birth=del;if(p0.passport)u.passport=del;const pd={};if(birth)pd.birth=birth;if(pass)pd.passport=pass;try{await F.setDoc(F.doc(db,'users',user.uid,'priv','p'),pd);priv=pd;}catch(e){return ce('Не удалось сохранить личные данные: '+(e.code==='permission-denied'?'нет прав (нужно опубликовать правила базы).':(e.code||e.message)))}
    try{ev.target.disabled=true;await F.updateDoc(F.doc(db,'users',user.uid),u);profile={...(profile||{}),fio};delete profile.birth;delete profile.passport;ce('Сохранено.');F.setDoc(F.doc(db,'syncReq',user.uid),{t:F.serverTimestamp()}).catch(e=>console.warn('syncReq',e.code||e));setTimeout(()=>{window.route();window.VPPKA_SETOPEN()},300)}catch(e){ev.target.disabled=false;ce('Не удалось: '+(e.code==='permission-denied'?'нет прав (нужно опубликовать правила базы).':(e.code||e.message)))}return}
   if(id==='ab-go'){const ae=t=>{const e=document.getElementById('ab-e');if(e){e.style.color='';e.textContent=t}};if(!user||!profile)return ae('Подключение к серверу… попробуйте через секунду.');
-   // v224 «О себе»: users/{uid}.about (своё) + bio всех своих карточек members (правило selfBioOk: только bio, до 1500). Бот догоняет новые карточки.
+   // «О себе»: users/{uid}.about (своё) + bio всех своих карточек members (правило selfBioOk: только bio, до 1500). Бот догоняет новые карточки.
    const t=v('c-about').replace(/\r\n?/g,'\n').trim();if(t.length>ABOUT_MAX)return ae(`Не более ${ABOUT_MAX} символов.`);ev.target.disabled=true;
    try{await F.updateDoc(F.doc(db,'users',user.uid),{about:t});profile={...profile,about:t};}catch(e){ev.target.disabled=false;return ae('Не удалось сохранить: '+(e.code==='permission-denied'?'нет прав.':(e.code||e.message)))}
    let bad=0;if(profile.discordId){try{const s=await F.getDocs(F.query(F.collection(db,'members'),F.where('discordId','==',profile.discordId)));for(const d of s.docs){const m=d.data();if(!m.name||/^вакансия$/i.test(String(m.name).trim())||(m.bio||'')===t)continue;try{await F.updateDoc(d.ref,{bio:t,updatedBy:user.uid,updatedAt:F.serverTimestamp()})}catch(e){bad++;console.warn('о себе',d.id,e.code||e)}}}catch(e){bad++;console.warn('о себе',e.code||e)}}
    ev.target.disabled=false;ae(bad?'Сохранено. На карточке обновится в течение пары минут.':'Сохранено.');const el=document.getElementById('ab-e');if(el)el.style.color='var(--gold)';if(window.VPPKA_RELOAD)window.VPPKA_RELOAD().then(()=>window.VPPKA_SETOPEN&&window.VPPKA_SETOPEN());return}
-  // v233: аккаунт без пароля (создан ботом после вступления через Discord) — пароль добавляет сам владелец, только после свежего входа.
+  // аккаунт без пароля (создан ботом после вступления через Discord) — пароль добавляет сам владелец, только после свежего входа.
   if(id==='pa-go'){const pe=(t,ok)=>{const e=document.getElementById('pa-e');if(e){e.style.color=ok?'var(--gold)':'';e.textContent=t}};
    if(!auth||!user)return pe('Подключение к серверу… попробуйте через секунду.');const u=auth.currentUser;if(!u||hasPw(u))return pe('Пароль уже есть — используйте «Сменить пароль».');
    const n=v('pa-n'),n2=v('pa-n2');if(pwBad(n))return pe(pwBad(n));if(n!==n2)return pe('Пароли не совпадают.');
@@ -139,7 +137,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.i
    if(!dc){if(pwBad(p))return err(pwBad(p));if(p!==v('r-p2'))return err('Пароли не совпадают.');}const fioR=normFio(v('r-n'));if(!fioR)return err(FIO_ERR);const ppv=normPP(v('r-pp'));if(!ppv)return err('Укажите номер паспорта (статик) — 6 цифр в формате 000-000, например 869-753.');if(!(document.getElementById('r-ph')||{}).files?.[0])return err('Загрузите фото персонажа из игры — это обязательно.');
    ev.target.disabled=true;const ph=await photoData((document.getElementById('r-ph')||{}).files?.[0]).catch(e=>{err(e.message);return null});if(!ph){if(ph==='')err('Загрузите фото персонажа из игры — это обязательно.');ev.target.disabled=false;return;}
    regPP=ppv;regBusy=true;let c;if(dc){const ok=await dlStart(d,'reg');if(!ok||!auth.currentUser){regBusy=false;regPP='';ev.target.disabled=false;return;}c={user:auth.currentUser};}else{c=await A.createUserWithEmailAndPassword(auth,mail(d),p);
-    // v222: аккаунт должен быть привязан к Discord — код из ЛС бота до создания профиля (правила фазы 2 без привязки профиль не примут)
+    // аккаунт должен быть привязан к Discord — код из ЛС бота до создания профиля (правила фазы 2 без привязки профиль не примут)
     if(!(await checkLinked(c.user))&&!(await lkPrompt(true))){regBusy=false;regPP='';ev.target.disabled=false;return;}}let ppmsg='';try{const pr=F.doc(db,'users',c.user.uid,'priv','p');const ex=await F.getDoc(pr).catch(()=>null);if(!(ex&&ex.exists()&&ex.data().passport))await F.setDoc(pr,{passport:ppv},{merge:true});priv={...((ex&&ex.exists()&&ex.data())||{}),passport:(ex&&ex.exists()&&ex.data().passport)||ppv};privT=1;}catch(e){console.warn('статик',e.code||e);ppmsg='Номер паспорта не сохранён — укажите его в кабинете.';}
    profile={discordLink:raw.slice(0,200),discordId:d,displayName:fioR.slice(0,40),fio:fioR,createdAt:F.serverTimestamp()};if(ph)profile.photo=await window.VPPKA_PH.up(ph,c.user.uid);
    let kmsg=ppmsg;const kk=v('r-k').trim();if(kk){const r=await checkKey(kk,d);if(r.ok)Object.assign(profile,{keyHash:r.h,rank:r.rank,roleName:r.roleName});else kmsg='Ключ не принят: '+r.msg;}
@@ -163,9 +161,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.i
  document.addEventListener('change',async ev=>{const t=ev.target;if(!['r-ph','p-ph','p-av','p-ld'].includes(t.id))return;const nm=document.getElementById(t.id+'-nm');if(nm)nm.textContent=t.files[0]?.name||'Файл не выбран';const pv=document.getElementById(t.id+'-pv');try{const u=await photoData(t.files[0]);if(pv&&u){pv.removeAttribute('data-ph');pv.src=u;pv.hidden=false;}}catch(e){err(e.message)}});
  paintAuth();
  if(['login','register','account'].includes(location.hash.slice(1)))route();
- // v228: App Check (reCAPTCHA Enterprise). Модуль грузится вместе с остальными, инициализация — сразу после initializeApp и ДО getAuth/getFirestore,
-// поэтому все запросы к Auth и Firestore (вход, регистрация, кабинет, панель, чат и т. д. — всё идёт через этот app) несут токен App Check.
-// На localhost/127.0.0.1 выключен (эмулятор и локальная отладка: ключ разрешён только для vppka-arbat-rmrp.ru).
+ // App Check (reCAPTCHA Enterprise): сразу после initializeApp и до getAuth/getFirestore, чтобы запросы несли токен.
+// На localhost и 127.0.0.1 выключен — ключ разрешён только для vppka-arbat-rmrp.ru.
 const acOn=!!appCheckSiteKey&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
  const [{initializeApp},A_,F_,AC]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js'),acOn?import(B+'firebase-app-check.js').catch(e=>{console.warn('App Check',e);return null}):null]);
  A=A_;F=F_;const app=initializeApp(firebaseConfig);
@@ -183,7 +180,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  let liveMPub=false,mPub=null,mUid='',mUnsub=null,RESUBM=null;
  const memDocs=()=>liveM.docs.map(d=>{const o=fixD({...d.data(),id:d.id});if(liveMPub){delete o.discord;delete o.discordId;delete o.updatedBy;if(o.pk)o.discordId=o.pk;o._pub=true}delete o.pk;return o});
  window.VPPKA_MEMPUB=()=>liveMPub;
- // v224: публичный статик карточек — pubStatik/{memberId}.s (читают все, пишут бот и владелец). Не смешиваем с members:
+ // публичный статик карточек — pubStatik/{memberId}.s (читают все, пишут бот и владелец). Не смешиваем с members:
  // карточки сохраняются целиком, и лишнее поле statik правила members не примут.
  let liveS={};window.VPPKA_STATIK=id=>liveS[id]||'';
  const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
@@ -194,7 +191,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
  function liveSubs(){let fn=true,fm=true;const ready=()=>{if(!fn&&!fm&&liveRes){toD();const r=liveRes;liveRes=null;r()}};
   F.onSnapshot(F.collection(db,'news'),s=>{if(fn){fn=false;liveN=s;ready();return}s.docChanges().forEach(c=>{if(c.type==='added')liveNew.add(c.doc.id)});liveN=s;liveApply()},e=>{console.warn('live news',e);fn=false;ready()});
-  // v236: Discord видят только члены партии. members (с discordId) читают члены партии/руководство; гостям и беспартийным —
+  // Discord видят только члены партии. members (с discordId) читают члены партии/руководство; гостям и беспартийным —
   // зеркало membersPub без discord/discordId (его пишет бот). pk — псевдо-ID вместо discordId: группировка карточек одного человека.
   const subM=pub=>{if(mUnsub)mUnsub();mPub=pub;mUid=auth.currentUser?auth.currentUser.uid:'';
    mUnsub=F.onSnapshot(F.collection(db,pub?'membersPub':'members'),s=>{liveM=s;liveMPub=pub;if(fm){fm=false;ready();return}liveApply()},
@@ -204,7 +201,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
   F.onSnapshot(F.collection(db,'pubStatik'),s=>{const o={};s.forEach(d=>{const v=d.data().s;if(typeof v==='string'&&/^\d{3}-\d{3}$/.test(v))o[d.id]=v});const ch=JSON.stringify(o)!==JSON.stringify(liveS);liveS=o;if(ch&&!fm)liveApply()},e=>console.warn('live pubStatik',e.code||e));}
  function liveStart(){}
  window.VPPKA_AUTH={get user(){return user},get priv(){return priv},get profile(){return profile},get power(){return power},
- // v232: можно ли подать заявку на вступление: loading (вход ещё проверяется) | guest (не вошёл) | noprofile (профиль не создан) | unlinked (Discord не привязан) | ok
+ // можно ли подать заявку на вступление: loading (вход ещё проверяется) | guest (не вошёл) | noprofile (профиль не создан) | unlinked (Discord не привязан) | ok
  get joinState(){return joinState()},finishReg(){if(user&&!profile)npPrompt()},linkDiscord(){const u=cu();if(u&&lkOk===false)lkPrompt(false)},async submitApplication(answers){if(!user)throw new Error('Чтобы вступить в партию, нужно зарегистрироваться на сайте.');if(!profile)throw new Error('сначала завершите регистрацию на сайте.');if(lkOk===false)throw new Error('сначала привяжите Discord к аккаунту на сайте.');if(window.VPPKA_NEEDST()){throw new Error('сначала укажите номер паспорта (статик) — окно открыто.')}const ref=F.doc(db,'applications',user.uid);
   let ex=null;try{ex=await F.getDoc(ref)}catch(e){}if(ex&&ex.exists()){const st=ex.data().status;if(st==='rejected'||st==='expelled')await F.deleteDoc(ref);else throw new Error(st==='new'?'Ваша заявка уже подана и ждёт рассмотрения.':'Заявка уже рассмотрена.')}
   const d={answers,status:'new',createdAt:F.serverTimestamp(),uid:user.uid};if(profile&&profile.discordId)d.discordId=profile.discordId;await F.setDoc(ref,d);}};
@@ -249,15 +246,15 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  }
 
  async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=238').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=225').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=216').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=216').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=225').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=227').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=234').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=230').then(m=>m.install()).catch(e=>console.error('admin',e));
-// v207: аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=241').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=241').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=241').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=241').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=241').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=241').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=241').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=241').then(m=>m.install()).catch(e=>console.error('admin',e));
+// аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false;
-// v232: authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена
+// authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена
 var authReady=false,lkOk=null;
 var SVC_UID0='ZpVGAXbbg1a9I8kRsNEm0OU8QAt2';
 function joinState(){if(!authReady)return 'loading';if(!user)return 'guest';if(user.uid===SVC_UID0)return 'ok';if(lkOk===false)return 'unlinked';if(!profile)return regBusy?'loading':'noprofile';return 'ok'}
 const reJoin=()=>{if(location.hash.slice(1).split('/')[0]==='join')window.route()};
-// v222 «Аккаунт на сайте должен быть привязан к дискорду». Привязан = вход/регистрация через Discord (claim dv) или
+// «Аккаунт на сайте должен быть привязан к дискорду». Привязан = вход/регистрация через Discord (claim dv) или
 // отметка dvf/{uid}, которую пишет бот после кода из ЛС. Код: сайт пишет linkReq/{uid} {did,status:'pending'} → бот шлёт
 // 6 цифр в ЛС (status 'sent') → сайт пишет {status:'check',code} → бот сверяет (ok | bad + left | locked | expired …).
 // Пока аккаунт не привязан — блокирующее окно «Привяжите Discord» (без «Позже», только «Выйти»).
@@ -299,7 +296,7 @@ document.addEventListener('click',async ev=>{const id=ev.target.id;if(id!=='lk-s
   const pe=t=>{const e=document.getElementById('np-e');if(e)e.textContent=t};const f=normFio((document.getElementById('np-in')||{}).value);if(!f)return pe(FIO_ERR);if(!user)return;const d0=String(user.email||'').split('@')[0];
   ev.target.disabled=true;try{const np={discordId:d0,discordLink:'https://discord.com/users/'+d0,displayName:f.slice(0,40),fio:f,createdAt:F.serverTimestamp()};await F.setDoc(F.doc(db,'users',user.uid),np);profile={...np,createdAt:{toDate:()=>new Date()}};noProfile=false;o?.remove();await refreshPower();paintAuth();window.route();stPrompt(false)}
   catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер не принял профиль (нет прав).':'Не удалось: '+(e.code||e.message))}});
- // v206: статик (паспорт) обязателен. Хранится в users/{uid}/priv/p (как и раньше); не перезаписываем уже записанный (из реестра).
+ // статик (паспорт) обязателен. Хранится в users/{uid}/priv/p (как и раньше); не перезаписываем уже записанный (из реестра).
  const SVC_UID='ZpVGAXbbg1a9I8kRsNEm0OU8QAt2';
  function loadPriv(){if(!user)return;privT=1;const uid=user.uid;F.getDoc(F.doc(db,'users',uid,'priv','p')).then(x=>{if(!user||user.uid!==uid)return;priv=x.exists()?x.data():{};if(regPP&&!priv.passport)priv={...priv,passport:regPP};regPP='';if(location.hash==='#account')window.route();fillJoinPP();stPrompt(false)}).catch(e=>{console.warn('priv',e.code||e)})}
  function fillJoinPP(){const t=document.querySelector('#jf textarea[data-k="passport"]');if(t&&!t.value&&priv&&priv.passport)t.value=priv.passport}
@@ -320,10 +317,10 @@ document.addEventListener('click',async ev=>{const id=ev.target.id;if(id!=='lk-s
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():(regBusy?profile:null);if(!s.exists()&&!regBusy)noProfile=true;else noProfile=false;}catch(e){console.warn(e)}}await refreshPower();authReady=true;if(RESUBM&&user===u)RESUBM(u);
   if(!u&&document.getElementById('lk-ov'))lkFinish(false);
   paintAuth();if(['login','register','account','join','news','leadership','apps','members','party','member','home','admin',''].includes(location.hash.slice(1).split('/')[0]))route();
-  // v222: без привязки Discord — сначала окно «Привяжите Discord» (код из ЛС бота), потом остальное (статик, «Завершите регистрацию»)
+  // без привязки Discord — сначала окно «Привяжите Discord» (код из ЛС бота), потом остальное (статик, «Завершите регистрацию»)
   if(u&&!regBusy&&u.uid!==SVC_UID&&!(await checkLinked(u))){if(user!==u)return;lkOk=false;reJoin();const ok=await lkPrompt(false);if(!ok||user!==u)return;}
   if(u&&user===u&&lkOk===null){lkOk=true}if(u&&user===u)loadPriv();if(u&&user===u&&noProfile)npPrompt();if(u&&user===u&&pwSug){pwSug=false;setTimeout(()=>pwPrompt(u),1200)}});
-  // v233: после входа через Discord (код из ЛС) аккаунту без пароля мягко предлагаем его создать. Не блокирует; «Позже» — не спрашивать 3 дня.
+  // после входа через Discord (код из ЛС) аккаунту без пароля мягко предлагаем его создать. Не блокирует; «Позже» — не спрашивать 3 дня.
   function pwPrompt(u){if(!u||user!==u||hasPw(u)||noProfile||document.querySelector('#pw-ov,#st-ov,#lk-ov,#np-ov'))return;try{if(Date.now()-Number(localStorage.getItem('pw_later_'+u.uid)||0)<3*864e5)return}catch(e){}
    const o=document.createElement('div');o.className='acc-ov';o.id='pw-ov';o.innerHTML=`<div class="acc-md st-md" role="dialog" aria-modal="true" aria-labelledby="pw-h"><h3 id="pw-h">Создайте пароль, чтобы входить и без Discord</h3><p class="amut">Сейчас в ваш аккаунт можно войти только через Discord — кодом из личных сообщений бота. С паролем вы сможете входить по Discord ID и паролю, даже если бот или Discord недоступны.</p><div class="st-act"><button class="btn" id="pw-sg-go" type="button">Создать пароль</button><button class="btn o" id="pw-sg-later" type="button">Позже</button></div></div>`;document.body.appendChild(o)}
   document.addEventListener('click',ev=>{const id=ev.target.id;if(id!=='pw-sg-go'&&id!=='pw-sg-later')return;document.getElementById('pw-ov')?.remove();

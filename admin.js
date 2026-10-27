@@ -1,16 +1,16 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=227';
-import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=216';
-import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=230';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=241';
+import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=241';
+import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=241';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
 const onAdmin=()=>(location.hash.slice(1)||'').split('/')[0]==='admin';
 // «Каналы Discord» (dch) — только владелец: в LITE его нет, поэтому сокращённой панели вкладка не показывается.
 const ALL_TABS=[...CONTENT,...COLS.map(([id,t])=>[id,t]),['dch','Каналы Discord'],['keys','Ключи доступа'],['raw','Коллекция']];
-// v230: «Ключи доступа» — только ступень 7+ (владелец видит всегда; сокращённой панели — если ключ ступени 7).
+// «Ключи доступа» — только ступень 7+ (владелец видит всегда; сокращённой панели — если ключ ступени 7).
 // Сокращённая панель (ступень 5+, не владелец). Права — по firestore.rules: правила остаются единственной защитой, здесь только интерфейс.
 // add — создать, edit — сохранить правку, del — удалить; без edit документ открывается только для просмотра.
 const LITE={
@@ -35,7 +35,7 @@ function viewer(){const did=myDidV(),on=s=>!!did&&seatDidV(s)===did,ra=['m1','m4
 function liteCaps(tab){const c=LITE[tab];if(!c||tab!=='members')return c;const v=viewer();if(!v.ra&&v.tier<=5)return c;
  return {...c,hint:`Можно менять карточки со ступенью ниже ${v.tier} и уровнем ниже 100.`+(v.ra?' Вы назначаете и снимаете людей на руководящих местах и меняете звания членов партии (только из списка званий).':'')+' Технический отдел (m11–m14), m17 и места владельца меняет только владелец.'+` Места m1${v.chair?'':', m4, m5'} меняет только владелец${v.chair?'':' или Председатель ЦК'}.`}}
 // Можно ли сохранить/удалить конкретную карточку состава (как в правилах members: tierUpdOk, seatAssignOk, delete).
-// v222 «только 7 доступ имеет право менять тех отдел»: тех. отдел (m11–m14), m17 и места владельца — только владелец (как в firestore.rules)
+// «только 7 доступ имеет право менять тех отдел»: тех. отдел (m11–m14), m17 и места владельца — только владелец (как в firestore.rules)
 const techLockedA=(id,d)=>['m11','m12','m13','m14','m17'].includes(id)||(d||{}).group==='Технический отдел'||String((d||{}).discordId||'')===OWNER_DID||(d||{}).role==='Начальник технического отдела';
 function memberCaps(id,d){d=d||{};if(superOn())return OWNER_CAPS;const v=viewer(),party=String(id).startsWith('p_')||d.group==='Члены партии';
  if(techLockedA(id,d)||d.role==='Начальник технического отдела'||(d.rank|0)>=100)return {};
@@ -135,7 +135,7 @@ async function loadHist(col,id){try{const f=F();const s=await f.getDoc(f.doc(db(
 async function pushHist(col,id,data){const f=F(),ref=f.doc(db(),'adminHist',histKey(col,id));const snap={at:Date.now(),by:(FB().user&&FB().user.uid)||'',data:clone(data)};if(JSON.stringify(snap).length>800000)return false;let items=[];try{const s=await f.getDoc(ref);if(s.exists()&&Array.isArray(s.data().items))items=s.data().items}catch(e){}items=items.concat([snap]);while(items.length>HIST_N)items.shift();while(items.length>1&&JSON.stringify(items).length>700000)items.shift();await f.setDoc(ref,{col,id:String(id),items});return true}
 async function loadTpls(){try{const f=F();const s=await f.getDoc(f.doc(db(),'config','adminTemplates'));state.tpls=(s.exists()&&s.data().items)||{}}catch(e){state.tpls={}}}
 async function openContent(id){const seq=++state.seq;state.loading=true;state.edit=null;refresh();try{const data=await loadSection(id);if(seq!==state.seq)return;state.edit={col:'content',id,isNew:false,kind:id,data,base:clone(data)};state.hist=await loadHist('content',id);state.dirty=false;state.fieldErr={};state.expert=false;state.loading=false}catch(e){state.loading=false;say(errText(e))}if(seq===state.seq)refresh()}
-async function openList(col){const seq=++state.seq;state.loading=true;state.edit=null;refresh();try{const f=F();const s=await f.getDocs(col==='notifications'&&!superOn()?f.query(f.collection(db(),col),f.where('type','in',['news','convocation','other']),f.limit(120)):f.query(f.collection(db(),col),f.limit(120)));/* v223: личные уведомления видит только адресат (и владелец) */if(seq!==state.seq)return;state.rows=s.docs.map(d=>({id:d.id,data:plain(d.data())}));state.loading=false}catch(e){state.loading=false;state.rows=[];say(errText(e))}if(seq===state.seq)refresh()}
+async function openList(col){const seq=++state.seq;state.loading=true;state.edit=null;refresh();try{const f=F();const s=await f.getDocs(col==='notifications'&&!superOn()?f.query(f.collection(db(),col),f.where('type','in',['news','convocation','other']),f.limit(120)):f.query(f.collection(db(),col),f.limit(120)));/* личные уведомления видит только адресат (и владелец) */if(seq!==state.seq)return;state.rows=s.docs.map(d=>({id:d.id,data:plain(d.data())}));state.loading=false}catch(e){state.loading=false;state.rows=[];say(errText(e))}if(seq===state.seq)refresh()}
 async function openDoc(col,id){const f=F();const s=await f.getDoc(f.doc(db(),col,id));const data=plain(s.exists()?s.data():{});const kind=kindOf(col);state.edit={col,id,isNew:false,kind,data,base:clone(data)};state.hist=await loadHist(col,id);state.dirty=false;state.fieldErr={};state.expert=false;state.msg='';refresh()}
 function newDoc(tplId){const col=state.tab,kind=kindOf(col);const meta=tplId?templateMeta(kind,tplId):null;const data=tplId?templateData(kind,tplId,state.tpls):blank(kind);if(!data)return say('Шаблон не найден.');let id='';const party=!!(meta&&meta.party)||data.group==='Члены партии';if(col==='members')id=party?newPartyId():nextSeatId((state.rows||[]).map(r=>r.id));state.edit={col,id,isNew:true,kind,data,base:null,party};state.hist=[];state.dirty=true;state.fieldErr={};state.expert=false;state.msg='';refresh()}
 function claimKey(name){const s=String(name||'').trim().replace(/\s+/g,' ');if(!s||s.length>100||/[\\/]/.test(s)||s==='.'||s==='..')return '';return s}
@@ -143,7 +143,7 @@ function ldrDoc(id,data){return !!data&&data.group!=='Члены партии'&&
 function ldrDids(list){const s=[],seen=new Set();for(const m of list||[]){if(!ldrDoc(m.id,m)||!m.name||/^Вакансия/i.test(m.name))continue;const d=String(m.discordId||'');if(!/^\d{15,21}$/.test(d)||seen.has(d))continue;seen.add(d);s.push(d)}return s}
 function withMember(id,data,removed){const base=[...(((window.VPPKA_DATA||{}).members)||[])];if(!base.length)return null;const i=base.findIndex(m=>m.id===id);if(removed){if(i>=0)base.splice(i,1);return base}const row={...(i>=0?base[i]:{}),...(data||{}),id};if(i>=0)base[i]=row;else base.push(row);return base}
 function seatList(id,data,removed){const live=withMember(id,data,removed);if(live)return live;if(!state.rows||!state.rows.length)return null;const base=state.rows.map(r=>({...r.data,id:r.id}));if(removed)return base.filter(m=>m.id!==id);const i=base.findIndex(m=>m.id===id);const row={...(i>=0?base[i]:{}),...(data||{}),id};if(i>=0)base[i]=row;else base.push(row);return base}
-// v222: config/ldrSeats пишут только владелец и бот (бот сверяет список с местами раз в минуту)
+// config/ldrSeats пишут только владелец и бот (бот сверяет список с местами раз в минуту)
 async function syncSeats(list){if(!list||!superOn())return;const f=F();if(window.VPPKA_SYNC_SEATS){await window.VPPKA_SYNC_SEATS(list);return}await f.setDoc(f.doc(db(),'config','ldrSeats'),{dids:ldrDids(list)},{merge:true})}
 async function putMember(f,id,data){const ref=f.doc(db(),'members',id);const prev=await f.getDoc(ref);const was=prev.exists()?prev.data():null;const party=x=>!!x&&(x.group==='Члены партии'||String(id).startsWith('p_'));
  if(!prev.exists()&&(data.group==='Члены партии'||String(id).startsWith('p_'))){const key=claimKey(data.name);if(!key||data.group!=='Члены партии'||!String(id).startsWith('p_'))throw new Error('Карточка члена партии: идентификатор p_…, группа «Члены партии» и ФИО без «/».');
@@ -158,7 +158,7 @@ async function removeMember(f,id){const ref=f.doc(db(),'members',id);const prev=
  if(was&&(String(id).startsWith('p_')||was.group==='Члены партии')){const key=claimKey(was.name);const b=f.writeBatch(db());b.delete(ref);if(key){const c=await f.getDoc(f.doc(db(),'memClaim',key));if(c.exists()&&c.data()&&c.data().memberId===id)b.delete(c.ref)}await b.commit();if(window.VPPKA_ARCHIVE_APPS)await window.VPPKA_ARCHIVE_APPS({...was,id})}
  else await f.deleteDoc(ref);return ldrDoc(id,was)}
 function guardDelete(col,id,data){
- if(col==='events')return true; // v221: подтверждение вводом названия — в VPPKA_EV_DEL (events.js)
+ if(col==='events')return true; // подтверждение вводом названия — в VPPKA_EV_DEL (events.js)
  if(col==='members'&&isProtected(id)){const why=id==='m11'?'начальник технического отдела':id==='m1'?'председатель ЦК':'заместитель председателя ЦК';return confirm('Место '+id+' защищено ('+why+'). Удалить его может только владелец. Удалить?')}
  if(col==='members'&&data&&data.role==='Начальник технического отдела')return confirm('Это должность начальника технического отдела. Удалить?');
  return confirm('Удалить '+col+'/'+id+'?');
