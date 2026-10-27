@@ -84,7 +84,7 @@ function msgHtml(){if(!chats[cur.id])return '<p class="ch-empty">Напишит�
  return msgs.map(m=>{const d=m.at?.toDate?.(),day=d?d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):'';const sep=day&&day!==last?`<div class="ch-day">${esc(day)}</div>`:'';last=day||last;
   const who=m.from!==me&&(sep||prev!==m.from)?`<span class="ch-au">${esc(person(m.from,c).n)}</span>`:'';prev=m.from;
   return `${sep}<div class="ch-m${m.from===me?' me':''}"><div class="ch-bb">${who}${esc(m.text).replace(/\n/g,'<br>')}<span class="ch-mt">${esc(ft(m.at))}</span></div></div>`}).join('')}
-// «Написать»: только в профиле участника (v234: с карточек списков убрано) (по discordId → pub)
+// «Написать»: только в профиле участника (с карточек списков убрано) (по discordId → pub)
 const uidByDid=did=>did&&Object.keys(pub).find(u=>pub[u].did===String(did));
 function hookPages(){const P=window.P;if(!P||P.__ch)return;P.__ch=1;const om=P.member;const MEM=()=>(window.VPPKA_DATA&&window.VPPKA_DATA.members)||(window.VPPKA_C&&window.VPPKA_C().leadership.members)||[];
  P.member=(id,from)=>{const h=om(id,from);const m=MEM().find(x=>x.id===id),u=me&&m&&uidByDid(m.discordId);return u&&u!==me?h.replace(/(<div class="prof-r">[\s\S]*?<\/div>)/,`$1<button class="btn ch-write" data-on-click="chat" data-oa="${esc(u)}">✉ Написать</button>`):h};}

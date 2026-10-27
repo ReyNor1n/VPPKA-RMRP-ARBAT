@@ -1,8 +1,6 @@
-// v230: загрузки считаются в phq/{uid} (до 20 за 10 минут); старые фото, на которые больше ничего не ссылается, бот удаляет через час.
-// v225: фото отдельно от карточек. В карточке (members.photo, users.photo/avatar, ldrPhotos.d, avatars.d, news.photos)
-// вместо base64 лежит ссылка «ph:<id>»: полный размер — photos/{id}.d, миниатюра для списков — photoThumbs/{id}.d.
-// Списки берут миниатюру, когда картинка подъезжает к экрану; профиль — полный размер только при открытии.
-// Старые base64 и обычные ссылки (img/…, https://…) показываются как раньше.
+// Фото отдельно от карточек: в поле лежит «ph:<id>», полный размер — photos/{id}.d, миниатюра — photoThumbs/{id}.d.
+// Списки берут миниатюру у края экрана, профиль — полный размер при открытии. Старые base64 и обычные ссылки работают как раньше.
+// Загрузки считаются в phq/{uid}: не больше 20 за 10 минут.
 (()=>{
 const PHQ_WIN=600000,PHQ_MAX=20;
 const RE=/^ph:([A-Za-z0-9]{20})$/,BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -34,8 +32,7 @@ window.PHA=(s,k)=>{s=String(s||'');k=k==='f'?'f':'t';const id=idOf(s);if(!id)ret
  const d=known(id,k);if(d)return `src="${E(d)}" data-ph="${id}" data-pk="${k}" data-phd="1" data-phs="1"`;
  const tmp=k==='f'?thumbOf(id):'';return `src="${E(tmp||BLANK)}" data-ph="${id}" data-pk="${k}"`};
 // значение для href ссылки «открыть фото» (полный размер открывается по клику — см. обработчик ниже)
-// v227: ссылки — только обычные https://. Свои картинки: «ph:<id>», data:image/…, относительный путь img/….
-// Всё прочее (javascript:, data:text/html, vbscript:, http: и т. п.) ссылкой не становится.
+// Ссылкой становится только https://, «ph:<id>», data:image/… или путь img/…. Остальное (javascript:, http:) — нет.
 const SAFE_HTTPS=s=>/^https:\/\/[^\s"'<>\\]+$/i.test(String(s||''));
 const SAFE_MEDIA=s=>{s=String(s||'');return !!idOf(s)||SAFE_HTTPS(s)||/^data:image\/(png|jpe?g|gif|webp|bmp|avif);base64,[A-Za-z0-9+\/=\s]*$/i.test(s)||/^img\/[^:\s"'<>\\]+$/.test(s)};
 window.VPPKA_SAFE={https:SAFE_HTTPS,media:SAFE_MEDIA};
@@ -50,7 +47,7 @@ const VP=window.VPPKA_PH={isRef:s=>!!idOf(s),BLANK,
  // загрузка: base64 → photos/{id} + photoThumbs/{id}, возвращает «ph:<id>». Не вышло — исходный base64 (как раньше).
  up:async(d,uid)=>{d=String(d||'');if(!/^data:image\//.test(d))return d;try{const {F,db,user}=await fb();const by=uid||(user&&user.uid);if(!by)throw new Error('нет входа');
    const t=await mkThumb(d),ref=F.doc(F.collection(db,'photos')),id=ref.id;
-   // v230: счётчик загрузок phq/{uid} (не больше PHQ_MAX за PHQ_WIN) пишется тем же пакетом — его проверяют правила базы.
+   // счётчик загрузок phq/{uid} (не больше PHQ_MAX за PHQ_WIN) пишется тем же пакетом — его проверяют правила базы.
    const q=F.doc(db,'phq',by);let qd=null;try{const s=await F.getDoc(q);qd=s.exists()?s.data():null}catch(e){}
    const age=qd&&qd.at&&qd.at.toMillis?Date.now()-qd.at.toMillis():Infinity;
    const tries=!qd||age>PHQ_WIN+60000?[1]:age<PHQ_WIN-60000?[0]:[0,1];let err=null;

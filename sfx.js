@@ -1,8 +1,7 @@
-// Звуки интерфейса (WebAudio, без файлов) в стиле Atomic Heart: ЭЛТ-тик при наведении, механический клац + пневмо-шипение при открытии.
+// Звуки интерфейса на WebAudio, без файлов: тихий тик при наведении, щелчок при открытии.
 (()=>{const K='vppka_sfx_off';let off=localStorage.getItem(K)==='1',ctx=null,armed=false,lastH=0,lastO=0;const VOL=0.06;
  const touch=matchMedia('(hover:none),(pointer:coarse)').matches;
  const ac=()=>{if(!ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;ctx=new C()}if(ctx.state==='suspended')ctx.resume();return ctx};
- // Atomic Heart-стиль: металлический «робо-щелчок» и тёплый аналоговый перезвон (в духе «Полёт»/«Квази») с лёгким эхом
  let bus=null;function out(c){if(bus)return bus;const m=c.createGain();m.gain.value=1;const d=c.createDelay(0.5),fb=c.createGain(),lp=c.createBiquadFilter(),wet=c.createGain();
   d.delayTime.value=0.11;fb.gain.value=0.32;lp.type='lowpass';lp.frequency.value=2600;wet.gain.value=0.35;m.connect(c.destination);m.connect(d);d.connect(lp);lp.connect(fb);fb.connect(d);lp.connect(wet);wet.connect(c.destination);return bus=m}
  const ok=()=>!off&&armed&&ac();

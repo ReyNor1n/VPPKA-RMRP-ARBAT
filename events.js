@@ -3,7 +3,7 @@ const FB=()=>window.VPPKA_FB,F=()=>FB().F,db=()=>FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const can=()=>{const p=(FB()&&FB().power)||{};return (p.rank||0)>=1000||!!p.owner||(p.tier||0)>=4};
 const ended=e=>!!(e&&e.status==='ended');
-// v221: удаление — только через корзину eventsArchive; завершённое с отметками удаляет только владелец (остальным — «Скрыть»).
+// удаление — только через корзину eventsArchive; завершённое с отметками удаляет только владелец (остальным — «Скрыть»).
 const isOwn=()=>{const p=(FB()&&FB().power)||{};return !!p.owner||(p.rank||0)>=1000};
 const hasAtt=e=>!!(e&&Array.isArray(e.att)&&e.att.length);
 const locked=e=>ended(e)&&hasAtt(e);

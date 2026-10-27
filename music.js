@@ -4,7 +4,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const nrm=s=>String(s||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
 const MAX=5*1024*1024,CH=600000,VOL=0.05;
 let T=null,loading=null;const blobs={};
-// v227: ссылка на музыку — только https и только на сам аудиофайл. Страница звука myinstants.com (…/instant/…) — это HTML, не аудио.
+// Ссылка на музыку — https и сам аудиофайл. Страница myinstants.com/instant/… это HTML, не звук.
 const MI_PAGE=/^https?:\/\/(www\.)?myinstants\.com\/([a-z]{2}\/)?instant\//i;
 const urlOk=u=>/^https:\/\/[^\s"'<>\\]+$/i.test(String(u||''))&&!MI_PAGE.test(String(u||''));
 // проверка, что браузер может играть ссылку как аудио (без CORS — обычный <audio>)
@@ -21,7 +21,7 @@ async function srcOf(uid){const t=T[uid];if(t.url){if(!urlOk(t.url))throw new Er
 let busy='';async function apply(){const h=location.hash;if(!/^#(member|user)\//.test(h))return;await load();const r=trackFor(h);if(!r)return;const [uid,key]=r,M=window.VPPKA_MUSIC;
  const t=T[uid],sig=uid+(t.ver||t.url);if(M[key]&&M[key].sig===sig){title(t);return}if(busy===key)return;busy=key;
  try{const src=await srcOf(uid);if(location.hash.replace(/^#/,'').split('/').slice(0,2).join('/')!==key)return;M[key]={src,start:0,vol:VOL,sig};window.VPPKA_MUSIC_SYNC&&window.VPPKA_MUSIC_SYNC();title(t)}catch(e){console.warn('музыка профиля',e)}finally{busy=''}}
-function title(t){return;const h=document.querySelector('.pg h1');if(!h||document.querySelector('.pmus-t'))return;const s=document.createElement('div');s.className='pmus-t';s.textContent=/^(https?:|www\.)|\.(mp3|ogg|wav)(\?|$)/i.test(String(t.title).trim())?'♪':'♪ '+t.title;h.after(s)}
+function title(){} // название трека на странице не показываем
 // ---- настройки (только руководство) ----
 function setHtml(t){return `<div class="phc" id="mus-box"><h4 class="phc-h">Музыка профиля</h4><small class="phc-hint">Играет, когда открывают вашу карточку (громкость 5%). Файл mp3/ogg до 5 МБ или прямая https-ссылка на сам аудиофайл (.mp3/.ogg). С myinstants.com — ссылка из кнопки «Скачать», не адрес страницы.${t?`<br>Сейчас: <b>${esc(t.title||(t.url?'ссылка':'файл'))}</b>`:''}</small>
 <div class="phc-btns" style="margin-top:8px;flex-wrap:wrap"><label class="btn sm o"><input id="mus-f" type="file" accept="audio/mpeg,audio/ogg,.mp3,.ogg" style="display:none">Файл</label><input id="mus-u" class="inp" placeholder="или https://…/track.mp3" style="flex:1;min-width:180px" value="${esc(t&&t.url||'')}"></div>
