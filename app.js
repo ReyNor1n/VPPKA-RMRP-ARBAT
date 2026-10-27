@@ -222,7 +222,7 @@ addEventListener('appinstalled',()=>{b.hidden=true});
 const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 if(ios){b.hidden=false}
 b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true}else if(ios){alert('Чтобы установить: нажмите «Поделиться» → «На экран Домой»')}}})();
-// --- Уведомление о новой новости (один раз на пользователя/гостя) ---
+// Уведомление о новой новости (один раз на пользователя/гостя)
 (function(){const K='vppka-seen-news';let shown=false;function chk(){if(shown||!window.VPPKA_DATA||!window.VPPKA_DATA.news)return;const ns=NEWS().filter(n=>n.id);if(!ns.length)return;
  ns.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||((b.createdAt&&b.createdAt.seconds||0)-(a.createdAt&&a.createdAt.seconds||0)));const n=ns[0];
  if(localStorage.getItem(K)===String(n.id))return;if(location.hash==='#news/'+n.id){localStorage.setItem(K,String(n.id));return}shown=true;
@@ -230,7 +230,7 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
  const done=()=>{localStorage.setItem(K,String(n.id));d.remove()};d.querySelector('a').onclick=done;d.querySelector('button').onclick=done;document.body.appendChild(d);if(matchMedia('(max-width:860px)').matches)setTimeout(done,8000)}
  setInterval(chk,2000)})();
 
-// --- Автообновление после каждого деплоя (без Ctrl+F5) ---
+// Автообновление после каждого деплоя (без Ctrl+F5)
 (function(){let ver=null,pending=false,had=!!(navigator.serviceWorker&&navigator.serviceWorker.controller);
  const typing=()=>{const e=document.activeElement;return !!e&&(/^(TEXTAREA|SELECT)$/.test(e.tagName)||(e.tagName==='INPUT'&&!/^(button|submit|checkbox|radio)$/i.test(e.type))||e.isContentEditable)&&!!(e.value||e.textContent)};
  const go=()=>{const k='vppka-reload-at',t=+sessionStorage.getItem(k)||0;if(Date.now()-t<15000)return;sessionStorage.setItem(k,Date.now());location.reload()};
@@ -246,7 +246,7 @@ b.onclick=async()=>{if(ev){ev.prompt();await ev.userChoice;ev=null;b.hidden=true
  const rtI=setInterval(()=>{rtStart();if(rt)clearInterval(rtI)},1000);
  chk();setInterval(chk,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});addEventListener('focus',chk)})();
 
-// --- Музыка страниц: маршрут → трек. Добавить новый: 'member/<id>':{src,start,vol} или {list:[...]} для плейлиста. keep:true — продолжать с места, иначе каждый раз с start ---
+// Музыка страниц: маршрут → трек. Добавить новый: 'member/<id>':{src,start,vol} или {list:[...]} для плейлиста. keep:true — продолжать с места, иначе каждый раз с start
 window.VPPKA_MUSIC={
  'about':{src:'audio/about.mp3',start:0,vol:0.1,keep:true},          // «О партии»: Интернационал (без слов)
  'member/m4':{src:'audio/bykov.mp3',start:18,vol:0.05},                // Быков В. А.: Аким Апачев — «Лето и арбалеты»
@@ -289,7 +289,7 @@ window.VPPKA_MUSIC={
  addEventListener('hashchange',()=>setTimeout(sync,0));document.addEventListener('visibilitychange',sync);addEventListener('storage',e=>{if(e.key===GK)sync()});new MutationObserver(()=>{if(cur){const b=document.getElementById('amu'),h=document.querySelector('.pg h1');if(h&&(!b||b.parentNode!==h))btn()}else if(!cur&&window.VPPKA_DATA&&location.hash.startsWith('#member/')&&keyOf())sync()}).observe(document.body,{childList:true,subtree:true});
  if(document.readyState==='loading')addEventListener('DOMContentLoaded',sync);else sync();window.VPPKA_MUSIC_SYNC=sync;window.VPPKA_ABOUT_AUDIO=()=>A.about;window.VPPKA_PAGE_AUDIO=()=>cur&&A[cur]})();
 
-// --- Баннер профиля: файл (видео/картинка/GIF, частями в Firestore banners/{uid}/chunks) или прямая ссылка ---
+// Баннер профиля: файл (видео/картинка/GIF, частями в Firestore banners/{uid}/chunks) или прямая ссылка
 (function(){let B=null,started=false,lastMsg='';const RX=/^https:\/\/[^\s]+\.(mp4|webm)([?#].*)?$/i,MAXB=8*1048576,CH=900000,blobs={};
  const esc2=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  const FBX=()=>window.VPPKA_FB,myUid=()=>((FBX()||{}).user||{}).uid,myDid=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');
@@ -329,7 +329,7 @@ window.VPPKA_MUSIC={
   if(e.target.id==='vb-del'){try{await fb.F.deleteDoc(fb.F.doc(fb.db,'banners',uid));await delChunks(uid);say('Баннер убран.')}catch(x){say('Не удалось: '+perr(x))}}});
  setInterval(start,1000);new MutationObserver(()=>paint()).observe(document.body,{childList:true,subtree:true});addEventListener('hashchange',()=>setTimeout(paint,0))})();
 
-// ---------- лайки новостей: news/{id}/likes/{uid} + likeCount (счётчик приходит с живой подпиской на news) ----------
+// лайки новостей: news/{id}/likes/{uid} + likeCount (счётчик приходит с живой подпиской на news)
 (()=>{const L=window.VPPKA_LIKED={},asked={};let busy=false;
  const sync=()=>{const fb=window.VPPKA_FB;document.querySelectorAll('.nlike').forEach(b=>{const id=b.dataset.like;b.classList.toggle('on',!!L[id]);if(fb&&fb.user&&fb.F&&asked[id]===undefined){asked[id]=1;fb.F.getDoc(fb.F.doc(fb.db,'news',id,'likes',fb.user.uid)).then(x=>{L[id]=x.exists();document.querySelectorAll(`.nlike[data-like="${id}"]`).forEach(e=>e.classList.toggle('on',L[id]))}).catch(()=>{})}})};
  new MutationObserver(()=>{clearTimeout(sync.t);sync.t=setTimeout(sync,150)}).observe(document.body,{childList:true,subtree:true});

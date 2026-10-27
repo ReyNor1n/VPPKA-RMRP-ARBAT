@@ -9,8 +9,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Админ-панель ВППКА</title>
-<link rel="icon" href="img/icons/favicon.ico?v=fav2" sizes="any">
-<link rel="icon" type="image/png" sizes="120x120" href="img/icons/favicon-120.png?v=fav3">
+<link rel="icon" href="img/icons/favicon.ico?v=fav2" sizes="any"><link rel="icon" type="image/png" sizes="120x120" href="img/icons/favicon-120.png?v=fav3">
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@400;600&family=Oxanium&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css?v=241">
 <style>
@@ -35,40 +34,19 @@ legend{font:13px Oxanium,monospace;color:var(--red);padding:0 6px}
 </style>
 </head>
 <body>
-<header>
-<div class="nav">
-<a class="brand" href="index.html">
-<img src="img/emblem.png?v=241">
-<span>ВППКА · Админ</span>
-</a>
-</div>
-</header>
+<header><div class="nav"><a class="brand" href="index.html"><img src="img/emblem.png?v=241"><span>ВППКА · Админ</span></a></div></header>
 <div class="wrap">
-<div id="login" class="box">
-<h2>Вход владельца</h2>
+<div id="login" class="box"><h2>Вход владельца</h2>
 <p>Изменения публикуются прямо в ваш репозиторий GitHub. Опубликовать что-либо может только тот, у кого есть ваш личный токен GitHub с доступом к репозиторию — то есть только вы. Токен хранится только в этом браузере.</p>
-<label>Репозиторий (владелец/имя)</label>
-<input id="repo" value="ReyNor1n/VPPKA-RMRP-ARBAT">
-<label>Ветка</label>
-<input id="branch" value="main">
-<label>Личный токен GitHub (fine-grained, права Contents: Read and write только на этот репозиторий)</label>
-<input id="token" type="password">
-<div class="row" style="margin-top:12px">
-<button class="btn" id="b-login">Войти</button>
-<button class="btn sm" id="b-offline">Локальный режим (без публикации, только экспорт файла)</button>
-</div>
+<label>Репозиторий (владелец/имя)</label><input id="repo" value="ReyNor1n/VPPKA-RMRP-ARBAT">
+<label>Ветка</label><input id="branch" value="main">
+<label>Личный токен GitHub (fine-grained, права Contents: Read and write только на этот репозиторий)</label><input id="token" type="password">
+<div class="row" style="margin-top:12px"><button class="btn" id="b-login">Войти</button><button class="btn sm" id="b-offline">Локальный режим (без публикации, только экспорт файла)</button></div>
 </div>
 <div id="ed" style="display:none">
-<div class="box row">
-<button class="btn sm" id="b-publish">💾 Опубликовать на сайт</button>
-<button class="btn sm" id="b-preview">👁 Предпросмотр</button>
-<button class="btn sm" id="b-export">⬇ Скачать content.json</button>
-<label class="btn sm">⬆ Загрузить content.json<input type="file" accept=".json" hidden id="b-import">
-</label>
-<button class="del" id="b-logout">Выйти</button>
-</div>
-<div class="box tabs" id="tabs"></div>
-<div class="box" id="form"></div>
+<div class="box row"><button class="btn sm" id="b-publish">💾 Опубликовать на сайт</button><button class="btn sm" id="b-preview">👁 Предпросмотр</button><button class="btn sm" id="b-export">⬇ Скачать content.json</button>
+<label class="btn sm">⬆ Загрузить content.json<input type="file" accept=".json" hidden id="b-import"></label><button class="del" id="b-logout">Выйти</button></div>
+<div class="box tabs" id="tabs"></div><div class="box" id="form"></div>
 </div>
 </div>
 <div id="msg"></div>

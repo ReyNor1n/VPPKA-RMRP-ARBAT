@@ -52,7 +52,7 @@ function appsPage(){const c=`<div class="crumbs"><a href="#home">Главная<
  ${['accepted','member'].includes(a.status)?`<div class="kp-row"><span class="kp-in">Звание в партии: <b>${esc(prn(a.partyRank||0))}</b></span>${T>=4?` <button class="btn sm o" data-pu="${a.id}" title="Повысить">▲ Повысить</button> <button class="btn sm o" data-pd="${a.id}" title="Понизить">▼ Понизить</button>`:''}</div>`:''}</div>`}).join('')}</div>`;}
 async function loadApps(){try{const s=await F().getDocs(F().query(F().collection(db(),'applications'),F().orderBy('createdAt','desc')));apps=s.docs.map(d=>({...d.data(),id:d.id})).filter(a=>(!a.status||a.status==='new'||((a.reviewedAt?.toMillis?.()||0)>Date.now()-12*3600e3))).filter(a=>!window.VPPKA_HIDDEN({discordId:a.discordId,uid:a.uid})||a.uid===FB().user?.uid);}catch(e){apps=[];setTimeout(()=>msg('Ошибка загрузки: '+(e.code||e.message)),0)}if(location.hash==='#apps')window.route();}
 
-// ---------- Участники партии (только ключи с canViewMembers и владельцы) ----------
+// Участники партии (только ключи с canViewMembers и владельцы)
 let mlist=null;
 const canM=()=>{const p=FB().power||{};return !!p.members||(p.rank||0)>=1000};
 const dlink=x=>{const s=String(x||'');const id=s.match(/(\d{15,21})/);return id?`<a href="https://discord.com/users/${id[1]}" target="_blank" rel="noopener">${esc(/^https?:/.test(s)?s:'discord.com/users/'+id[1])}</a>`:esc(s)};
@@ -127,7 +127,7 @@ async function loadMembers(){let er='';const f=F(),me=FB().user&&FB().user.uid,m
  mlist=out.sort((a,b)=>b.t-a.t);if(location.hash==='#members'){window.route();if(er)msg(er);}}
 
 
-// ---------- Гости: зарегистрированы на сайте, но не приняты в партию (та же аудитория, что «Участники») ----------
+// Гости: зарегистрированы на сайте, но не приняты в партию (та же аудитория, что «Участники»)
 const KEYMASTER='ZpVGAXbbg1a9I8kRsNEm0OU8QAt2';let gU=null,gA=null,gSub=null,gT=0,gX={};
 const gIni=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
 function gStart(){if(gSub)return;const f=F(),d=db();gSub=[];
@@ -157,7 +157,7 @@ function guestBlock(){if(!canM())return '';gStart();
  const card=x=>`<div class="pm-card gcard" data-q="${esc((x.name+' гость '+x.st).toLowerCase())}"><span class="pm-av${x.photo?'':' noph'}">${x.photo?`<img ${PHA(x.photo,'t')} alt="${esc(x.name||'')}" loading="lazy">`:`<b>${esc(gIni(x.name))}</b>`}</span><span class="pm-n">${esc(x.name)}</span><span class="pm-r g-st${x.pend?' pend':''}${x.xp?' xp':''}">${esc(x.st)}</span>${x.discord?`<span class="pm-j g-d">${dlink(x.discord)}</span>`:''}<span class="pm-j">рег. ${esc(x.date)}</span>${gCanDel()?`<div class="g-mn"><button class="g-dots" aria-label="Действия" aria-haspopup="true" data-on-click="gmenu">⋮</button><div class="g-dd" hidden role="menu"><button role="menuitem" data-on-click="chat" data-oa="${esc(x.uid)}">Написать</button><button role="menuitem" class="g-dd-del" data-on-click="gdel" data-oa="${esc(x.uid)}">Удалить гостя</button></div></div>`:''}</div>`;
  return `<div class="blk gst"><h2>Гости <span class="g-cnt">${g.length}</span></h2><p class="amut">Зарегистрировались на сайте, но пока не приняты в партию. Раздел виден только по разрешению ключа.</p><div class="pm-grid">${g.map(card).join('')||'<p class="amut">Гостей нет.</p>'}</div></div>`;}
 
-// ---------- «Уволить» из партии: владелец и ступень 5; только записи со ступенью ниже своей, не председатель ----------
+// «Уволить» из партии: владелец и ступень 5; только записи со ступенью ниже своей, не председатель
 const xMem=()=>(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[];
 const canX=m=>!!m&&tier()>=5&&mt(m)<tier()&&(m.rank??0)<(rank()>=1000?1000:100)&&!window.VPPKA_HIDDEN(m)&&m.name&&m.name!=='Вакансия'&&!(m.discordId&&m.discordId===((window.VPPKA_AUTH||{}).profile||{}).discordId);
 const OWNER_IDS=['p_Xglv_ypsOH3s7mW2UTXD','m11'];
@@ -166,7 +166,7 @@ const myDidP=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');
 const actorName=()=>{const did=myDidP(),ms=(D().members||[]).filter(x=>did&&x.discordId===did&&!String(x.id).startsWith('p_')&&x.name&&!/^Вакансия/i.test(x.name)).sort((a,b)=>(Number(b.rank)||0)-(Number(a.rank)||0));const me=ms[0]||(D().members||[]).find(x=>did&&x.discordId===did);const role=(me&&me.role)||(FB().power||{}).roleName||'';const nm=(me&&me.name)||((window.VPPKA_AUTH||{}).profile||{}).displayName||'';return [role,nm].filter(Boolean).join(' ')};
 async function rankNote(did,kind,text){did=String(did||'');if(!did||did===myDidP())return;const f=F();try{await f.addDoc(f.collection(db(),'rankNotes'),{did,kind,text:String(text).slice(0,300),by:FB().user.uid,byName:actorName().slice(0,160),at:f.serverTimestamp(),read:false})}catch(e){console.warn('rankNote',e.code||e)}}
 window.VPPKA_RANKNOTE=rankNote;window.VPPKA_ACTOR=actorName;
-// ---------- звание члена партии: кнопка + выбор (только Председатель ЦК, его заместители и владелец сайта) ----------
+// звание члена партии: кнопка + выбор (только Председатель ЦК, его заместители и владелец сайта)
 const RK_OWNER_DID='646280678736003073',RK_SEATS=['m1','m4','m5','m12'];
 const rkAdminDids=()=>[RK_OWNER_DID,...RK_SEATS.map(s=>String(((xMem().find(x=>x.id===s))||{}).discordId||'')).filter(Boolean)];
 const rkAdmin=()=>{const u=(FB()||{}).user,did=myDidP();return !!u&&!!did&&rkAdminDids().includes(did)};
@@ -228,7 +228,7 @@ window.VPPKA_EXPEL=async id=>{const m=xMem().find(x=>x.id===id);if(!canX(m))retu
    const e={name:String(m.name).slice(0,100),by:me,at:now};if(reason)e.reason=reason;await f.setDoc(f.doc(d,'expulsions',m.discordId),e)}
   msg('Уволен: '+m.name+'.');window.VPPKA_RELOAD&&window.VPPKA_RELOAD()}
  catch(e){msg('Не удалось уволить: '+(e.code==='permission-denied'?'нет прав (опубликуйте новые правила базы).':(e.code||e.message)))}};
-// ---------- Баннер созывов/объявлений на главной (под «Документами») ----------
+// Баннер созывов/объявлений на главной (под «Документами»)
 const DCH='https://discord.com/channels/1557758930959081502/1560401813856059553';let hn=[],hnSub=null;
 function hnWhen(w,y0){const m=String(w||'').match(/(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?(?:[^\d]+(\d{1,2})[:.](\d{2}))?/);if(!m)return null;let y=m[3]?+m[3]:y0;if(y<100)y+=2000;
  return new Date(y,+m[2]-1,+m[1],m[4]!==undefined?+m[4]:23,m[5]!==undefined?+m[5]:59)}
@@ -246,7 +246,7 @@ window.VPPKA_HN=()=>{hnStart();return hnActive()};function hnPaint(){const e=doc
 function hnStart(){if(hnSub||!FB()||!F())return;const f=F();hnSub=f.onSnapshot(f.query(f.collection(db(),'notifications'),f.where('type','in',['convocation','other'])),s=>{hn=s.docs.map(x=>({...x.data(),id:x.id}));hnPaint()},e=>{console.warn('home notices',e.code);hnSub=null})}
 setInterval(()=>{if(!hnSub)hnStart();hnPaint()},60000);
 
-// ---------- «Заявки на вступление» на вкладке «Члены партии» (ступень 3+, как в панели заявок) ----------
+// «Заявки на вступление» на вкладке «Члены партии» (ступень 3+, как в панели заявок)
 let aqSub=null,aqA=null,aqT=0;
 function aqStart(){if(aqSub)return;const f=F();aqSub=f.onSnapshot(f.collection(db(),'applications'),s=>{aqA=s.docs.map(x=>({...x.data(),id:x.id}));clearTimeout(aqT);aqT=setTimeout(()=>{if(location.hash==='#party'){const y=scrollY;window.route();scrollTo(0,y)}},120)},e=>{console.warn('aq',e.code);aqA=aqA||[]})}
 const aqFio=a=>{const f=String((a.answers||{}).fio||'Без имени').trim();return f};
@@ -273,7 +273,6 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest('button')
   if(d.ne){editNews=(D().news||[]).find(x=>x.id===d.ne);window.route();}
   if(d.nd&&confirm('Удалить новость?')){await f.deleteDoc(f.doc(db(),'news',d.nd));await done('Новость удалена.');}
   if(id==='pn-save'){const o=editNews||{};let nid='';const n={title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
-// auto-insert unused photo tags if none present
 if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');if(fl&&fl.files.length){for(let i=1;i<=fl.files.length;i++)n.text+='\n\n[фото:'+i+']';}}
    if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');b.disabled=true;const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
    if(ph.length+fl.length>4){b.disabled=false;return msg('Не больше 4 фото в новости.');}for(const f of fl)ph.push(await window.VPPKA_PH.up(await smallJpeg(f)));
@@ -319,7 +318,7 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
  });
  window.route();if(tier()>=4)rosterSync().catch(e=>console.warn('roster',e.code||e));}
 
-// ---------- Назначение на должность ----------
+// Назначение на должность
 // Суперпользователь = владелец сайта (config/owners). Это же Начальник технического отдела.
 const isOwnerP=()=>rank()>=1000||!!(FB().power&&FB().power.owner);
 const isSuper=()=>isOwnerP();
@@ -482,7 +481,7 @@ function installAssign(){const P=window.P,om=P.member;
  document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.asgopen){e.preventDefault();asgOpen(b.dataset.asgopen)}else if(b.id==='asg-x')asgClose();else if(b.dataset.asg)asgDo(b.dataset.asg);else if(b.id==='vac-add')addVacancy().catch(err=>{const el=document.getElementById('vac-msg');if(el)el.textContent='Ошибка: '+(err.code==='permission-denied'?'недостаточно прав':(err.message||err.code))});else if(b.dataset.postdel)deletePost(b.dataset.postdel).catch(err=>alert('Ошибка: '+(err.code==='permission-denied'?'недостаточно прав':(err.message||err.code))))});
  addEventListener('keydown',e=>{if(e.key==='Escape')asgClose()});}
 
-// ---------- Публичный список членов партии: принятые заявки → members/p_<id> (group «Члены партии»), ступень 4+ ----------
+// Публичный список членов партии: принятые заявки → members/p_<id> (group «Члены партии»), ступень 4+
 let rsBusy=false;
 function isPartyDoc(x){return !!x&&String(x.id||'').startsWith('p_')&&(x.group===window.VPPKA_PG||x.group==='Члены партии')}
 function findParty(cur,a,fio){const list=Object.values(cur).filter(isPartyDoc),did=String(a.discordId||''),uid=String(a.uid||'');

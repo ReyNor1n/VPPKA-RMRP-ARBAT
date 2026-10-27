@@ -22,7 +22,7 @@ let busy='';async function apply(){const h=location.hash;if(!/^#(member|user)\//
  const t=T[uid],sig=uid+(t.ver||t.url);if(M[key]&&M[key].sig===sig){title(t);return}if(busy===key)return;busy=key;
  try{const src=await srcOf(uid);if(location.hash.replace(/^#/,'').split('/').slice(0,2).join('/')!==key)return;M[key]={src,start:0,vol:VOL,sig};window.VPPKA_MUSIC_SYNC&&window.VPPKA_MUSIC_SYNC();title(t)}catch(e){console.warn('музыка профиля',e)}finally{busy=''}}
 function title(){} // название трека на странице не показываем
-// ---- настройки (только руководство) ----
+// настройки (только руководство)
 function setHtml(t){return `<div class="phc" id="mus-box"><h4 class="phc-h">Музыка профиля</h4><small class="phc-hint">Играет, когда открывают вашу карточку (громкость 5%). Файл mp3/ogg до 5 МБ или прямая https-ссылка на сам аудиофайл (.mp3/.ogg). С myinstants.com — ссылка из кнопки «Скачать», не адрес страницы.${t?`<br>Сейчас: <b>${esc(t.title||(t.url?'ссылка':'файл'))}</b>`:''}</small>
 <div class="phc-btns" style="margin-top:8px;flex-wrap:wrap"><label class="btn sm o"><input id="mus-f" type="file" accept="audio/mpeg,audio/ogg,.mp3,.ogg" style="display:none">Файл</label><input id="mus-u" class="inp" placeholder="или https://…/track.mp3" style="flex:1;min-width:180px" value="${esc(t&&t.url||'')}"></div>
 <div class="phc-btns" style="margin-top:8px"><input id="mus-t" class="inp" maxlength="100" placeholder="Название трека (необязательно)" style="flex:1" value="${esc(t&&t.title||'')}"><button class="btn sm" id="mus-go">Сохранить</button>${t?'<button class="btn sm o" id="mus-rm">Убрать</button>':''}</div><p class="aerr" id="mus-e"></p></div>`}
