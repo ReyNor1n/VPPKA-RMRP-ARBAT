@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey } from './firebase-config.js?v=242';
+import { firebaseConfig, appCheckSiteKey } from './firebase-config.js?v=243';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -83,7 +83,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.i
    +(p.discordId?`<tr><td>Discord</td><td>${/^https?:/.test(p.discordLink||'')?`<a href="${esc(p.discordLink)}" target="_blank" rel="noopener">${esc(p.discordLink)}</a>`:esc(p.discordLink||p.discordId)}</td></tr>`:'')+(gold?'<tr class="creator-r"><td colspan="2"><span class="creator-b">⚙ Создатель сайта партии</span></td></tr>':'');
   return `${crumbs('Личный кабинет')}<div class="pg"><div class="auth acc-wrap"><h2 class="acc-h2">Личный кабинет<button class="acc-gear" data-on-click="setopen" aria-label="Настройки" title="Настройки">⚙</button></h2>
   <div class="acc-bnw"><div id="vb-prev" class="phead-bn"></div></div>
-  <div class="prof blk acc-card${tc?' ldr-card '+tc:''}${skin}"><div class="prof-ph${tc?' ldr-av '+tc:''}${ph?'':' noph'}">${ph?`<img ${PHA(ph,'f')} alt="${esc(nm)}">`:`<b>${esc(nm.split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase())}</b>`}</div><div><span class="role">// ${esc((lead&&lead.group)||'Личный кабинет')}</span><h1 class="prof-n">${esc(nm)}</h1><div class="prof-r">${pos}</div>
+  <div class="prof blk acc-card${tc?' ldr-card '+tc:''}${skin}"><div class="prof-ph${tc?' ldr-av '+tc:''}${ph?'':' noph'}">${ph?`<img ${PHA(ph,'f')} alt="${esc(nm)}">`:`<b>${esc(nm.split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase())}</b>`}</div><div><span class="role">${esc((lead&&lead.group)||'Личный кабинет')}</span><h1 class="prof-n">${esc(nm)}</h1><div class="prof-r">${pos}</div>
   <table class="tbl" style="margin-top:16px">${rows}</table><p class="acc-priv">🔒 Дата рождения видна только вам и членам Партии. Номер паспорта виден всем в вашем профиле на сайте.</p></div></div>
   ${about?`<div class="blk about-blk"><h2>О себе</h2><p class="lead about-t">${esc(about)}</p></div>`:''}
   ${set}<p style="margin-top:20px"><button class="btn o" id="a-out">Выйти</button></p></div></div>`};
@@ -222,7 +222,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  }
 
  async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=242').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=242').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=242').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=242').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=242').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=242').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=242').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=242').then(m=>m.install()).catch(e=>console.error('admin',e));
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=243').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=243').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=243').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=243').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=243').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=243').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=243').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=243').then(m=>m.install()).catch(e=>console.error('admin',e));
 // аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false;
 // authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена

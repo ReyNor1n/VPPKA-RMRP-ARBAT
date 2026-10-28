@@ -10,15 +10,15 @@
 .ny-gl i:before{content:"";position:absolute;left:1px;top:-2px;width:4px;height:3px;background:#8c939c;border-radius:1px}
 @keyframes nyB{50%{opacity:.35;box-shadow:none}}
 .ny-hat{position:absolute;width:26px;height:22px;pointer-events:none;z-index:6;transform:rotate(-18deg)}
-.ny-tree{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font:600 11px Oxanium,monospace;letter-spacing:.12em;text-transform:uppercase;color:#ffcf80;opacity:.9;white-space:nowrap}
+.ny-tree{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font:600 11px "Oswald",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#e6c98a;opacity:.9;white-space:nowrap}
 .ny-tree svg{width:18px;height:22px;filter:drop-shadow(0 0 4px #d6282888)}
 #ny-sn{position:fixed;inset:0;pointer-events:none;z-index:40}
 @media(max-width:600px){.ny-tree{display:none}.ny-hat{width:18px;height:15px}.ny-gl i:nth-child(even){display:none}}
 @media(prefers-reduced-motion:reduce){.ny-gl i{animation:none}}`;
  const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);document.documentElement.classList.add('ny');
- const tree='<svg viewBox="0 0 18 22"><path d="M9 4l-6 8h3l-4 6h14l-4-6h3z" fill="#1f6b3a" stroke="#4fd47d" stroke-width=".6"/><rect x="8" y="18" width="2" height="3" fill="#7a4a2a"/><path d="M9 .3l.9 2 2.1.2-1.6 1.4.5 2.1L9 4.9 7.1 6l.5-2.1L6 2.5l2.1-.2z" fill="#e21d1d" stroke="#ff8a7a" stroke-width=".3"/><circle cx="7" cy="11" r=".9" fill="#ffcf80"/><circle cx="11" cy="14" r=".9" fill="#e21d1d"/><circle cx="8" cy="16" r=".9" fill="#5b9bff"/></svg>';
+ const tree='<svg viewBox="0 0 18 22"><path d="M9 4l-6 8h3l-4 6h14l-4-6h3z" fill="#1f6b3a" stroke="#6e8f56" stroke-width=".6"/><rect x="8" y="18" width="2" height="3" fill="#7a4a2a"/><path d="M9 .3l.9 2 2.1.2-1.6 1.4.5 2.1L9 4.9 7.1 6l.5-2.1L6 2.5l2.1-.2z" fill="#8e2a2a" stroke="#c4847c" stroke-width=".3"/><circle cx="7" cy="11" r=".9" fill="#e6c98a"/><circle cx="11" cy="14" r=".9" fill="#8e2a2a"/><circle cx="8" cy="16" r=".9" fill="#c6a15a"/></svg>';
  function deco(){const hd=document.querySelector('.hd');if(!hd||hd.querySelector('.ny-gl'))return;
-  const g=document.createElement('div');g.className='ny-gl';const n=Math.min(40,Math.round(innerWidth/34)),C=['#ff3b30','#ffcf80','#4fd47d','#5b9bff','#ff3b30'];
+  const g=document.createElement('div');g.className='ny-gl';const n=Math.min(40,Math.round(innerWidth/34)),C=['#8e2a2a','#e6c98a','#6e8f56','#c6a15a','#8e2a2a'];
   let h='<svg preserveAspectRatio="none" viewBox="0 0 100 16"><path d="M0 3'+Array.from({length:n},(_,i)=>` Q${(i+.5)*100/n} 9 ${(i+1)*100/n} 3`).join('')+'" fill="none" stroke="#3a3f47" stroke-width=".5" vector-effect="non-scaling-stroke"/></svg>';
   for(let i=0;i<n;i++)h+=`<i style="left:calc(${(i+.5)*100/n}% - 3px);--c:${C[i%C.length]};--dl:${(i%5)*.45}s"></i>`;g.innerHTML=h;hd.appendChild(g);
   const nm=document.getElementById('pname');if(nm&&!document.querySelector('.ny-tree')){const t=document.createElement('span');t.className='ny-tree';t.innerHTML=tree+'<span>С Новым годом!</span>';nm.parentNode.appendChild(t)}
