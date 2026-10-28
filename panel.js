@@ -60,24 +60,25 @@ const fdt=t=>t&&t.toDate?t.toDate().toLocaleDateString('ru-RU'):(t||'—');
 let mq='',mf='all',ms='new';
 const dsh=x=>{const s=String(x||'');const id=s.match(/(\d{15,21})/);const ic='<svg class="ml-dc" viewBox="0 0 24 24" width="13" height="13"><path fill="currentColor" d="M20 5.3A19 19 0 0 0 15.4 4l-.6 1.2a17 17 0 0 0-5.6 0L8.6 4A19 19 0 0 0 4 5.3C1.1 9.6.3 13.8.7 18A19 19 0 0 0 6.4 21l1.2-1.9-1.9-.9.5-.4a13 13 0 0 0 11.6 0l.5.4-1.9.9 1.2 1.9a19 19 0 0 0 5.7-2.9c.5-4.9-.8-9.1-3.3-12.7ZM8.5 15.4c-1.1 0-2-1-2-2.3s.9-2.3 2-2.3 2 1 2 2.3-.9 2.3-2 2.3Zm7 0c-1.1 0-2-1-2-2.3s.9-2.3 2-2.3 2 1 2 2.3-.9 2.3-2 2.3Z"/></svg>';
  if(id)return `<a href="https://discord.com/users/${id[1]}" target="_blank" rel="noopener" title="${esc(s)}">${ic}${id[1].slice(0,4)}…${id[1].slice(-4)}</a>`;return s?`<span title="${esc(s)}">${ic}@${esc(s.replace(/^@/,''))}</span>`:'—'};
-const KL={lead:'Руководство',cand:'Члены партии',reg:'Зарегистрированные',out:'Вне состава'};
+const KL={lead:'Руководство',cand:'Члены партии',out:'Вне состава'};
 const canPP=()=>{const p=FB().power||{};return (p.rank||0)>=1000||!!p.owner};
-function mlRows(){const q=mq.trim().toLowerCase();let l=mlist.filter(m=>(mf==='all'||m.k===mf)&&(!q||[m.name,m.discord,m.status,m.pp].join(' ').toLowerCase().includes(q)));
+function mlRows(){const q=mq.trim().toLowerCase();let l=mlist.filter(m=>m.k!=='reg'&&(mf==='all'||m.k===mf)&&(!q||[m.name,m.discord,m.status,m.pp].join(' ').toLowerCase().includes(q)));
  l=l.slice().sort(ms==='az'?(a,b)=>String(a.name).localeCompare(String(b.name),'ru'):(a,b)=>b.t-a.t);
  return l.map(m=>`<div class="ml-r"><span class="ml-p${window.isLdr&&window.isLdr(m.name)?' ldr-av'+(window.LT?window.LT(m.name):''):''}">${m.photo?`<img ${PHA(m.photo,'t')} alt="${esc(m.name||'')}">`:'<i></i>'}</span><span class="ml-n"><b>${esc(m.name||'—')}</b>${m.acc?'<span class="ml-ic" title="Аккаунт на сайте">◉</span>':''}${m.app?'<span class="ml-ic" title="Подана заявка">✉</span>':''}</span><span class="ml-d">${dsh(m.discord)}</span>${mlPP?`<span class="ml-pp" title="Номер паспорта">${esc(m.pp||'—')}</span>`:''}<span class="ml-s ml-${m.k==='out'?'reg':m.k}" title="${esc(m.tip||m.status)}">${esc(m.status)}</span><span class="ml-t">${esc(m.date)}</span></div>`).join('')||'<div class="ml-r">Никого не найдено.</div>'}
 window.VPPKA_ML=(k,v)=>{if(k==='q')mq=v;if(k==='f')mf=v;if(k==='s')ms=ms==='az'?'new':'az';const e=document.getElementById('ml-l');if(e)e.innerHTML=mlRows();document.querySelectorAll('.ml-c').forEach(b=>b.classList.toggle('on',b.dataset.f===mf));const sb=document.getElementById('ml-sort');if(sb)sb.textContent=ms==='az'?'А–Я':'Новые';};
 function membersPage(){const c=`<div class="crumbs"><a href="#home">Главная</a> / Участники партии</div>`;
  if(!canM())return c+`<div class="pg"><h1>Нет доступа</h1><p>Раздел доступен только по специальному разрешению ключа.</p></div>`;
  if(!mlist){loadMembers();return c+`<div class="pg"><h1>Участники партии</h1><p>Загрузка…</p></div>`;}
- const n=k=>mlist.filter(m=>k==='all'||m.k===k).length,ks=['all','lead','cand','reg'].concat(n('out')?['out']:[]);if(!ks.includes(mf))mf='all';
- return c+`<div class="pg"><h1>Участники партии</h1><p class="amut">Закрытый список: состав партии (руководство и карточки членов партии), а также аккаунты на сайте без членства. Один человек — одна строка. Всего: ${mlist.length}.</p><p class="aerr" id="pmsg"></p>
+ const n=k=>mlist.filter(m=>k==='all'||m.k===k).length,ks=['all','lead','cand'].concat(n('out')?['out']:[]);if(!ks.includes(mf))mf='all';
+ return c+`<div class="pg"><h1>Участники партии</h1><p class="amut">Закрытый список состава партии: руководство и карточки членов партии. Аккаунты только с регистрацией на сайте здесь не показываются. Один человек — одна строка. Всего: ${mlist.length}.</p><p class="aerr" id="pmsg"></p>
  <div class="ml-bar"><input id="ml-q" placeholder="Поиск: имя, Discord, статус${mlPP?', номер паспорта':''}" value="${esc(mq)}" data-on-input="mlq">${ks.map(k=>`<button class="ml-c${mf===k?' on':''}" data-f="${k}" data-on-click="ml" data-oa="f" data-ob="${k}">${k==='all'?'Все':KL[k]} <small>${n(k)}</small></button>`).join('')}<button class="ml-c" id="ml-sort" title="Сортировка" data-on-click="ml" data-oa="s">${ms==='az'?'А–Я':'Новые'}</button></div>
  <div class="ml${mlPP?' pp':''}" id="ml-l">${mlRows()}</div></div>`;}
 // Источник истины — коллекция members (то же, что состав на сайте и ростер в Discord):
 //  • руководство — занятые места (не «Члены партии», не «Вакансия»), статус = должность(и);
 //  • члены партии — карточки p_*, статус = звание (role карточки);
 // к человеку (по Discord ID, иначе по ФИО) привязываются аккаунт и все его заявки (по ID заявки = p_<id>, Discord ID, uid, нику или ФИО).
-// Аккаунт без членства — «Зарегистрирован»; принятая заявка без карточки и места — «Вне состава» (не «Принята»).
+// Аккаунт только с регистрацией (без карточки и места) в этот список не попадает — он в блоке «Гости».
+// Принятая заявка без карточки и места — «Вне состава» (не «Принята»).
 let mlPP=false;
 const mlNz=s=>String(s||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
 const mlHk=h=>{const s=String(h||'').trim();if(/\d{15,21}/.test(s))return '';return s.replace(/^https?:\/\/\S*\//,'').replace(/^@/,'').toLowerCase()};
@@ -116,18 +117,18 @@ async function loadMembers(){let er='';const f=F(),me=FB().user&&FB().user.uid,m
   out.push({name:(seats[0]||p.card||{}).name||p.name,discord:p.did||(okApp&&(okApp.answers||{}).discord)||'',did:p.did,uid:p.user&&p.user.uid,photo:p.photo||(p.user&&p.user.photo)||'',
    status:seats.length?seats.map(m=>m.role).join(', '):rk,tip:seats.length?seats.map(m=>m.role).join(', ')+' · звание: '+rk:'Звание: '+rk,k:seats.length?'lead':'cand',
    acc:p.user?1:0,app:p.apps.length?1:0,date:t?new Date(t).toLocaleDateString('ru-RU'):'—',t})}
- for(const g of guests){const u=g.user;if(hid(u))continue;const ok=g.apps.some(a=>['accepted','member'].includes(a.status));
+ for(const g of guests){const u=g.user;if(hid(u))continue;if(!g.apps.some(a=>['accepted','member'].includes(a.status)))continue;
   out.push({name:u.fio||(g.apps[0]&&(g.apps[0].answers||{}).fio)||u.displayName||u.discordId,discord:u.discordLink||u.discordId,did:u.discordId,uid:u.uid,photo:u.photo,
-   status:ok?'Заявка принята, нет в составе':'Зарегистрирован',tip:ok?'Принятая заявка есть, но карточки в составе нет (снят, исключён или карточка удалена)':'Аккаунт на сайте, в составе партии нет',k:ok?'out':'reg',acc:1,app:g.apps.length?1:0,date:fdt(u.createdAt),t:mlMs(u.createdAt)})}
+   status:'Заявка принята, нет в составе',tip:'Принятая заявка есть, но карточки в составе нет (снят, исключён или карточка удалена)',k:'out',acc:1,app:g.apps.length?1:0,date:fdt(u.createdAt),t:mlMs(u.createdAt)})}
  const seenL=new Set();
  for(const a of loose){if(!['accepted','member'].includes(a.status)||hid(a))continue;const x=a.answers||{},k=String(a.discordId||'')||mlHk(x.discord)||mlNz(x.fio);if(seenL.has(k))continue;seenL.add(k);const t=mlMs(a.reviewedAt||a.createdAt);
   out.push({name:x.fio,discord:a.discordId||x.discord,status:'Заявка принята, нет в составе',tip:'Принятая заявка без карточки в составе и без аккаунта',k:'out',app:1,date:t?new Date(t).toLocaleDateString('ru-RU'):'—',t})}
  mlPP=canPP();
  if(mlPP)await Promise.all(out.filter(o=>o.uid).map(async o=>{try{const s=await f.getDoc(f.doc(db(),'users',o.uid,'priv','p'));if(s.exists())o.pp=s.data().passport||''}catch(e){}}));
- mlist=out.sort((a,b)=>b.t-a.t);if(location.hash==='#members'){window.route();if(er)msg(er);}}
+ mlist=out.filter(o=>o.k!=='reg').sort((a,b)=>b.t-a.t);if(location.hash==='#members'){window.route();if(er)msg(er);}}
 
 
-// Гости: зарегистрированы на сайте, но не приняты в партию (та же аудитория, что «Участники»)
+// Гости: зарегистрированы на сайте, но не приняты в партию. Отдельный блок, не список «Участники партии».
 const KEYMASTER='ZpVGAXbbg1a9I8kRsNEm0OU8QAt2';let gU=null,gA=null,gSub=null,gT=0,gX={};
 const gIni=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
 function gStart(){if(gSub)return;const f=F(),d=db();gSub=[];
