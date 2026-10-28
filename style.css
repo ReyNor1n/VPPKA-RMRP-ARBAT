@@ -1,7 +1,7 @@
-:root{--bg:#16130f;--p1:#1c1814;--p2:#262119;--tx:#e7dcc8;--mut:#a89880;--ln:#5a4c38;--red:#8e2a2a;--cy:#c6a15a;--gold:#b08948;--cut:none}
+:root{--bg:#16130f;--p1:#1c1814;--p2:#262119;--tx:#e7dcc8;--mut:#a89880;--ln:#5a4c38;--red:#9e1b28;--cy:#c6a15a;--gold:#b08948;--cut:none}
 *{box-sizing:border-box}
 /* v242: звезда на фоне, тёплая вуаль. Зерно вместо ЭЛТ-полос. */
-body{margin:0;color:var(--tx);font:16px/1.6 "PT Sans",sans-serif;background-color:var(--bg);background-image:linear-gradient(rgba(22,16,10,.36),rgba(22,16,10,.36)),url("img/bg-soviet-star.jpg");background-repeat:no-repeat;background-position:center center;background-size:cover;background-attachment:fixed}
+body{margin:0;color:var(--tx);font:16px/1.6 "PT Sans",sans-serif;background-color:var(--bg);background-image:linear-gradient(rgba(48,14,16,.32),rgba(16,12,10,.5)),url("img/bg-soviet-star.jpg");background-repeat:no-repeat;background-position:center center;background-size:cover;background-attachment:fixed}
 body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.22;background-image:radial-gradient(rgba(0,0,0,.45) .55px,transparent .7px);background-size:3px 3px}
 /* Контент выше зерна. Панели матовые, без штриховки. */
 .util,.hd,.nav,main,footer{position:relative;z-index:1}
@@ -871,3 +871,24 @@ html.dcl-on #reglink,html.dcl-on .mreg{display:none!important}
   .prof.blk.ldr-card.gold-card{background:#2a2416!important}
   .prof.blk.ldr-card.silver-card{background:#2a2d31!important}
 }
+/* Коммунистический штамп поверх метро: красная звезда, герб, плакатная плашка. Панели остаются прямыми. */
+.util{background:#120c0c;border-top:5px solid var(--red);border-bottom-color:#4a3028}
+.hd{background:linear-gradient(180deg,#2a1416 0%,#1c1814 46%,#16130f 100%);border-bottom:0}
+.hd .os{color:#d45a5a}
+.nav{background:#14110e;border-bottom:3px solid var(--red)}
+.nav a.on{background:rgba(158,27,40,.16)}
+.hd .rt .reglink{color:#f3ead8;border-color:var(--red);border-radius:0}
+.hd .rt .reglink:hover{background:rgba(158,27,40,.2)}
+.hd .rt .authlink:not(.in),.hd .rt a.authlink:not(.in){background:var(--red)!important;color:#f6ead8!important;border-color:var(--red)!important;border-radius:0}
+.intro{background:linear-gradient(90deg,rgba(158,27,40,.2),rgba(158,27,40,0) 48%),#1e1a15!important;border-left:6px solid var(--red)}
+.blk h2:before,.lsec>h2:before,.pg>h1:before,.intro h1:before,.doc .hdr h1:before,footer h4:before,.duty-hd span:before{content:"★ ";color:#d45a5a;font-weight:500}
+.lsec>h2{border-left:4px solid var(--red);padding-left:10px}
+.pg h1:after{width:148px;height:3px;background:var(--red)}
+.doc .hdr{border-bottom:3px solid var(--red)}
+.joinbig{background:#7a1822;border-color:#c45a5a;color:#f6ead8}
+.joinbig:hover{background:#8e222c;border-color:#d47a78;color:#fff}
+.prof-ph.ldr-av,.mpg .prof-ph.ldr-av{border-color:var(--red)!important}
+footer{border-top:4px solid var(--red);background:#120e0c}
+footer .req{color:#8a7a64}
+.ft-brand{display:flex;gap:14px;align-items:flex-start}
+.ft-brand img{width:72px;height:auto;flex:none;filter:none}

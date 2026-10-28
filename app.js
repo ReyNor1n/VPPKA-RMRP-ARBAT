@@ -9,7 +9,7 @@ const NAMES={about:'О партии',program:'Программа',charter:'Ус�
 function chrome(){if(!C||!S)return;document.title='ВППКА «Коммунисты Арбата» — официальный сайт партии';logo.src=S.mark||'img/gerb-red.png?v=242';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+(S.server||'');
 const items=(C.contacts&&C.contacts.items)||[];
-foot.innerHTML=`<div class="w"><div class="cols"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div>
+foot.innerHTML=`<div class="w"><div class="cols"><div class="ft-brand"><img src="img/gerb-red.png?v=242" alt="Эмблема партии"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div></div>
 <div><h4>О партии</h4><a href="#about">Общие сведения</a><a href="#program">Программа</a><a href="#charter">Устав</a><a href="#howto">Как вступить</a><a href="#leadership">Руководители партии</a><a href="#party">Члены партии</a></div>
 <div><h4>Информация</h4><a href="#news">Новости</a><a href="#legal">Правовая база</a><a href="#contacts">Контакты</a></div>
 <div><h4>Связь</h4>${items.filter(i=>i.url).map(i=>`<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.label)}</a>`).join('')}</div></div>
