@@ -28,7 +28,7 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img ${PHA(u,'t')} alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
 
- <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=242').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
+ <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=243').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
  <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
  ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
 
@@ -62,7 +62,7 @@ const dsh=x=>{const s=String(x||'');const id=s.match(/(\d{15,21})/);const ic='<s
  if(id)return `<a href="https://discord.com/users/${id[1]}" target="_blank" rel="noopener" title="${esc(s)}">${ic}${id[1].slice(0,4)}…${id[1].slice(-4)}</a>`;return s?`<span title="${esc(s)}">${ic}@${esc(s.replace(/^@/,''))}</span>`:'—'};
 const KL={lead:'Руководство',cand:'Члены партии',out:'Вне состава'};
 const canPP=()=>{const p=FB().power||{};return (p.rank||0)>=1000||!!p.owner};
-function mlRows(){const q=mq.trim().toLowerCase();let l=mlist.filter(m=>m.k!=='reg'&&(mf==='all'||m.k===mf)&&(!q||[m.name,m.discord,m.status,m.pp].join(' ').toLowerCase().includes(q)));
+function mlRows(){const q=mq.trim().toLowerCase();let l=mlist.filter(m=>(mf==='all'||m.k===mf)&&(!q||[m.name,m.discord,m.status,m.pp].join(' ').toLowerCase().includes(q)));
  l=l.slice().sort(ms==='az'?(a,b)=>String(a.name).localeCompare(String(b.name),'ru'):(a,b)=>b.t-a.t);
  return l.map(m=>`<div class="ml-r"><span class="ml-p${window.isLdr&&window.isLdr(m.name)?' ldr-av'+(window.LT?window.LT(m.name):''):''}">${m.photo?`<img ${PHA(m.photo,'t')} alt="${esc(m.name||'')}">`:'<i></i>'}</span><span class="ml-n"><b>${esc(m.name||'—')}</b>${m.acc?'<span class="ml-ic" title="Аккаунт на сайте">◉</span>':''}${m.app?'<span class="ml-ic" title="Подана заявка">✉</span>':''}</span><span class="ml-d">${dsh(m.discord)}</span>${mlPP?`<span class="ml-pp" title="Номер паспорта">${esc(m.pp||'—')}</span>`:''}<span class="ml-s ml-${m.k==='out'?'reg':m.k}" title="${esc(m.tip||m.status)}">${esc(m.status)}</span><span class="ml-t">${esc(m.date)}</span></div>`).join('')||'<div class="ml-r">Никого не найдено.</div>'}
 window.VPPKA_ML=(k,v)=>{if(k==='q')mq=v;if(k==='f')mf=v;if(k==='s')ms=ms==='az'?'new':'az';const e=document.getElementById('ml-l');if(e)e.innerHTML=mlRows();document.querySelectorAll('.ml-c').forEach(b=>b.classList.toggle('on',b.dataset.f===mf));const sb=document.getElementById('ml-sort');if(sb)sb.textContent=ms==='az'?'А–Я':'Новые';};
@@ -125,7 +125,7 @@ async function loadMembers(){let er='';const f=F(),me=FB().user&&FB().user.uid,m
   out.push({name:x.fio,discord:a.discordId||x.discord,status:'Заявка принята, нет в составе',tip:'Принятая заявка без карточки в составе и без аккаунта',k:'out',app:1,date:t?new Date(t).toLocaleDateString('ru-RU'):'—',t})}
  mlPP=canPP();
  if(mlPP)await Promise.all(out.filter(o=>o.uid).map(async o=>{try{const s=await f.getDoc(f.doc(db(),'users',o.uid,'priv','p'));if(s.exists())o.pp=s.data().passport||''}catch(e){}}));
- mlist=out.filter(o=>o.k!=='reg').sort((a,b)=>b.t-a.t);if(location.hash==='#members'){window.route();if(er)msg(er);}}
+ mlist=out.sort((a,b)=>b.t-a.t);if(location.hash==='#members'){window.route();if(er)msg(er);}}
 
 
 // Гости: зарегистрированы на сайте, но не приняты в партию. Отдельный блок, не список «Участники партии».
@@ -283,9 +283,9 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
    // Отправка в Discord: своя строка из «Каналы Discord» или канал новостей «как обычно» — через бота (discordOut)
    let dtNote='';const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=242');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=243');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    // «как обычно» — тоже через бота (b_news): вебхуки config/discord видит только владелец
-   else{try{const m=await import('./discord-targets.js?v=242');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   else{try{const m=await import('./discord-targets.js?v=243');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    editNews=null;await done('Сохранено.'+dtNote);}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}
