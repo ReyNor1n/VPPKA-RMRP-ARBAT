@@ -892,3 +892,23 @@ footer{border-top:4px solid var(--red);background:#120e0c}
 footer .req{color:#8a7a64}
 .ft-brand{display:flex;gap:14px;align-items:flex-start}
 .ft-brand img{width:72px;height:auto;flex:none;filter:none}
+/* Без киберпанка: ни неоновых ореолов, ни синего стекла. Рамка и свечение карточек ЦК остаются. */
+.hd img,.intro img,.ldr-badge img,.lgrid .lc-vac .lc-ph img.lc-emb,.noph>b,.pm-av.noph>b,.av .avini,.ch-av.noph>b,
+#pm-grid .pm-av.noph>b,.lgrid .lc-ph.noph>b,.prof-n,.hd .nm,.doc .hdr h1,.intro h1{filter:none;text-shadow:none}
+.fl input:focus,.jf textarea:focus,.pm-q:focus,.kpanel,.vid,.pm-card:hover,.pm-av,.ch-btn,.hnote,.acc-md,.asg-box,.hj-n,
+#installBtn,.btn.danger:hover,.hd .hcard .av,.ldr-av.pm-av,.ldr-av.ch-av,.cm-av.ldr-av,.ml-p.ldr-av img,.ml-p.ldr-av i,
+.pm-card.ldr-pc:hover,.pm-card.ldr-pc:hover .pm-av,.ch-av.ldr-av:hover,.cm-av.ldr-av:hover,.rk-btn:hover,.hd .hcard.gold .av,
+.lgrid .lc-inf:before,#pm-grid .pm-inf:before{box-shadow:none!important}
+.ldr .mcard[class*=" t-"],.ldr .mcard[class*=" t-"]:hover{box-shadow:none}
+.lgrid .lc-inf{background:linear-gradient(180deg,transparent 0,#16130fcc 42%,#120e0cf5 100%)}
+.lgrid .lc:not(.t-cc1):not(.t-cc2):not(.t-cc3){border-color:color-mix(in srgb,var(--tc) 42%,#5a4c38);box-shadow:0 8px 18px -14px #000}
+.lgrid .lc-j{color:#c4b59a}.lgrid .lc-vac .lc-n{color:#a89880}
+.lgrid .lc:focus-visible:not(.t-cc1):not(.t-cc2):not(.t-cc3),#pm-grid .pm-card:focus-visible{box-shadow:none;outline:2px solid var(--gold);outline-offset:2px}
+.pm-card,.hnote{background:#1e1a15}
+.pm-av,.ch-av,.ph0{background:#221c16}
+.ch-btn{box-shadow:0 4px 10px rgba(0,0,0,.45)}
+.creator-b{background:rgba(176,137,72,.16);border-color:var(--gold);box-shadow:none;color:#f3ead8}
+.amu,.amu:hover,h1 .amu,body>.amu.def:not([hidden]){box-shadow:inset 0 0 0 2px #000a,inset 0 0 0 3px #8a7a644d}
+@media(hover:hover){
+  .lgrid .lc:not(.t-cc1):not(.t-cc2):not(.t-cc3):hover{box-shadow:0 14px 28px -16px #000;transform:none}
+}
