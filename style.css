@@ -907,3 +907,10 @@ b,strong{font-weight:700}
 h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthesis:none;letter-spacing:.04em}
 .pg h1,.doc .hdr h1{font-size:36px}
 .btn{letter-spacing:.08em}
+/* v248: цитата на главной — меньше кегль, шрифт прежний */
+.intro h1{font-size:clamp(15px,1.45vw,19px);line-height:1.4;max-width:62ch}
+.intro h1:before{font-size:.9em}
+/* v248: «Личные данные» — всегда в самом низу профиля на всю ширину, ничего не сдвигает */
+.mpg>.pvx{order:99}
+@media(min-width:861px){.mpg>.pvx{grid-column:1/-1;grid-row:99;margin:12px 0 0!important}}
+@media(min-width:861px){.mpg>.rh{grid-column:2;grid-row:3;align-self:start}.mpg:has(.act)>.rh{grid-column:1/-1;grid-row:98;margin-left:0}}
