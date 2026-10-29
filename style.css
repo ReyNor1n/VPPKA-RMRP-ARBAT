@@ -1069,3 +1069,47 @@ h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthes
 @media(max-width:600px){.lgrid .lc-n{line-height:1.2}.lgrid .lc-inf{gap:4px}}
 .prof-ph.noph .prof-stamp{display:none}
 @media(max-width:600px){.lgrid .lc-ph.noph{align-items:flex-start}.lgrid .lc-ph.noph>b{font-size:32px;margin:28px 0 0}}
+/* v251: компактная табличка — только ФИО и звание, лицо открыто (табличка ≤ ~25–30% фото) */
+.lgrid .lc-inf,.lgrid-home .lc-inf{gap:3px;padding:7px 10px 6px}
+.lgrid .lc-n,.lgrid-home .lc-n{font-size:16px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.lgrid .lc-r,.lgrid-home .lc-r{display:block;min-width:0;max-width:100%;font-size:10px;line-height:1.3;padding:1px 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lgrid .lc:is(.gold-card,.silver-card) .lc-r{padding:1px 6px 0!important}
+.lgrid .lc:not(.lc-vac) .lc-inf:after{top:-7px;right:7px;padding:1px 4px 0;font-size:7.5px;letter-spacing:.12em;outline-offset:1px;border-width:1px}
+.lgrid .lc-j,.lgrid .lc-q,#pm-grid .pm-j{display:none}
+.lgrid .lc:not(.lc-vac) .lc-ph:after{height:34%}
+@container (max-width:205px){.lgrid .lc-n{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:13.5px;line-height:1.12}}
+@media(max-width:600px){.lgrid .lc-inf,.lgrid-home .lc-inf{padding:5px 7px 5px;gap:2px}.lgrid .lc-r,.lgrid-home .lc-r{font-size:9px;padding:1px 4px 0}
+ .lgrid .lc:is(.gold-card,.silver-card) .lc-r{padding:1px 4px 0!important}
+ .lgrid .lc:not(.lc-vac) .lc-inf:after{font-size:6.5px;top:-6px;right:5px;padding:1px 3px 0}
+ .lgrid-home .lc-n{font-size:16px}}
+#pm-grid .pm-inf,#pm-grid .pm-card:is(.gold-card,.silver-card) .pm-inf{margin-top:-46px;gap:3px;padding:7px 10px 6px}
+#pm-grid .pm-n{font-size:15px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#pm-grid .pm-r,#pm-grid .pm-card:is(.gold-card,.silver-card) .pm-r{display:block;min-width:0;max-width:100%;font-size:10px;line-height:1.3;padding:1px 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pm-grid .pm-inf:after{top:-7px;right:7px;padding:1px 4px 0;font-size:7.5px;letter-spacing:.12em;outline-offset:1px;border-width:1px}
+#pm-grid .pm-card .pm-av:after{height:30%}
+@media(max-width:768px){#pm-grid .pm-inf,#pm-grid .pm-card:is(.gold-card,.silver-card) .pm-inf{margin-top:-30px;padding:5px 7px 5px;gap:2px}
+ #pm-grid .pm-n{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:13px;line-height:1.12}
+ #pm-grid .pm-r,#pm-grid .pm-card:is(.gold-card,.silver-card) .pm-r{font-size:9px;padding:1px 4px 0}
+ #pm-grid .pm-inf:after{font-size:6.5px;top:-6px;right:5px;padding:1px 3px 0}}
+#pm-grid .pm-n{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.lgrid .lc-inf,#pm-grid .pm-inf{gap:4px}.lgrid .lc-n,#pm-grid .pm-n{line-height:1.2}
+
+/* v252: «Руководители партии» на главной — без таблички: только надписи по нижнему краю фото (трафарет + машинопись),
+   читаемость — тенью/обводкой и узкой тенью у самого края; персонаж открыт. Рамка ЦК, золото/серебро и hover — как были. */
+.lgrid-home .lc .lc-inf,.lgrid-home .lc:is(.t-cc1,.t-cc2,.t-cc3) .lc-inf,.lgrid-home .lc:is(.gold-card,.silver-card) .lc-inf,
+.lgrid-home .lc.gold-card:is(.t-cc1,.t-cc2,.t-cc3) .lc-inf,.lgrid-home .lc-vac .lc-inf{background:none!important;box-shadow:none!important;left:10px;right:10px;bottom:8px;padding:0!important;gap:3px}
+.lgrid-home .lc .lc-inf:after,.lgrid-home .lc:not(.lc-vac) .lc-inf:after{content:none!important;display:none!important}
+.lgrid-home .lc:not(.lc-vac) .lc-ph:after{height:26%;background:linear-gradient(180deg,transparent 0,rgba(8,6,5,.35) 45%,rgba(8,6,5,.82) 100%)}
+.lgrid-home .lc .lc-n,.lgrid-home .lc.gold-card .lc-n,.lgrid-home .lc.silver-card .lc-n{display:block;font:400 clamp(11px,7.4cqi,19px)/1.15 var(--fh);letter-spacing:.05em;text-transform:none;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;-webkit-line-clamp:unset;
+ color:#efe4cc;text-shadow:0 1px 0 #000,1px 0 0 #000,-1px 0 0 #000,0 -1px 0 #000,0 2px 6px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.7)}
+.lgrid-home .lc .lc-r,.lgrid-home .lc:is(.t-cc1,.t-cc2,.t-cc3) .lc-r,.lgrid-home .lc:is(.gold-card,.silver-card) .lc-r{align-self:flex-start;display:flex;align-items:center;gap:6px;max-width:100%;padding:0!important;background:none!important;box-shadow:none!important;
+ font:400 10.5px/1.2 var(--fb);letter-spacing:.12em;text-transform:uppercase;color:#e2c271!important;text-shadow:0 1px 0 #000,1px 0 0 #000,-1px 0 0 #000,0 0 6px rgba(0,0,0,.95)!important}
+.lgrid-home .lc .lc-r:before{content:"";flex:none;width:14px;height:2px;background:#b3121f;box-shadow:0 1px 0 #000}
+.lgrid-home .lc.gold-card .lc-n{color:#f3d98a}
+.lgrid-home .lc.gold-card .lc-r{color:#f3e6c4!important}.lgrid-home .lc.gold-card .lc-r:before{background:#d4a640}
+.lgrid-home .lc.silver-card .lc-n{color:#e9eef3}
+.lgrid-home .lc.silver-card .lc-r{color:#d9dfe6!important}.lgrid-home .lc.silver-card .lc-r:before{background:#9aa3ad}
+.lgrid-home .lc-vac .lc-n{color:#a89880;font-style:normal}
+.lgrid-home .lc-j,.lgrid-home .lc-q{display:none!important}
+@container (max-width:205px){.lgrid-home .lc .lc-n{white-space:nowrap!important;display:block}}
+@media(max-width:600px){.lgrid-home .lc .lc-inf{left:12px!important;right:12px!important;bottom:10px!important}.lgrid-home .lc .lc-n{font-size:clamp(14px,6.4cqi,20px)}.lgrid-home .lc .lc-r{font-size:11px}.lgrid-home .lc:not(.lc-vac) .lc-ph:after{height:22%}}
