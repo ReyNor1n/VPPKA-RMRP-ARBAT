@@ -901,3 +901,13 @@ b,strong{font-weight:700}
 .doc p,.doc li,.doc .t{text-align:left}
 @media(max-width:480px){body{font-size:14.5px}}
 @media(max-width:600px){.lgrid .lc-n{font-size:17px}.lgrid .lc-r{font-size:10.5px;line-height:1.25}.lgrid .lc-j{font-size:10px}}
+/* v245-C: трафарет с копотью + машинопись TT2020 — «антуражнее» под «Метро 2033». Кириллица полная, OFL. */
+@font-face{font-family:"Metro Stencil";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/ussr-stencil.woff2) format("woff2")}
+@font-face{font-family:"Metro Typewriter";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/tt2020e.woff2) format("woff2")}
+:root{--fh:"Metro Stencil",var(--fd);--fb:"Metro Typewriter","Metro Type","PT Mono","Courier New",monospace}
+h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthesis:none;letter-spacing:.04em}
+.pg h1,.doc .hdr h1{font-size:36px}
+.pg h1,.doc .hdr h1,.intro h1{-webkit-mask:url(img/grunge.svg) 0 0/480px 240px;mask:url(img/grunge.svg) 0 0/480px 240px}
+.hd .nm span{font-family:var(--fd);letter-spacing:.14em}
+body{font-size:16px}
+@media(max-width:480px){body{font-size:15px}}
