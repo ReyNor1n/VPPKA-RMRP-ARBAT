@@ -10,7 +10,7 @@
 .ny-gl i:before{content:"";position:absolute;left:1px;top:-2px;width:4px;height:3px;background:#8c939c;border-radius:1px}
 @keyframes nyB{50%{opacity:.35;box-shadow:none}}
 .ny-hat{position:absolute;width:26px;height:22px;pointer-events:none;z-index:6;transform:rotate(-18deg)}
-.ny-tree{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font:600 11px "Oswald",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#e6c98a;opacity:.9;white-space:nowrap}
+.ny-tree{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font:600 11px var(--fd);letter-spacing:.12em;text-transform:uppercase;color:#e6c98a;opacity:.9;white-space:nowrap}
 .ny-tree svg{width:18px;height:22px;filter:drop-shadow(0 0 4px #d6282888)}
 #ny-sn{position:fixed;inset:0;pointer-events:none;z-index:40}
 @media(max-width:600px){.ny-tree{display:none}.ny-hat{width:18px;height:15px}.ny-gl i:nth-child(even){display:none}}
