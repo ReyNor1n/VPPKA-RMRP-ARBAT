@@ -914,3 +914,158 @@ h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthes
 .mpg>.pvx{order:99}
 @media(min-width:861px){.mpg>.pvx{grid-column:1/-1;grid-row:99;margin:12px 0 0!important}}
 @media(min-width:861px){.mpg>.rh{grid-column:2;grid-row:3;align-self:start}.mpg:has(.act)>.rh{grid-column:1/-1;grid-row:98;margin-left:0}}
+/* v248: карточки — партбилет и наградной металл. Прямые углы, без неона.
+   Латунь (владелец) и сталь (зам) — с зерном, патиной, шлифовкой и медленным бликом. */
+:root{
+ --grain:url(img/tex-grain.svg) 0 0/180px 180px;
+ --brush:url(img/tex-brush.svg) 0 0/360px 180px;
+ --patina:url(img/tex-patina.svg) 0 0/420px 420px;
+ --patina-soft:url(img/tex-patina-soft.svg) 0 0/520px 520px;
+ --brass:linear-gradient(128deg,#6e5019 0%,#a9802f 16%,#d8b768 31%,#a47a2b 47%,#c9a24f 63%,#7a5a1f 82%,#a8843a 100%);
+ --steel:linear-gradient(128deg,#4b525a 0%,#878f98 16%,#c4cad0 31%,#7a828b 47%,#aab1b8 63%,#525a62 82%,#8e959d 100%);
+ --cloth:linear-gradient(180deg,#5c121a,#3c0a10);
+ --sheen-g:linear-gradient(112deg,transparent 38%,rgba(255,236,180,.20) 50%,transparent 62%);
+ --sheen-s:linear-gradient(112deg,transparent 38%,rgba(240,246,255,.22) 50%,transparent 62%);
+ --rivets:radial-gradient(circle at 7px 7px,#e6d3a6 0 .9px,#7d6640 1.4px,#211a10 2.1px,transparent 2.6px),
+  radial-gradient(circle at calc(100% - 7px) 7px,#e6d3a6 0 .9px,#7d6640 1.4px,#211a10 2.1px,transparent 2.6px),
+  radial-gradient(circle at 7px calc(100% - 7px),#e6d3a6 0 .9px,#7d6640 1.4px,#211a10 2.1px,transparent 2.6px),
+  radial-gradient(circle at calc(100% - 7px) calc(100% - 7px),#e6d3a6 0 .9px,#7d6640 1.4px,#211a10 2.1px,transparent 2.6px);
+ --pin:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='12,1.6 14.6,8.7 22.1,8.9 16.2,13.6 18.3,20.9 12,16.7 5.7,20.9 7.8,13.6 1.9,8.9 9.4,8.7' fill='%23a5141f' stroke='%23caa45a' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M12 3.4V12l8.3-2.6L12 12l4.7 7.2L12 12l-4.7 7.2L12 12 3.7 9.4 12 12' fill='none' stroke='%23000' stroke-opacity='.28' stroke-width='.7'/%3E%3Cpath d='M12 3.4 14 9.3l6.2.2L12 12z M12 12l4.8 7.1-1.9-6.2z M12 12 3.8 9.5l5.1 3.7z' fill='%23fff' fill-opacity='.14'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+/* ——— Сетка руководства (главная и «Руководство») ——— */
+.lgrid .lc:before{content:""!important;display:block!important;position:absolute;inset:5px;z-index:3;pointer-events:none;border:1px solid rgba(202,164,90,.26);box-shadow:none;background:none;clip-path:none}
+.lgrid .lc:not(.lc-vac) .lc-ph:before{content:"";position:absolute;top:12px;left:12px;width:22px;height:22px;z-index:3;background:var(--pin);filter:drop-shadow(0 1px 1px rgba(0,0,0,.75))}
+.lgrid .lc:not(.lc-vac) .lc-ph:after{content:"";position:absolute;left:0;right:0;bottom:0;height:48%;z-index:1;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(10,8,6,.7))}
+.lgrid .lc-ph img{position:relative;z-index:0}
+.lgrid .lc-inf{left:6px;right:6px;bottom:6px;z-index:4;gap:4px;padding:11px 12px 10px;
+ background:var(--grain),var(--brush),linear-gradient(180deg,#26211b,#16130f);
+ box-shadow:inset 0 1px 0 rgba(255,232,190,.12),inset 0 -1px 0 rgba(0,0,0,.6),0 0 0 1px #0b0907,0 4px 10px rgba(0,0,0,.6)}
+.lgrid .lc-inf:before{display:none!important}
+.lgrid .lc-n{color:#efe4cc;text-shadow:0 1px 0 #000}
+.lgrid .lc-r{align-self:flex-start;max-width:100%;padding:2px 7px 1px;color:#f3e4c2;text-shadow:0 1px 0 rgba(0,0,0,.45);
+ background:var(--grain),linear-gradient(180deg,#9c1d27,#76121b);box-shadow:inset 0 1px 0 rgba(255,190,170,.2),inset 0 -1px 0 rgba(0,0,0,.35),0 1px 0 rgba(0,0,0,.5)}
+.lgrid .lc-j{color:#a89c86;text-shadow:none}
+.lgrid .lc-q{color:#cdbfa6;text-shadow:none}
+/* Штамп: красная мастика поперёк кромки таблички */
+.lgrid .lc:not(.lc-vac) .lc-inf:after{content:"ВППКА";position:absolute;right:9px;top:-11px;padding:2px 5px 1px;font:10px/1 var(--fh);letter-spacing:.14em;color:#c3222e;
+ border:1.5px solid currentColor;outline:1px solid currentColor;outline-offset:1.5px;opacity:.8;transform:rotate(-7deg);pointer-events:none;
+ -webkit-mask:url(img/ink.svg) 0 0/140px 70px;mask:url(img/ink.svg) 0 0/140px 70px}
+.lgrid .lc:is(.t-cc1,.t-cc2,.t-cc3):not(.lc-vac) .lc-inf:after{content:"ЦК ВППКА"}
+/* ЦК: табличка — красная корочка партбилета, звание тиснёно золотом */
+.lgrid .lc:is(.t-cc1,.t-cc2,.t-cc3) .lc-inf{background:var(--grain),var(--cloth)!important;box-shadow:inset 0 0 0 3px rgba(0,0,0,.18),inset 0 0 0 4px rgba(214,174,92,.42),0 0 0 1px #1a0507,0 4px 10px rgba(0,0,0,.6)}
+.lgrid .lc:is(.t-cc1,.t-cc2,.t-cc3) .lc-inf:after{color:#e0b85c;opacity:.7}
+.lgrid .lc:is(.t-cc1,.t-cc2,.t-cc3) .lc-r{background:none;box-shadow:none;padding:0;color:#e2c271;text-shadow:0 1px 0 rgba(0,0,0,.55),0 -1px 0 rgba(255,236,170,.12)}
+.lgrid .lc:is(.t-cc1,.t-cc2,.t-cc3) .lc-j{color:#c9a6a0}
+.lgrid .lc-vac .lc-inf{background:linear-gradient(180deg,#1a1714,#120f0d)}
+/* Латунь и сталь: паспарту из металла вокруг фото + гравированная табличка */
+.lgrid .lc.gold-card{background:var(--grain),var(--patina),var(--brush),var(--brass)!important;border-color:#8d6a2a!important}
+.lgrid .lc.silver-card{background:var(--grain),var(--patina),var(--brush),var(--steel)!important;border-color:#6d747c!important}
+.lgrid .lc.gold-card:is(.t-cc1,.t-cc2,.t-cc3){background:var(--grain) padding-box,var(--patina) padding-box,var(--brush) padding-box,var(--brass) padding-box,linear-gradient(135deg,#f0cf6a 0%,#d4a640 30%,#b3121f 72%,#7d0b16 100%) border-box!important}
+@media(hover:hover){.lgrid .lc.gold-card:is(.t-cc1,.t-cc2,.t-cc3):hover{background:var(--grain) padding-box,var(--patina) padding-box,var(--brush) padding-box,var(--brass) padding-box,linear-gradient(135deg,#ffe08a 0%,#e8b94e 30%,#d81a2b 72%,#9c0d1b 100%) border-box!important}}
+.lgrid .lc:is(.gold-card,.silver-card) .lc-ph{inset:7px 7px 7px 7px;box-shadow:0 0 0 1px rgba(0,0,0,.55),0 0 0 2px rgba(255,240,205,.16)}
+.lgrid .lc:is(.gold-card,.silver-card):before{border-color:rgba(40,26,8,.35)}
+.lgrid .lc:is(.gold-card,.silver-card) .lc-inf{left:7px;right:7px;bottom:7px}
+.lgrid .lc.gold-card .lc-inf,.lgrid .lc.gold-card:is(.t-cc1,.t-cc2,.t-cc3) .lc-inf{background:var(--rivets),var(--grain),var(--patina),var(--brush),var(--brass)!important;background-size:auto,180px 180px,420px 420px,360px 180px,auto!important;background-position:0 0,0 0,-60px -40px,0 0,0 0!important;
+ box-shadow:inset 0 1px 0 rgba(255,236,180,.55),inset 0 -1px 0 rgba(40,24,4,.6),inset 0 0 18px rgba(60,36,6,.45),0 0 0 1px #3a280b,0 4px 10px rgba(0,0,0,.6)!important}
+.lgrid .lc.silver-card .lc-inf{background:var(--rivets),var(--grain),var(--patina),var(--brush),var(--steel)!important;background-size:auto,180px 180px,420px 420px,360px 180px,auto!important;background-position:0 0,0 0,-60px -40px,0 0,0 0!important;
+ box-shadow:inset 0 1px 0 rgba(245,250,255,.5),inset 0 -1px 0 rgba(10,14,18,.6),inset 0 0 18px rgba(20,26,32,.4),0 0 0 1px #23282e,0 4px 10px rgba(0,0,0,.6)!important}
+.lgrid .lc.gold-card .lc-n{color:#2a1a06;text-shadow:0 1px 0 rgba(255,238,190,.45)}
+.lgrid .lc.silver-card .lc-n{color:#15191e;text-shadow:0 1px 0 rgba(245,250,255,.45)}
+.lgrid .lc.gold-card .lc-j,.lgrid .lc.gold-card .lc-q{color:#3a2709;text-shadow:0 1px 0 rgba(255,238,190,.35)}
+.lgrid .lc.silver-card .lc-j,.lgrid .lc.silver-card .lc-q{color:#20262d;text-shadow:0 1px 0 rgba(245,250,255,.35)}
+.lgrid .lc:is(.gold-card,.silver-card) .lc-r{padding:2px 7px 1px!important;color:#f3e4c2!important;background:var(--grain),linear-gradient(180deg,#9c1d27,#76121b)!important;box-shadow:inset 0 1px 0 rgba(255,190,170,.25),inset 0 -1px 0 rgba(0,0,0,.35),0 1px 0 rgba(255,240,200,.3)!important;text-shadow:0 1px 0 rgba(0,0,0,.45)!important}
+.lgrid .lc:is(.gold-card,.silver-card) .lc-inf:after{content:"ВППКА";color:#9e1520;opacity:.72}
+/* ——— «Члены партии» ——— */
+#pm-grid .pm-card{border-radius:0;position:relative}
+#pm-grid .pm-card:before{content:""!important;display:block!important;position:absolute;inset:5px;z-index:4;pointer-events:none;border:1px solid rgba(202,164,90,.24)}
+#pm-grid .pm-av{position:relative}
+#pm-grid .pm-card .pm-av:before{background:var(--pin)!important;inset:auto!important;top:12px!important;left:12px!important;width:22px;height:22px;z-index:3!important;filter:drop-shadow(0 1px 1px rgba(0,0,0,.75))}
+#pm-grid .pm-inf{margin:-64px 6px 6px;padding:11px 12px 10px;
+ background:var(--grain),var(--brush),linear-gradient(180deg,#26211b,#16130f);
+ box-shadow:inset 0 1px 0 rgba(255,232,190,.12),inset 0 -1px 0 rgba(0,0,0,.6),0 0 0 1px #0b0907,0 4px 10px rgba(0,0,0,.6)}
+#pm-grid .pm-inf:before{display:none}
+#pm-grid .pm-inf:after{content:"ВППКА";position:absolute;right:9px;top:-11px;padding:2px 5px 1px;font:10px/1 var(--fh);letter-spacing:.14em;color:#c3222e;
+ border:1.5px solid currentColor;outline:1px solid currentColor;outline-offset:1.5px;opacity:.8;transform:rotate(-7deg);pointer-events:none;
+ -webkit-mask:url(img/ink.svg) 0 0/140px 70px;mask:url(img/ink.svg) 0 0/140px 70px}
+#pm-grid .pm-n{color:#efe4cc;text-shadow:0 1px 0 #000}
+#pm-grid .pm-r{align-self:flex-start;max-width:100%;padding:2px 7px 1px;color:#f3e4c2;letter-spacing:.06em;
+ background:var(--grain),linear-gradient(180deg,#9c1d27,#76121b);box-shadow:inset 0 1px 0 rgba(255,190,170,.2),inset 0 -1px 0 rgba(0,0,0,.35),0 1px 0 rgba(0,0,0,.5)}
+#pm-grid .pm-j{color:#a89c86}
+#pm-grid .pm-card:is(.t-cc1,.t-cc2,.t-cc3) .pm-inf{background:var(--grain),var(--cloth);box-shadow:inset 0 0 0 3px rgba(0,0,0,.18),inset 0 0 0 4px rgba(214,174,92,.42),0 0 0 1px #1a0507,0 4px 10px rgba(0,0,0,.6)}
+#pm-grid .pm-card:is(.t-cc1,.t-cc2,.t-cc3) .pm-r{background:none;box-shadow:none;padding:0;color:#e2c271}
+#pm-grid .pm-card:is(.t-cc1,.t-cc2,.t-cc3) .pm-j{color:#c9a6a0}
+#pm-grid .pm-card:is(.t-cc1,.t-cc2,.t-cc3) .pm-inf:after{content:"ЦК ВППКА";color:#e0b85c;opacity:.7}
+#pm-grid .pm-card.gold-card{background:var(--grain),var(--patina),var(--brush),var(--brass)!important;border-color:#8d6a2a!important}
+#pm-grid .pm-card.silver-card{background:var(--grain),var(--patina),var(--brush),var(--steel)!important;border-color:#6d747c!important}
+#pm-grid .pm-card:is(.gold-card,.silver-card) .pm-av{width:auto;margin:7px 7px 0;box-shadow:0 0 0 1px rgba(0,0,0,.55),0 0 0 2px rgba(255,240,205,.16)!important}
+#pm-grid .pm-card:is(.gold-card,.silver-card) .pm-inf{margin:-64px 7px 7px}
+#pm-grid .pm-card.gold-card .pm-inf{background:var(--rivets),var(--grain),var(--patina),var(--brush),var(--brass);background-size:auto,180px 180px,420px 420px,360px 180px,auto;background-position:0 0,0 0,-60px -40px,0 0,0 0;
+ box-shadow:inset 0 1px 0 rgba(255,236,180,.55),inset 0 -1px 0 rgba(40,24,4,.6),inset 0 0 18px rgba(60,36,6,.45),0 0 0 1px #3a280b,0 4px 10px rgba(0,0,0,.6)}
+#pm-grid .pm-card.silver-card .pm-inf{background:var(--rivets),var(--grain),var(--patina),var(--brush),var(--steel);background-size:auto,180px 180px,420px 420px,360px 180px,auto;background-position:0 0,0 0,-60px -40px,0 0,0 0;
+ box-shadow:inset 0 1px 0 rgba(245,250,255,.5),inset 0 -1px 0 rgba(10,14,18,.6),inset 0 0 18px rgba(20,26,32,.4),0 0 0 1px #23282e,0 4px 10px rgba(0,0,0,.6)}
+#pm-grid .pm-card.gold-card .pm-n{color:#2a1a06;text-shadow:0 1px 0 rgba(255,238,190,.45)}
+#pm-grid .pm-card.silver-card .pm-n{color:#15191e;text-shadow:0 1px 0 rgba(245,250,255,.45)}
+#pm-grid .pm-card.gold-card .pm-j{color:#3a2709}#pm-grid .pm-card.silver-card .pm-j{color:#20262d}
+#pm-grid .pm-card:is(.gold-card,.silver-card) .pm-r{padding:2px 7px 1px;color:#f3e4c2;background:var(--grain),linear-gradient(180deg,#9c1d27,#76121b);box-shadow:inset 0 1px 0 rgba(255,190,170,.25),inset 0 -1px 0 rgba(0,0,0,.35),0 1px 0 rgba(255,240,200,.3)}
+#pm-grid .pm-card:is(.gold-card,.silver-card) .pm-inf:after{content:"ВППКА";color:#9e1520;opacity:.72}
+/* Медленный блик по металлу (только латунь/сталь; при «уменьшить движение» — без анимации) */
+.lgrid .lc.gold-card:after,.lgrid .lc.silver-card:after,#pm-grid .pm-card.gold-card:after,#pm-grid .pm-card.silver-card:after,
+.prof.blk.ldr-card.gold-card:after,.prof.blk.ldr-card.silver-card:after{content:""!important;display:block!important;position:absolute;inset:0;z-index:5;pointer-events:none;
+ background:var(--sheen-g) -160% 0/260% 100% no-repeat!important;mix-blend-mode:soft-light;animation:v248Sh 9s ease-in-out infinite!important}
+.lgrid .lc.silver-card:after,#pm-grid .pm-card.silver-card:after,.prof.blk.ldr-card.silver-card:after{background:var(--sheen-s) -160% 0/260% 100% no-repeat!important}
+@keyframes v248Sh{0%,62%{background-position:-160% 0}100%{background-position:160% 0}}
+@media(prefers-reduced-motion:reduce){.gold-card:after,.silver-card:after{animation:none!important;display:none!important}}
+/* ——— Профиль: удостоверение / партбилет ——— */
+.prof.blk,.prof.blk.ldr-card{background:var(--grain),linear-gradient(180deg,#221d17,#1a1612)!important;outline:1px solid rgba(202,164,90,.28);outline-offset:-7px;position:relative}
+.prof.blk.ldr-card{border-left:6px solid var(--red)!important}
+.prof.blk.ldr-card.gold-card{background:var(--grain),linear-gradient(90deg,rgba(18,12,4,.88) 0%,rgba(18,12,4,.74) 42%,rgba(18,12,4,.42) 70%,rgba(18,12,4,.12) 100%),var(--patina-soft),var(--brush),var(--brass)!important;
+ border-color:#a07a33!important;border-left-color:var(--red)!important;outline-color:rgba(255,226,160,.32);box-shadow:inset 0 1px 0 rgba(255,236,180,.35),inset 0 0 50px rgba(40,24,4,.55)!important;overflow:hidden}
+.prof.blk.ldr-card.silver-card{background:var(--grain),linear-gradient(90deg,rgba(8,10,13,.88) 0%,rgba(8,10,13,.74) 42%,rgba(8,10,13,.42) 70%,rgba(8,10,13,.12) 100%),var(--patina-soft),var(--brush),var(--steel)!important;
+ border-color:#7d858e!important;border-left-color:var(--red)!important;outline-color:rgba(235,242,250,.3);box-shadow:inset 0 1px 0 rgba(245,250,255,.3),inset 0 0 50px rgba(10,14,18,.5)!important;overflow:hidden}
+@media(max-width:860px){
+ .prof.blk.ldr-card.gold-card{background:var(--grain),linear-gradient(180deg,rgba(18,12,4,.35) 0%,rgba(18,12,4,.72) 45%,rgba(18,12,4,.80) 100%),var(--patina-soft),var(--brush),var(--brass)!important}
+ .prof.blk.ldr-card.silver-card{background:var(--grain),linear-gradient(180deg,rgba(8,10,13,.35) 0%,rgba(8,10,13,.72) 45%,rgba(8,10,13,.80) 100%),var(--patina-soft),var(--brush),var(--steel)!important}}
+.prof.blk:is(.gold-card,.silver-card) .prof-n,.prof.blk:is(.gold-card,.silver-card) h1{text-shadow:0 1px 2px rgba(0,0,0,.8)!important}
+.prof.blk:is(.gold-card,.silver-card) .tbl td,.prof.blk:is(.gold-card,.silver-card) .role,.prof.blk:is(.gold-card,.silver-card) .prof-r,.prof.blk:is(.gold-card,.silver-card) .ldr-badge span{text-shadow:0 1px 2px rgba(0,0,0,.7)!important}
+.prof.blk.gold-card .ldr-badge span{color:#2a1a06!important;text-shadow:0 1px 0 rgba(255,238,190,.45)!important;border-top-color:rgba(60,36,6,.5)!important}
+.prof.blk.silver-card .ldr-badge span{color:#15191e!important;text-shadow:0 1px 0 rgba(245,250,255,.45)!important;border-top-color:rgba(20,26,32,.5)!important}
+.prof-ph{position:relative}
+.prof-stamp{position:absolute;right:-16px;bottom:-14px;width:112px;height:112px;z-index:3;color:#b8141f;opacity:.78;transform:rotate(-14deg);pointer-events:none;font-family:var(--fh);
+ -webkit-mask:url(img/ink.svg) 0 0/200px 100px;mask:url(img/ink.svg) 0 0/200px 100px}
+@media(max-width:860px){.prof-stamp{width:92px;height:92px}}
+.prof.blk.gold-card .tbl td:first-child,.prof.blk.gold-card .prof-r,.prof.blk.gold-card .role{color:#e6c97f!important}
+.prof.blk.silver-card .tbl td:first-child,.prof.blk.silver-card .prof-r,.prof.blk.silver-card .role{color:#d9e0e8!important}
+.prof.blk:is(.gold-card,.silver-card) .amut{color:#cfc3ad!important}
+.prof.blk:is(.gold-card,.silver-card) .tbl td{border-color:rgba(255,236,190,.16)!important}
+.prof.blk.gold-card .btn,.prof.blk.gold-card .duty-btn{color:#f2e2b8!important;border-color:rgba(230,201,127,.7)!important;background:rgba(18,12,4,.6)!important}
+.prof.blk.silver-card .btn,.prof.blk.silver-card .duty-btn{color:#eef2f6!important;border-color:rgba(217,224,232,.7)!important;background:rgba(8,10,13,.6)!important}
+@media(max-width:600px){.lgrid .lc-inf{left:4px;right:4px;bottom:4px;padding:7px 8px 6px;gap:3px}.lgrid .lc:is(.gold-card,.silver-card) .lc-inf{left:5px;right:5px;bottom:5px}
+ .lgrid .lc:is(.gold-card,.silver-card) .lc-ph{inset:5px}.lgrid .lc:before{inset:3px}.lgrid .lc-r{padding:1px 5px 0}
+ .lgrid .lc:not(.lc-vac) .lc-inf:after{font-size:8px;top:-9px;right:6px;padding:1px 4px 0}.lgrid .lc:not(.lc-vac) .lc-ph:before{width:18px;height:18px;top:9px;left:9px}}
+/* v249: ничего не накладывается ни на какой ширине */
+.prof-stamp{right:6px;bottom:6px;width:96px;height:96px}
+.prof.blk>div:not(.prof-ph):not(.ldr-badge){min-width:0;container:ptx/inline-size}
+.prof .tbl td{min-width:0;overflow-wrap:anywhere}
+.mpg .prof .tbl tr{min-width:0}
+@container ptx (max-width:440px){.mpg .prof .tbl tbody{grid-template-columns:minmax(0,1fr)!important}.mpg .prof .tbl tr.creator-r{grid-column:auto}}
+@media(max-width:860px){
+ .prof.blk.ldr-card .ldr-badge{position:static;grid-column:1/-1;flex-direction:row;justify-content:flex-start;align-items:center;width:auto;gap:10px;background:none;padding:0;margin:0 0 2px}
+ .prof.blk.ldr-card .ldr-badge img{width:40px}
+ .prof.blk.ldr-card .ldr-badge span{font-size:10px;border-top:0;padding-top:0}
+ .prof-stamp{width:84px;height:84px}}
+@media(min-width:861px){
+ .mpg>.prof.blk{container:prof/inline-size}
+ @container prof (max-width:780px){
+  .mpg .prof.ldr-card:not(.nob)>.ldr-badge{position:static;grid-column:2;grid-row:1;flex-direction:row;justify-self:start;align-items:center;width:auto;gap:10px;margin:0 0 -8px}
+  .mpg .prof.ldr-card:not(.nob)>.ldr-badge img{width:40px}
+  .mpg .prof.ldr-card:not(.nob)>.ldr-badge span{border-top:0;padding-top:0}
+  .mpg .prof.ldr-card:not(.nob)>.prof-ph{grid-column:1;grid-row:1/span 2}
+  .mpg .prof.ldr-card:not(.nob)>div:not(.prof-ph):not(.ldr-badge){grid-column:2;grid-row:2;padding-right:0}
+  .mpg .prof>.prof-ph{width:clamp(150px,30cqw,240px)}}}
+.lgrid .lc{container-type:inline-size}
+.lgrid .lc-n{line-height:1.22}
+.lgrid .lc-inf{gap:5px}
+@container (max-width:205px){.lgrid .lc-q{display:none}}
+@media(max-width:600px){.lgrid .lc-n{line-height:1.2}.lgrid .lc-inf{gap:4px}}
+.prof-ph.noph .prof-stamp{display:none}
+@media(max-width:600px){.lgrid .lc-ph.noph{align-items:flex-start}.lgrid .lc-ph.noph>b{font-size:32px;margin:28px 0 0}}
