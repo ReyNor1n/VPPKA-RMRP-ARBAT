@@ -901,3 +901,9 @@ b,strong{font-weight:700}
 .doc p,.doc li,.doc .t{text-align:left}
 @media(max-width:480px){body{font-size:14.5px}}
 @media(max-width:600px){.lgrid .lc-n{font-size:17px}.lgrid .lc-r{font-size:10.5px;line-height:1.25}.lgrid .lc-j{font-size:10px}}
+/* v245-A: трафарет USSR Stencil — «антуражнее» под «Метро 2033». Кириллица полная, OFL. */
+@font-face{font-family:"Metro Stencil";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/ussr-stencil.woff2) format("woff2")}
+:root{--fh:"Metro Stencil",var(--fd)}
+h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthesis:none;letter-spacing:.04em}
+.pg h1,.doc .hdr h1{font-size:36px}
+.btn{letter-spacing:.08em}
