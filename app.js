@@ -6,10 +6,10 @@ burger.onclick=()=>{const o=menu.classList.toggle('open');burger.setAttribute('a
 (()=>{const mq=matchMedia('(max-width:768px)'),w=menu.querySelector('.w');const add=()=>{if(!mq.matches)return;w.querySelectorAll('.mauth').forEach(x=>x.remove());const al=document.getElementById('authlink');if(al&&al.style.display!=='none'){const a=document.createElement('a');a.className='mauth';a.href=al.getAttribute('href');a.textContent=al.classList.contains('in')?(al.getAttribute('aria-label')||al.title||'Кабинет'):'Войти';w.appendChild(a);if(!al.classList.contains('in')&&!w.querySelector('.mreg')){const r=document.createElement('a');r.className='mauth mreg';r.href='#register';r.textContent='Регистрация';w.appendChild(r)}}};burger.addEventListener('click',add,true);menu.addEventListener('click',e=>{if(e.target.closest('a')){menu.classList.remove('open');burger.textContent='☰';burger.setAttribute('aria-expanded',false);w.querySelectorAll('.mjoin,.mauth').forEach(x=>x.remove());}});})();
 const strip=t=>t.replace(/^[IVX]+\.\s*/,'');
 const NAMES={about:'О партии',program:'Программа',charter:'Устав',howto:'Как вступить',leadership:'Руководители партии',party:'Члены партии',news:'Новости',events:'Мероприятия',votes:'Голосования',legal:'Правовая база',contacts:'Контакты'};
-function chrome(){if(!C||!S)return;document.title='ВППКА «Коммунисты Арбата» — официальный сайт партии';logo.src=S.mark||'img/gerb-red.png?v=252';
+function chrome(){if(!C||!S)return;document.title='ВППКА «Коммунисты Арбата» — официальный сайт партии';logo.src=S.mark||'img/gerb-red.png?v=253';
 pname.innerHTML=`<span>Всероссийская политическая партия</span>${esc((S.name.match(/«([^»]+)»/)||[,S.name])[1])}`;srv.textContent=S.name+' · '+(S.server||'');
 const items=(C.contacts&&C.contacts.items)||[];
-foot.innerHTML=`<div class="w"><div class="cols"><div class="ft-brand"><img src="img/gerb-red.png?v=252" alt="Эмблема партии"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div></div>
+foot.innerHTML=`<div class="w"><div class="cols"><div class="ft-brand"><img src="img/gerb-red.png?v=253" alt="Эмблема партии"><div><h4>${esc(S.short)}</h4><p>${esc(S.name)}<br>Идеология: ${esc(S.ideology)}</p></div></div>
 <div><h4>О партии</h4><a href="#about">Общие сведения</a><a href="#program">Программа</a><a href="#charter">Устав</a><a href="#howto">Как вступить</a><a href="#leadership">Руководители партии</a><a href="#party">Члены партии</a></div>
 <div><h4>Информация</h4><a href="#news">Новости</a><a href="#legal">Правовая база</a><a href="#contacts">Контакты</a></div>
 <div><h4>Связь</h4>${items.filter(i=>i.url).map(i=>`<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.label)}</a>`).join('')}</div></div>
@@ -63,8 +63,8 @@ window.VPPKA_PQ=q=>{q=String(q||'').toLowerCase().trim();let n=0;document.queryS
 const nw=n=>{const a=n%10,b=n%100;return a===1&&b!==11?'член':a>=2&&a<=4&&(b<12||b>14)?'члена':'членов'};
 
 // медиа новостей: фото (data URL/ссылки) и видео (YouTube, VK, Rutube, mp4)
-function vemb(u){let m;u=String(u||'').trim();if(!(window.VPPKA_SAFE?window.VPPKA_SAFE.https(u):/^https:\/\/\S+$/i.test(u)))return u?`<p class="amut">▶ Видео: ${esc(u)}</p>`:'';const fr=src=>`<div class="vid"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
- if(m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/))return fr('https://www.youtube.com/embed/'+m[1]);
+function vemb(u){let m;u=String(u||'').trim();const yp=window.VPPKA_YT&&window.VPPKA_YT.parse(u);if(yp)u=window.VPPKA_YT.canon(yp);if(!(window.VPPKA_SAFE?window.VPPKA_SAFE.https(u):/^https:\/\/\S+$/i.test(u)))return u?`<p class="amut">▶ Видео: ${esc(u)}</p>`:'';const fr=src=>`<div class="vid"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+ if(yp)return fr(window.VPPKA_YT.embed(yp)); // любая ссылка YouTube (yt.js)
  if(m=u.match(/(?:vk\.com|vkvideo\.ru)\/.*video(-?\d+)_(\d+)/))return fr(`https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2`);
  if(m=u.match(/rutube\.ru\/(?:video|play\/embed)\/([0-9a-f]{32})/))return fr('https://rutube.ru/play/embed/'+m[1]);
  if(/^https:\/\/\S+\.(mp4|webm)(\?\S*)?$/i.test(u))return `<div class="vid"><video src="${esc(u)}" controls preload="metadata"></video></div>`;
@@ -101,7 +101,7 @@ window.VPPKA_LSHORT=lShort;
 const lFull=r=>String(r||'').replace(/(^|[^А-Яа-яЁё])ЦК(?![А-Яа-яЁё])/g,'$1Центрального Комитета').replace(/(^|[^А-Яа-яЁё])КРК(?![А-Яа-яЁё])/g,'$1Контрольно-ревизионной комиссии');
 // Дата вступления: из самого места, иначе из карточки члена партии того же человека (Discord, иначе ФИО).
 const lJoin=m=>{if(m.joined)return m.joined;const d=String(m.discordId||''),hd=/^\d{15,21}$/.test(d),n=nrm(m.name);const x=MEM().find(y=>y!==m&&y.joined&&!lVac(y)&&(hd&&/^\d{15,21}$/.test(String(y.discordId||''))?String(y.discordId)===d:!!n&&nrm(y.name)===n));return x?x.joined:''};
-const lcard=(m,pm,q,from)=>{const v=!pm&&lVac(m);return `<a class="card mcard lc${pm?' lc-pm':m.group&&m.group!==PG?' '+window.tierOfRole(m.role)[0]:''}${v?' lc-vac':window.VPPKA_SKIN(m.discordId)}" href="#member/${esc(m.id||'')}/${from||'leadership'}"><span class="lc-ph${v||m.photo?'':' noph'}">${v?'<img class="lc-emb" src="img/gerb-red.png?v=252" alt="" loading="lazy">':m.photo?`<img ${PHA(m.photo,'t')} alt="${esc(m.name||'')}" loading="lazy">`:`<b>${esc(ini(m.name))}</b>`}</span><span class="lc-inf"><span class="lc-n"${v?'':` title="${esc(m.name)}"`}>${v?'Вакантно':esc(m.name)}</span><span class="lc-r" title="${esc(lFull(pm?(m.title||m.role||'Член партии'):m.role))}">${esc(lShort(pm?(m.title||m.role||'Член партии'):m.role))}</span></span></a>`};
+const lcard=(m,pm,q,from)=>{const v=!pm&&lVac(m);return `<a class="card mcard lc${pm?' lc-pm':m.group&&m.group!==PG?' '+window.tierOfRole(m.role)[0]:''}${v?' lc-vac':window.VPPKA_SKIN(m.discordId)}" href="#member/${esc(m.id||'')}/${from||'leadership'}"><span class="lc-ph${v||m.photo?'':' noph'}">${v?'<img class="lc-emb" src="img/gerb-red.png?v=253" alt="" loading="lazy">':m.photo?`<img ${PHA(m.photo,'t')} alt="${esc(m.name||'')}" loading="lazy">`:`<b>${esc(ini(m.name))}</b>`}</span><span class="lc-inf"><span class="lc-n"${v?'':` title="${esc(m.name)}"`}>${v?'Вакантно':esc(m.name)}</span><span class="lc-r" title="${esc(lFull(pm?(m.title||m.role||'Член партии'):m.role))}">${esc(lShort(pm?(m.title||m.role||'Член партии'):m.role))}</span></span></a>`};
 const pg=(k,h)=>`<div class="crumbs"><a href="#home">Главная</a> / ${ABT.some(x=>x[0]===k)&&k!=='about'?'<a href="#about">О партии</a> / ':''}${esc(NAMES[k]||'')}</div><div class="pg">${ABT.some(x=>x[0]===k)?abTabs(k):''}${h}</div>`;
 // Раздел «О партии»: шторка в меню и вкладки над страницей.
 const ABT=[['about','Краткая справка'],['charter','Устав партии'],['program','Программа партии'],['howto','Как вступить в ВППКА']];
@@ -263,17 +263,22 @@ window.VPPKA_MUSIC={
  if(localStorage.getItem(GK)===null){const o=localStorage.getItem(K+':default');if(o!==null)localStorage.setItem(GK,o)}
  const muted=()=>localStorage.getItem(GK)==='1';
  // кнопка видна только на главной, в «О партии» и в профиле Быкова (музыка играет и на других страницах — выключается отсюда)
- const showBtn=()=>{const h=norm(location.hash);return h===''||h==='home'||h==='about'||cur==='member/m4'};
+ const showBtn=()=>{const h=norm(location.hash);return h===''||h==='home'||h==='about'||cur==='member/m4'||!!(cur&&(window.VPPKA_MUSIC[cur]||{}).btn)};
  const norm=s=>{s=String(s||'').replace(/^#/,'');return s.startsWith('member/')?s.split('/').slice(0,2).join('/'):s};
  const keyOf=()=>{const h=norm(location.hash);const M=window.VPPKA_MUSIC||{};if(M[h])return h;
   // профиль того же человека под другим id (запись «Члены партии» p_…) — по Discord ID
   if(h.startsWith('member/')){const ms=(window.VPPKA_DATA&&window.VPPKA_DATA.members)||[],m=ms.find(x=>'member/'+x.id===h);if(m&&m.discordId){const o=ms.find(x=>x.discordId===m.discordId&&M['member/'+x.id]);if(o)return 'member/'+o.id}}return M.default?'default':null};
- function el(k){const c=window.VPPKA_MUSIC[k];if(!A[k]){const L=(c.list&&c.list.length?c.list:[c.src]).map(t=>typeof t==='string'?{src:t,start:0}:t);
+ function el(k){const c=window.VPPKA_MUSIC[k];
+  // v253: трек сменился (музыка профиля руководства) — старый плеер выбрасываем
+  if(A[k]&&c.sig&&A[k]._sig!==c.sig){try{A[k].pause();A[k].destroy&&A[k].destroy()}catch(e){}delete A[k]}
+  // v253: свой плеер с интерфейсом Audio (скрытый YouTube из music.js)
+  if(!A[k]&&c.player){A[k]=c.player();A[k]._sig=c.sig}
+  if(!A[k]){const L=(c.list&&c.list.length?c.list:[c.src]).map(t=>typeof t==='string'?{src:t,start:0}:t);
   // плейлист: каждый визит — следующий трек (индекс в localStorage), трек стартует с припева (start), по окончании — следующий, по кругу
   let i=0;if(L.length>1){const LK='vppka-bg-i:'+k;i=((+localStorage.getItem(LK))+1)%L.length;if(!(i>=0))i=0;try{localStorage.setItem(LK,i)}catch(e){}}
   const au=new Audio();au.loop=L.length<2;au.preload='none';
   const load=n=>{au._i=n;const t=L[n];au.src=t.src;if(t.start){const go=()=>{try{au.currentTime=t.start}catch(e){}};au.addEventListener('loadedmetadata',go,{once:true})}};load(i);
-  if(L.length>1)au.addEventListener('ended',()=>{load((au._i+1)%L.length);au.play().catch(()=>{})});A[k]=au}
+  if(L.length>1)au.addEventListener('ended',()=>{load((au._i+1)%L.length);au.play().catch(()=>{})});au._sig=c.sig;A[k]=au}
  A[k].volume=c.vol??0.1;return A[k]}
  function btn(){let b=document.getElementById('amu');if(!b){b=document.createElement('button');b.id='amu';b.className='amu';b.onclick=()=>{localStorage.setItem(GK,muted()?'0':'1');sync()}}
   const h=cur&&document.querySelector('.pg h1');if(h&&b.parentNode!==h)h.appendChild(b);else if(!h&&!b.parentNode)document.body.appendChild(b);
@@ -283,7 +288,7 @@ window.VPPKA_MUSIC={
  function leave(k){const a=A[k];if(!a)return;a.pause();const c=window.VPPKA_MUSIC[k];if(!c.keep){try{a.currentTime=c.start||0}catch(e){}}}
  function sync(){const k=keyOf();if(k!==cur){if(cur)leave(cur);cur=k;if(k)enter(k)}btn();if(cur&&!muted()&&!document.hidden)play();else if(cur&&A[cur])A[cur].pause()}
  // клик по ссылке на страницу с музыкой — запускаем прямо в обработчике жеста (Safari/iOS)
- document.addEventListener('click',e=>{const l=e.target.closest&&e.target.closest('a[href^="#"]');if(!l)return;const k=norm(l.getAttribute('href')),c=(window.VPPKA_MUSIC||{})[k];if(!c||localStorage.getItem(K+(k!=='about'?':'+k:''))==='1')return;
+ document.addEventListener('click',e=>{const l=e.target.closest&&e.target.closest('a[href^="#"]');if(!l)return;const k=norm(l.getAttribute('href')),c=(window.VPPKA_MUSIC||{})[k];if(!c||muted()||localStorage.getItem(K+(k!=='about'?':'+k:''))==='1')return;
   if(cur&&cur!==k)leave(cur);const a=el(k);if(!c.keep){try{a.currentTime=c.start||0}catch(x){}}cur=k;a.play().then(()=>{if(!c.keep&&a.currentTime<(c.start||0)-1)a.currentTime=c.start||0}).catch(()=>{})},true);
  const kick=()=>{if(cur&&!muted()&&!document.hidden&&(!A[cur]||A[cur].paused))play()};['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,kick,{passive:true}));
  addEventListener('hashchange',()=>setTimeout(sync,0));document.addEventListener('visibilitychange',sync);addEventListener('storage',e=>{if(e.key===GK)sync()});new MutationObserver(()=>{if(cur){const b=document.getElementById('amu'),h=document.querySelector('.pg h1');if(h&&(!b||b.parentNode!==h))btn()}else if(!cur&&window.VPPKA_DATA&&location.hash.startsWith('#member/')&&keyOf())sync()}).observe(document.body,{childList:true,subtree:true});

@@ -1,6 +1,6 @@
-const CACHE='vppka-v224';
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','index.html','guard.js','style.css','ph.js','app.js','content.json','img/emblem.png']).catch(()=>{})))});
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE&&n!=='vppka-banners').map(n=>caches.delete(n)))).then(()=>self.clients.claim())));
+const CACHE='vppka-v225';
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','index.html','guard.js','style.css','ph.js','yt.js','app.js','content.json','img/emblem.png']).catch(()=>{})))});
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE&&n!=='vppka-banners'&&n!=='vppka-music').map(n=>caches.delete(n)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);
  if(r.method!=='GET'||u.origin!==location.origin||/\.(mp3|ogg|m4a|wav)$/i.test(u.pathname)||r.headers.has('range')||/admin\.html$/.test(u.pathname)||/\/(robots\.txt|sitemap\.xml|favicon\.ico)$/.test(u.pathname))return;
  const img=/\.(png|jpe?g|webp|gif|svg|woff2)$/i.test(u.pathname);if(/version\.json$/.test(u.pathname))return;const net=fetch(img?r:new Request(r,{cache:'no-cache'})).then(res=>{if(res.ok){const c=res.clone();caches.open(CACHE).then(x=>x.put(r,c))}return res});

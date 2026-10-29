@@ -1094,6 +1094,7 @@ h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthes
 #pm-grid .pm-n{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .lgrid .lc-inf,#pm-grid .pm-inf{gap:4px}.lgrid .lc-n,#pm-grid .pm-n{line-height:1.2}
 
+
 /* v252: «Руководители партии» на главной — без таблички: только надписи по нижнему краю фото (трафарет + машинопись),
    читаемость — тенью/обводкой и узкой тенью у самого края; персонаж открыт. Рамка ЦК, золото/серебро и hover — как были. */
 .lgrid-home .lc .lc-inf,.lgrid-home .lc:is(.t-cc1,.t-cc2,.t-cc3) .lc-inf,.lgrid-home .lc:is(.gold-card,.silver-card) .lc-inf,
@@ -1113,3 +1114,6 @@ h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthes
 .lgrid-home .lc-j,.lgrid-home .lc-q{display:none!important}
 @container (max-width:205px){.lgrid-home .lc .lc-n{white-space:nowrap!important;display:block}}
 @media(max-width:600px){.lgrid-home .lc .lc-inf{left:12px!important;right:12px!important;bottom:10px!important}.lgrid-home .lc .lc-n{font-size:clamp(14px,6.4cqi,20px)}.lgrid-home .lc .lc-r{font-size:11px}.lgrid-home .lc:not(.lc-vac) .lc-ph:after{height:22%}}
+
+/* v253: подпись поля «Музыка профиля» */
+.phc-l{font:600 10px var(--fd);letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
