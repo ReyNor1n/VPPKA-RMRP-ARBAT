@@ -2,16 +2,16 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com/firebasejs/ https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' data: blob: https://*.googleapis.com https://www.google.com/recaptcha/ https://api.github.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://vk.com https://vkvideo.ru https://rutube.ru https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://vppca-rmrp.firebaseapp.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com/firebasejs/ https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' data: blob: https://*.googleapis.com https://www.google.com/recaptcha/ https://api.github.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://vk.com https://vkvideo.ru https://rutube.ru https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://vppca-rmrp.firebaseapp.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <style id="afb">html{display:none!important}</style>
-<script src="guard.js?v=254"></script>
+<script src="guard.js?v=255"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Админ-панель ВППКА</title>
 <link rel="icon" href="img/icons/favicon.ico?v=fav2" sizes="any"><link rel="icon" type="image/png" sizes="120x120" href="img/icons/favicon-120.png?v=fav3">
 <link rel="preload" href="fonts/ussr-stencil.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/sofia-xc-cyr.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/ptmono-cyr.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=254">
+<link rel="stylesheet" href="style.css?v=255">
 <style>
 .wrap{max-width:1000px;margin:auto;padding:24px}
 .box{background:#1e1a15;border:1px solid var(--ln);padding:22px;margin:16px 0;clip-path:none}
@@ -34,13 +34,13 @@ legend{font:13px var(--fd);color:var(--red);padding:0 6px}
 </style>
 </head>
 <body>
-<header><div class="nav"><a class="brand" href="index.html"><img src="img/emblem.png?v=254"><span>ВППКА · Админ</span></a></div></header>
+<header><div class="nav"><a class="brand" href="index.html"><img src="img/emblem.png?v=255" alt=""><span>ВППКА · Админ</span></a></div></header>
 <div class="wrap">
 <div id="login" class="box"><h2>Вход владельца</h2>
 <p>Изменения публикуются прямо в ваш репозиторий GitHub. Опубликовать что-либо может только тот, у кого есть ваш личный токен GitHub с доступом к репозиторию — то есть только вы. Токен хранится только в этом браузере.</p>
-<label>Репозиторий (владелец/имя)</label><input id="repo" value="ReyNor1n/VPPKA-RMRP-ARBAT">
-<label>Ветка</label><input id="branch" value="main">
-<label>Личный токен GitHub (fine-grained, права Contents: Read and write только на этот репозиторий)</label><input id="token" type="password">
+<label for="repo">Репозиторий (владелец/имя)</label><input id="repo" value="ReyNor1n/VPPKA-RMRP-ARBAT">
+<label for="branch">Ветка</label><input id="branch" value="main">
+<label for="token">Личный токен GitHub (fine-grained, права Contents: Read and write только на этот репозиторий)</label><input id="token" type="password">
 <div class="row" style="margin-top:12px"><button class="btn" id="b-login">Войти</button><button class="btn sm" id="b-offline">Локальный режим (без публикации, только экспорт файла)</button></div>
 </div>
 <div id="ed" style="display:none">
@@ -50,6 +50,6 @@ legend{font:13px var(--fd);color:var(--red);padding:0 6px}
 </div>
 </div>
 <div id="msg"></div>
-<script src="admin-page.js?v=254"></script>
+<script src="admin-page.js?v=255"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey } from './firebase-config.js?v=254';
+import { firebaseConfig, appCheckSiteKey } from './firebase-config.js?v=255';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -11,8 +11,9 @@ const HID=['646280678736003073','t3t4KPD2bDasFw1gPLWAA0W8jCL2'];window.VPPKA_HID
 window.VPPKA_SHOWMEM=x=>!!x&&(!window.VPPKA_HIDDEN(x)||x.group!=='Члены партии'||x.id==='p_Xglv_ypsOH3s7mW2UTXD');
 let A,F,auth,db,user=null,profile=null,power={rank:0,roleName:''};
  const crumbs=t=>`<div class="crumbs"><a href="#home">Главная</a> / ${t}</div>`;
- const ERR={'auth/invalid-credential':'Не удалось войти. Нажмите «Войти через Discord».','auth/wrong-password':'Вход по паролю отключён. Нажмите «Войти через Discord».','auth/user-not-found':'Пользователь с таким Discord не зарегистрирован.','auth/email-already-in-use':'Аккаунт с этим Discord уже есть — войдите через Discord (кнопка «Войти через Discord» на странице входа).','auth/weak-password':'Пароль слишком простой (минимум 8 символов, буквы и цифры).','auth/too-many-requests':'Слишком много попыток. Попробуйте позже.','auth/network-request-failed':'Нет соединения с сервером.','permission-denied':'Нет доступа к профилю.'};
- ERR['auth/password-does-not-meet-requirements']='Пароль слишком простой: минимум 8 символов, буквы и цифры.';
+ const ERR={'auth/invalid-credential':'Не удалось войти. Нажмите «Войти через Discord».','auth/user-not-found':'Пользователь с таким Discord не зарегистрирован.','auth/email-already-in-use':'Аккаунт с этим Discord уже есть — войдите через Discord (кнопка «Войти через Discord» на странице входа).','auth/too-many-requests':'Слишком много попыток. Попробуйте позже.','auth/network-request-failed':'Нет соединения с сервером.','permission-denied':'Нет доступа к профилю.'};
+ // снять подписку «Каналы Discord» (admin), если она запущена — при выходе и смене пользователя
+ window.VPPKA_DCH_OFF=()=>{try{window.VPPKA_DCH_STOP&&window.VPPKA_DCH_STOP()}catch(e){}};
  const em=e=>ERR[e.code]||('Ошибка: '+(e.code||e.message));
  // discord.com/users/<id> | discordapp.com/users/<id> | @username | username
  function did(raw){const s=String(raw||'').trim();let m=s.match(/^(?:https?:\/\/)?(?:(?:www|ptb|canary)\.)?(?:discord(?:app)?\.com)\/users\/(\d{15,21})\/?(?:[?#].*)?$/i)||s.match(/^<@!?(\d{15,21})>$/)||s.match(/^(\d{15,21})$/);if(m)return m[1];
@@ -137,7 +138,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.i
   if(id==='p-go'||id==='p-rm'){const pe=t=>{const e=document.getElementById('p-e');if(e)e.textContent=t};let ph=null;
    if(id==='p-go'){try{ph=await photoData(document.getElementById('p-ph').files[0]);}catch(e){return pe(e.message)}if(!ph)return pe('Выберите файл.');ph=await window.VPPKA_PH.up(ph);}
    ev.target.disabled=true;try{await F.updateDoc(F.doc(db,'users',user.uid),{photo:ph?ph:F.deleteField()});if(ph)profile.photo=ph;else delete profile.photo;paintAuth();route();syncAv();window.VPPKA_PUBSELF&&window.VPPKA_PUBSELF();if(ph)syncPhoto(true).catch(e=>console.warn('автофото',e.code||e));F.setDoc(F.doc(db,'syncReq',user.uid),{t:F.serverTimestamp()}).catch(()=>{});}catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер пока не принимает фото (правила базы не обновлены).':em(e));}return;}
-  if(id==='a-out'){await A.signOut(auth);location.hash='#home';}
+  if(id==='a-out'){window.VPPKA_DCH_OFF();await A.signOut(auth);location.hash='#home';}
   }catch(e){if(regBusy&&!user){regBusy=false;regPP=''}err(em(e));ev.target.disabled=false;}
  });
  document.addEventListener('change',async ev=>{const t=ev.target;if(!['r-ph','p-ph','p-av','p-ld'].includes(t.id))return;const nm=document.getElementById(t.id+'-nm');if(nm)nm.textContent=t.files[0]?.name||'Файл не выбран';const pv=document.getElementById(t.id+'-pv');try{const u=await photoData(t.files[0]);if(pv&&u){pv.removeAttribute('data-ph');pv.src=u;pv.hidden=false;}}catch(e){err(e.message)}});
@@ -161,7 +162,6 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  let liveN=null,liveM=null,livePend=false,liveNew=new Set();
  let liveMPub=false,mPub=null,mUid='',mUnsub=null,RESUBM=null;
  const memDocs=()=>liveM.docs.map(d=>{const o=fixD({...d.data(),id:d.id});if(liveMPub){delete o.discord;delete o.discordId;delete o.updatedBy;if(o.pk)o.discordId=o.pk;o._pub=true}delete o.pk;return o});
- window.VPPKA_MEMPUB=()=>liveMPub;
  // публичный статик карточек — pubStatik/{memberId}.s (читают все, пишут бот и владелец). Не смешиваем с members:
  // карточки сохраняются целиком, и лишнее поле statik правила members не примут.
  let liveS={};window.VPPKA_STATIK=id=>liveS[id]||'';
@@ -228,7 +228,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  }
 
  async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=254').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=254').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=254').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=254').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=254').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=254').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=254').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=254').then(m=>m.install()).catch(e=>console.error('admin',e));
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();liveStart();import('./panel.js?v=255').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=255').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=255').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=255').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=255').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=255').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=255').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=255').then(m=>m.install()).catch(e=>console.error('admin',e));
 // аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false;
 // authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена
@@ -265,7 +265,7 @@ function lkState(s){if(!s)return;const go=document.getElementById('lk-go'),snd=d
 function lkFinish(ok){clearTimeout(lkTo);if(ok){lkOk=true;setTimeout(reJoin,0)}if(lkUn){lkUn();lkUn=null}document.getElementById('lk-ov')?.remove();const r=lkDone;lkDone=null;if(r)r(ok)}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='lk-code'){e.preventDefault();document.getElementById('lk-go')?.click()}});
 document.addEventListener('click',async ev=>{const id=ev.target.id;if(id!=='lk-send'&&id!=='lk-go'&&id!=='lk-out')return;
- if(id==='lk-out'){lkFinish(false);try{await A.signOut(auth)}catch(e){}location.hash='#home';return}
+ if(id==='lk-out'){lkFinish(false);window.VPPKA_DCH_OFF();try{await A.signOut(auth)}catch(e){}location.hash='#home';return}
  const u=cu();if(!u)return;const d0=String(u.email||'').split('@')[0],ref=F.doc(db,'linkReq',u.uid);
  try{if(id==='lk-send'){ev.target.disabled=true;lkSay('Отправляем код…',1);await F.setDoc(ref,{did:d0,status:'pending',t:F.serverTimestamp()});
    clearTimeout(lkTo);lkTo=setTimeout(()=>{const b=document.getElementById('lk-send');if(b)b.disabled=false;lkSay('Бот пока не ответил. Подождите минуту и нажмите «Отправить код» ещё раз.')},45000);}
@@ -295,7 +295,8 @@ document.addEventListener('click',async ev=>{const id=ev.target.id;if(id!=='lk-s
    if(cur.passport){priv=cur;o?.remove();return}
    await F.setDoc(r,{passport:pp},{merge:true});priv={...cur,passport:pp};o?.remove();sessionStorage.removeItem('st_later');fillJoinPP();if(location.hash==='#account')window.route();F.setDoc(F.doc(db,'syncReq',user.uid),{t:F.serverTimestamp()}).catch(()=>{});}
   catch(e){ev.target.disabled=false;pe(e.code==='permission-denied'?'Сервер не принял номер паспорта (нет прав).':'Не удалось сохранить: '+(e.code||e.message))}});
- A.onAuthStateChanged(auth,async u=>{user=u;lkOk=null;if(!regBusy||!u)profile=null;if(!u||!regPP){priv=null;privT=0;}document.getElementById('st-ov')?.remove();
+ let authUid=null;
+ A.onAuthStateChanged(auth,async u=>{if(!u||(authUid&&u.uid!==authUid))window.VPPKA_DCH_OFF();authUid=u?u.uid:null;user=u;lkOk=null;if(!regBusy||!u)profile=null;if(!u||!regPP){priv=null;privT=0;}document.getElementById('st-ov')?.remove();
   if(u){try{const s=await F.getDoc(F.doc(db,'users',u.uid));profile=s.exists()?s.data():(regBusy?profile:null);if(!s.exists()&&!regBusy)noProfile=true;else noProfile=false;}catch(e){console.warn(e)}}await refreshPower();authReady=true;if(RESUBM&&user===u)RESUBM(u);
   if(!u&&document.getElementById('lk-ov'))lkFinish(false);
   paintAuth();if(['login','register','account','join','news','leadership','apps','members','party','member','home','admin',''].includes(location.hash.slice(1).split('/')[0]))route();
