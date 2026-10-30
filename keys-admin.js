@@ -73,4 +73,3 @@ export async function keysClick(b,refresh){if(!keysAllowed())return;const f=F();
   S.msg=(rep?'Новый ключ выпущен'+(rep.revoked?'.':', старый отозван.'):'Ключ выпущен.')+' Сообщите его человеку лично: он вводит ключ в личном кабинете.'+note;S.ok=!note;S.form=blankForm();S.rep=-1;S.err={}}
  catch(e){S.msg=e.dup?'Такой ключ уже есть — придумайте другие 4 цифры.':'Не удалось выпустить ключ: '+(e.code==='permission-denied'?'нет прав.':(e.code||e.message));S.ok=false;if(kin)kin.value=''}
  S.busy=false;await keysLoad(refresh,true)}
-export function keysReset(){S.loaded=false;S.rows=[]}

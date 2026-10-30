@@ -23,7 +23,6 @@
   h.connect(hb).connect(hl).connect(hg).connect(c.destination);h.start(t+0.04);h.stop(t+0.4)}
  const hover=()=>{const n=performance.now();if(n-lastH<90)return;lastH=n;click()};
  const open=()=>{const n=performance.now();if(n-lastO<180)return;lastO=n;chime()};
- window.VPPKA_SFX={hover,open};
  const arm=()=>{armed=true;ac()};['pointerdown','keydown','touchstart'].forEach(e=>addEventListener(e,arm,{once:true,capture:true,passive:true}));
  const SEL='a,button,.btn,.card,.mcard,.pm-card,summary,[role=button]';
  if(!touch){let cur=null;document.addEventListener('mouseover',e=>{const t=e.target.closest&&e.target.closest(SEL);if(t&&t!==cur){cur=t;hover()}else if(!t)cur=null},{passive:true})}

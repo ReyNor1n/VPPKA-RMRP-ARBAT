@@ -1,9 +1,9 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=254';
-import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=254';
-import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=254';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=255';
+import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=255';
+import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=255';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;

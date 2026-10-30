@@ -73,6 +73,8 @@ export async function dchLoad(refresh,force){if(S.loading)return;if(S.loaded&&S.
   else S.loaded=true}catch(e){S.msg=e.code==='permission-denied'?'Нет прав: раздел только для владельца сайта.':(e.message||String(e));S.ok=false;S.loaded=true}
  S.loading=false;refresh()}
 export function dchStop(){if(S.un){try{S.un()}catch(e){}S.un=null}S.loaded=false}
+// выход из аккаунта / смена пользователя: auth.js снимает подписку на config/discordGuild (безопасно, если не запускалась)
+window.VPPKA_DCH_STOP=dchStop;
 export function dchChange(el,refresh){const k=el.dataset.dch;if(k){if(el.value==='__custom'){S.custom[k]=S.draft[k]||'';}else{delete S.custom[k];S.draft[k]=el.value;delete S.err[k]}S.msg='';refresh();return true}
  const kl=el.dataset.dchlab;if(kl){const r=S.rows.find(x=>x.id===kl);if(r){r.label=el.value;if(S.err[kl]&&el.value.trim().length>=2){delete S.err[kl];const n=el.closest('.dch-row')&&el.closest('.dch-row').querySelector('.aerr');if(n)n.remove()}}return true}
  const ki=el.dataset.dchid;if(ki){S.custom[ki]=el.value;const p=parseChannel(el.value);if(p.err){S.err[ki]=p.err}else{S.draft[ki]=p.id;delete S.err[ki]}const n=el.parentElement.querySelector('.aerr');if(n&&!S.err[ki])n.remove();return true}

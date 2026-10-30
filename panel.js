@@ -28,7 +28,7 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img ${PHA(u,'t')} alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
 
- <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=254').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
+ <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=255').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
  <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
  ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
 
@@ -41,7 +41,7 @@ function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m
  ${D().members?(()=>{const row=x=>`<div class="kl-r${/^вакансия$/i.test(String(x.name).trim())?' kl-v':''}"><span class="kl-n"><b>${esc(x.name)}</b> <small>${esc(x.role)}</small></span><span class="kl-b">ур. ${x.rank??0} · ст. ${mt(x)}</span><span class="kl-a">${isCh(x)?`<button class="kl-i" data-me="${esc(x.id)}" title="Изменить">✎</button>`:`<button class="kl-i" data-mu="${esc(x.id)}" title="Повысить">▲</button><button class="kl-i" data-md="${esc(x.id)}" title="Понизить">▼</button><button class="kl-i" data-me="${esc(x.id)}" title="Изменить">✎</button><button class="kl-i kl-x" data-mx="${esc(x.id)}" title="Удалить">🗑</button>`}</span></div>`;
  const isV=x=>/^вакансия$/i.test(String(x.name).trim()),L=low.filter(x=>!isV(x)&&(x.rank??0)>0),V=low.filter(isV),M=low.filter(x=>!isV(x)&&!((x.rank??0)>0));
  const row2=x=>{let h=row(x);if((coreSeat(x.id)&&!isSuper())||occupiedSeat(x))h=h.replace('<button class="kl-i kl-x" data-mx="'+esc(x.id)+'" title="Удалить">🗑</button>','');return h};
- return `<h3>Руководство (доступные вам)</h3>${(rank()>=90||(FB().user&&(FB().user.email||'').includes('arseniynit')||(FB().power||{}).owner))?'<button class="btn sm o" id="add-vac">+ Добавить вакансию</button> ':''}<div class="kl">${L.map(row2).join('')||(V.length||M.length?'':'<div class="kl-r">Нет участников ниже вашего уровня.</div>')}</div>${V.length?`<details class="kl-g"><summary>Вакансии (${V.length})</summary><div class="kl">${V.map(row2).join('')}</div></details>`:''}${M.length?`<details class="kl-g"><summary>Члены партии (${M.length})</summary><div class="kl">${M.map(row2).join('')}</div></details>`:''}`})():'<p class="amut">Состав пока берётся из content.json; после переноса в базу его можно будет править здесь.</p>'}</div>`;}
+ return `<h3>Руководство (доступные вам)</h3>${(rank()>=90||(FB().power||{}).owner)?'<button class="btn sm o" id="add-vac">+ Добавить вакансию</button> ':''}<div class="kl">${L.map(row2).join('')||(V.length||M.length?'':'<div class="kl-r">Нет участников ниже вашего уровня.</div>')}</div>${V.length?`<details class="kl-g"><summary>Вакансии (${V.length})</summary><div class="kl">${V.map(row2).join('')}</div></details>`:''}${M.length?`<details class="kl-g"><summary>Члены партии (${M.length})</summary><div class="kl">${M.map(row2).join('')}</div></details>`:''}`})():'<p class="amut">Состав пока берётся из content.json; после переноса в базу его можно будет править здесь.</p>'}</div>`;}
 
 window.VPPKA_APPS_RESET=()=>{apps=null};window.VPPKA_ROSTER_SYNC=()=>rosterSync();
 function appsPage(){const c=`<div class="crumbs"><a href="#home">Главная</a> / Заявки в партию</div>`;
@@ -166,7 +166,7 @@ const OWNER_IDS=['p_Xglv_ypsOH3s7mW2UTXD','m11'];
 const myDidP=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');
 const actorName=()=>{const did=myDidP(),ms=(D().members||[]).filter(x=>did&&x.discordId===did&&!String(x.id).startsWith('p_')&&x.name&&!/^Вакансия/i.test(x.name)).sort((a,b)=>(Number(b.rank)||0)-(Number(a.rank)||0));const me=ms[0]||(D().members||[]).find(x=>did&&x.discordId===did);const role=(me&&me.role)||(FB().power||{}).roleName||'';const nm=(me&&me.name)||((window.VPPKA_AUTH||{}).profile||{}).displayName||'';return [role,nm].filter(Boolean).join(' ')};
 async function rankNote(did,kind,text){did=String(did||'');if(!did||did===myDidP())return;const f=F();try{await f.addDoc(f.collection(db(),'rankNotes'),{did,kind,text:String(text).slice(0,300),by:FB().user.uid,byName:actorName().slice(0,160),at:f.serverTimestamp(),read:false})}catch(e){console.warn('rankNote',e.code||e)}}
-window.VPPKA_RANKNOTE=rankNote;window.VPPKA_ACTOR=actorName;
+window.VPPKA_ACTOR=actorName;
 // звание члена партии: кнопка + выбор (только Председатель ЦК, его заместители и владелец сайта)
 const RK_OWNER_DID='646280678736003073',RK_SEATS=['m1','m4','m5','m12'];
 const rkAdminDids=()=>[RK_OWNER_DID,...RK_SEATS.map(s=>String(((xMem().find(x=>x.id===s))||{}).discordId||'')).filter(Boolean)];
@@ -177,7 +177,7 @@ const rkLdr=m=>xMem().some(x=>!String(x.id||'').startsWith('p_')&&x.group&&x.gro
 // кнопка звания (только в профиле) — только у рядовых членов партии (не у руководства и не у распорядителей званий)
 const rkTarget=m=>!!m&&String(m.id||'').startsWith('p_')&&PR.includes(String(m.role||''))&&m.name&&m.name!=='Вакансия'&&!window.VPPKA_HIDDEN(m)&&!(m.discordId&&rkAdminDids().includes(String(m.discordId)))&&!rkLdr(m);
 const rkBtn=m=>rkAdmin()&&rkTarget(m)?`<span class="rk-btn" role="button" tabindex="0" data-rk="${esc(m.id)}" title="Изменить звание"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6l1.6 3.6 3.9.4-2.9 2.6.8 3.9L8 10.1 4.6 12.1l.8-3.9L2.5 5.6l3.9-.4z"/></svg><b>${esc(m.role)}</b><i>▾</i></span>`:'';
-window.VPPKA_RKBTN=rkBtn;
+
 function rkClose(){const o=document.getElementById('rk-ov');if(o){o.remove();document.body.classList.remove('asg-lock')}}
 function rkOpen(id){const m=xMem().find(x=>x.id===id);if(!rkAdmin()||!rkTarget(m))return;rkClose();const cur=PR.indexOf(String(m.role));
  const o=document.createElement('div');o.id='rk-ov';o.className='rk-ov';
@@ -283,9 +283,9 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
    // Отправка в Discord: своя строка из «Каналы Discord» или канал новостей «как обычно» — через бота (discordOut)
    let dtNote='';const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=254');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=255');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    // «как обычно» — тоже через бота (b_news): вебхуки config/discord видит только владелец
-   else{try{const m=await import('./discord-targets.js?v=254');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   else{try{const m=await import('./discord-targets.js?v=255');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    editNews=null;await done('Сохранено.'+dtNote);}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}
@@ -339,7 +339,7 @@ const coreSeat=id=>id==='m1'||id==='m4'||id==='m5';
 // «только 7 доступ имеет право менять тех отдел»: места тех. отдела (m11–m14), m17 и места владельца — только владелец (как в firestore.rules)
 const TECH_LOCK=['m11','m12','m13','m14','m17'];
 const techLocked=m=>!!m&&(TECH_LOCK.includes(m.id)||m.group==='Технический отдел'||String(m.discordId||'')===RK_OWNER_DID||m.role==='Начальник технического отдела');
-window.VPPKA_TECHLOCKED=techLocked;
+
 const canTouch=m=>{if(!isLdrPost(m))return false;if(isSuper())return true;if(techLocked(m))return false;if(isTechPost(m)||(m.rank??0)>=100)return false;if(isTechDepOnly()&&(m.id==='m12'||String(m.discordId||'')===RK_OWNER_DID))return false;if(coreSeat(m.id))return isChairP();return isPostAdmin()||chair()||tier()>=5};
 const canAssign=m=>canTouch(m);
 const nzName=s=>String(s||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
@@ -414,7 +414,7 @@ async function keepJoined(did,name){did=String(did||'');const ds=[goneJoin[did]]
  if(/^\d{15,21}$/.test(did)){try{const f=F(),q=await f.getDocs(f.query(f.collection(db(),'applications'),f.where('discordId','==',did)));
   for(const x of q.docs){const a=x.data()||{};if(!['accepted','member'].includes(a.status))continue;const t=jTs(a.reviewedAt||a.createdAt);if(t)ds.push(jDay(t))}}catch(e){if(e.code!=='permission-denied')console.warn('keepJoined',e.code||e)}}
  return earliestJoined(ds)||jDay(Date.now())}
-window.VPPKA_JOIN={earliestJoined,keepJoined};
+
 async function asgDo(uid){const u=(asgUsers||[]).find(x=>x.id===uid),p=asgPos;if(!u||!p)return;const f=F(),ms=D().members||[];
  if(!isSuper()&&(techLocked(p)||String(u.discordId||'')===RK_OWNER_DID)){const el=document.getElementById('asg-e');if(el)el.textContent='Технический отдел и места владельца меняет только владелец сайта.';return}
  const same=p.discordId&&u.discordId&&p.discordId===u.discordId;if(same){const el=document.getElementById('asg-e');if(el)el.textContent='Этот человек уже на этой должности.';return}

@@ -12,7 +12,6 @@ export async function loadTargets(fresh){if(cache&&!fresh&&Date.now()-t0<60000)r
 export function targetSelect(id,kind,T,val){const rows=(T&&Array.isArray(T.rows))?T.rows:[];if(!rows.length)return '';const def=((T&&T.builtin)||{})[kind];
  return `<label class="fl dt-l">Куда отправить в Discord<select id="${id}"><option value="">Как обычно${def?': #'+esc(def):''}</option>${rows.map(r=>`<option value="${esc(r.id)}"${r.ok?'':' disabled'}${r.ok&&r.id===val?' selected':''}>${esc(r.label)}${r.name?' — #'+esc(r.name):''}${r.ok?'':' (канал не готов)'}</option>`).join('')}</select></label>`}
 export async function fillTarget(hostId,selId,kind,val){const T=await loadTargets();const h=document.getElementById(hostId);if(h)h.innerHTML=targetSelect(selId,kind,T,val)}
-export const pickedTarget=selId=>{const el=document.getElementById(selId);return el&&/^c_[a-z0-9]{4,24}$/.test(el.value)?el.value:''};
 // В какую свою строку ушёл созыв (для отмены): бот запоминает в config/discordTargets.sent
 export async function sentTarget(ref){const T=await loadTargets(true);return (T&&T.sent&&T.sent[ref])||''}
 // -> true | текст ошибки
