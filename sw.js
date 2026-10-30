@@ -1,4 +1,4 @@
-const CACHE='vppka-v228';
+const CACHE='vppka-v229';
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','index.html','guard.js','style.css','ph.js','yt.js','app.js','content.json','img/emblem.png']).catch(()=>{})))});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE&&n!=='vppka-banners'&&n!=='vppka-music').map(n=>caches.delete(n)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);
