@@ -6,6 +6,11 @@
  try{ok=window.top===window.self||window.top.location.origin===location.origin}catch(e){ok=false}
  if(!ok){try{window.top.location.replace(location.href)}catch(e){}return}
  var s=document.getElementById('afb');if(s&&s.parentNode)s.parentNode.removeChild(s);
+ // v257: возврат из Discord OAuth (?code&state или ?error&state) — сразу убрать из адреса и истории, передать в auth.js
+ try{var q=new URLSearchParams(location.search);if(q.has('state')&&(q.has('code')||q.has('error'))){
+  try{sessionStorage.setItem('vppka-oa-ret',JSON.stringify({code:q.get('code')||'',state:q.get('state')||'',error:q.get('error')||''}))}catch(e){}
+  ['code','state','error','error_description'].forEach(function(k){q.delete(k)});q=String(q);
+  history.replaceState(null,'',location.pathname+(q?'?'+q:'')+'#login')}}catch(e){}
  var W=window,D=document,G=function(n){return W[n]};
  // data-on-click="имя" [data-oa, data-ob] [data-stop="1" — как preventDefault+stopPropagation в прежнем onclick]
  var CLICK={

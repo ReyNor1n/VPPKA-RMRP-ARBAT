@@ -571,7 +571,7 @@ body:has(.ntoast) #installBtn{bottom:calc(84px + env(safe-area-inset-bottom))}bo
 .dch-h{margin:22px 0 4px}.dch-cl{display:flex;gap:8px;align-items:center}.dch-cl input{flex:1;width:auto!important;margin:0!important}
 .dt-l select{width:100%;box-sizing:border-box;background:#14110e;color:#eee;border:1px solid rgba(255,255,255,.16);padding:8px 10px;margin-top:4px}
 .nb-f .dt-l{font-size:12px;margin:4px 0}
-.dl-hint{margin-top:8px}.dl-box{margin-top:12px;padding:12px 14px;border:1px solid #5865F2;background:#5865F214;font-size:14px;line-height:1.5}.dl-box.bad{border-color:var(--red);background:#8e2a2a14}.dl-box p{margin:6px 0 0}
+.dl-hint{margin-top:8px}.dhint.dl-alt{border:0;border-left:2px solid var(--ln);background:none;margin:16px 0 8px;padding:0 0 0 10px}.dl-alt>summary{padding:8px 0;min-height:0;font-size:13px}.dl-alt>.fl{margin-top:10px}.dl-box{margin-top:12px;padding:12px 14px;border:1px solid #5865F2;background:#5865F214;font-size:14px;line-height:1.5}.dl-box.bad{border-color:var(--red);background:#8e2a2a14}.dl-box p{margin:6px 0 0}
 .dcl-terms{margin:12px 0;padding:10px 14px;border-left:3px solid #5865F2;background:#5865F20f;font-size:13px;line-height:1.55}.dcl-terms ul{margin:6px 0 0;padding-left:18px}.dcl-terms li{margin:2px 0}.dcl-terms p{margin:6px 0 0}
 .about-t{white-space:pre-line;overflow-wrap:anywhere}
 .about-blk h3{margin:14px 0 6px;font-size:15px}
