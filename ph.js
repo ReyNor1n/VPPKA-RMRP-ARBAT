@@ -50,6 +50,7 @@ const VP=window.VPPKA_PH={isRef:s=>!!idOf(s),BLANK,
    // счётчик загрузок phq/{uid} (не больше PHQ_MAX за PHQ_WIN) пишется тем же пакетом — его проверяют правила базы.
    const q=F.doc(db,'phq',by);let qd=null;try{const s=await F.getDoc(q);qd=s.exists()?s.data():null}catch(e){}
    const age=qd&&qd.at&&qd.at.toMillis?Date.now()-qd.at.toMillis():Infinity;
+   if(qd&&age<PHQ_WIN-60000&&(qd.n|0)>=PHQ_MAX)throw new Error('лимит загрузок');   // правила базы всё равно не примут
    const tries=!qd||age>PHQ_WIN+60000?[1]:age<PHQ_WIN-60000?[0]:[0,1];let err=null;
    for(const fresh of tries){const b=F.writeBatch(db);
     b.set(ref,{d,by,at:F.serverTimestamp()});b.set(F.doc(db,'photoThumbs',id),{d:t,by,at:F.serverTimestamp()});
