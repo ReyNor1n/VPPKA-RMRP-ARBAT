@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=258';
+import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=259';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -293,7 +293,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  }
 
  async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=258').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=258').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=258').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=258').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=258').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=258').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=258').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=258').then(m=>m.install()).catch(e=>console.error('admin',e));
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=259').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=259').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=259').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=259').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=259').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=259').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=259').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=259').then(m=>m.install()).catch(e=>console.error('admin',e));
 // аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false,oaRan=false;
 // authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена
