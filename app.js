@@ -259,8 +259,8 @@ window.VPPKA_MUSIC={
  'about':{src:'audio/about.mp3',start:0,vol:0.1,keep:true},          // «О партии»: Интернационал (без слов)
 };
 (function(){const K='vppka-about-mute',GK='vppka-music-mute',VK='vppka-vol';const A={};let cur=null;
- // v260: общая громкость музыки (0–100%, по умолчанию 50% = прежняя громкость трека), одна на весь сайт — в localStorage
- const vget=()=>{const v=parseFloat(localStorage.getItem(VK));return v>=0&&v<=1?v:0.5};
+ // v260: общая громкость музыки (0–100%), одна на весь сайт — в localStorage (пишется только при движении ползунка/стрелках); v261: по умолчанию 70%
+ const vget=()=>{const v=parseFloat(localStorage.getItem(VK));return v>=0&&v<=1?v:0.7};
  // 0…50% — от тишины до громкости трека (vol), 50…100% — от неё до полной
  const gain=b=>{const v=vget();return v<=.5?b*v/.5:b+(1-b)*(v-.5)/.5};
  const vapply=()=>{const M=window.VPPKA_MUSIC||{};for(const k in A){if(A[k]&&M[k])A[k].volume=gain(M[k].vol??0.1)}};
