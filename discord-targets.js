@@ -1,7 +1,7 @@
 // «Куда отправить в Discord» при публикации новости или созыва/объявления.
 // Строки — «свои строки» владельца из раздела «Каналы Discord». Публикующим (ступень 4+) бот выкладывает только их
 // id, подпись, готовность и имя канала в config/discordTargets — вебхуки публикующим не видны.
-// Отправка: сайт создаёт discordOut/{id} = {kind, ref, target, by, at}; бот берёт текст из самого документа
+// Отправка: сайт создаёт discordOut/{id} = {kind, ref, target, by, at[, roles]}; бот берёт текст из самого документа
 // (news/{ref} или notifications/{ref}), отправляет и пишет в discordOut итог (status sent|error, err).
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -15,8 +15,10 @@ export async function fillTarget(hostId,selId,kind,val){const T=await loadTarget
 // В какую свою строку ушёл созыв (для отмены): бот запоминает в config/discordTargets.sent
 export async function sentTarget(ref){const T=await loadTargets(true);return (T&&T.sent&&T.sent[ref])||''}
 // -> true | текст ошибки
-export async function sendVia(kind,ref,target){const f=F();try{
- const r=await f.addDoc(f.collection(db(),'discordOut'),{kind,ref,target,by:FB().user.uid,at:f.serverTimestamp()});
+// roles (v262, необязательно) — id ролей для упоминания; бот пропускает только роли из «Настроек сайта», @everyone — никогда
+export async function sendVia(kind,ref,target,roles){const f=F();try{
+ const o={kind,ref,target,by:FB().user.uid,at:f.serverTimestamp()};if(Array.isArray(roles))o.roles=roles.slice(0,5).map(String);
+ const r=await f.addDoc(f.collection(db(),'discordOut'),o);
  return await new Promise(res=>{let un=()=>{};const to=setTimeout(()=>{un();res('бот ещё не ответил — сообщение уйдёт, когда он обработает очередь.')},45000);
   un=f.onSnapshot(r,s=>{const d=s.data()||{};if(d.status==='sent'){clearTimeout(to);un();res(true)}else if(d.status==='error'){clearTimeout(to);un();res(String(d.err||'ошибка'))}},()=>{})})}
  catch(e){return e.code==='permission-denied'?'нет прав на отправку.':(e.message||String(e))}}

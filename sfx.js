@@ -1,9 +1,9 @@
 // Звуки интерфейса на WebAudio, без файлов.
-(()=>{const K='vppka_sfx_off';let off=localStorage.getItem(K)==='1',ctx=null,armed=false,lastH=0,lastO=0;const VOL=0.06;
+(()=>{const K='vppka_sfx_off';let off=localStorage.getItem(K)==='1',ctx=null,armed=false,lastH=0,lastO=0;const VOL=()=>Math.min(1,Math.max(0,(+(((window.VPPKA_CFG&&window.VPPKA_CFG().music)||{}).sfxVol??6)||0)/100)); // v262: «Настройки сайта» → Музыка (по умолчанию 6%)
  const touch=matchMedia('(hover:none),(pointer:coarse)').matches;
  const ac=()=>{if(!ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;ctx=new C()}if(ctx.state==='suspended')ctx.resume();return ctx};
  const ok=()=>!off&&armed&&ac();
- function click(){const c=ok();if(!c)return;const t=c.currentTime,V=VOL*0.5;
+ function click(){const c=ok();if(!c)return;const t=c.currentTime,V=VOL()*0.5;
   const n=c.createBufferSource(),len=Math.floor(c.sampleRate*0.032),b=c.createBuffer(1,len,c.sampleRate),d=b.getChannelData(0);
   for(let i=0;i<len;i++){const e=Math.pow(1-i/len,3);d[i]=(Math.random()<0.18?(Math.random()*2-1):(Math.random()*2-1)*0.25)*e}
   n.buffer=b;const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=4500;bp.Q.value=2.5;const hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=1800;
@@ -11,7 +11,7 @@
   const w=c.createOscillator(),wg=c.createGain();w.type='sine';w.frequency.value=15200;wg.gain.setValueAtTime(0.0001,t);wg.gain.exponentialRampToValueAtTime(V*0.12,t+0.006);wg.gain.exponentialRampToValueAtTime(0.0001,t+0.04);
   w.connect(wg).connect(c.destination);w.start(t);w.stop(t+0.05)}
  function nbuf(c,sec){const b=c.createBuffer(1,Math.floor(c.sampleRate*sec),c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b}
- function chime(){const c=ok();if(!c)return;const t=c.currentTime+0.005,V=VOL*0.75;
+ function chime(){const c=ok();if(!c)return;const t=c.currentTime+0.005,V=VOL()*0.75;
   const th=c.createOscillator(),tg=c.createGain();th.type='sine';th.frequency.setValueAtTime(190,t);th.frequency.exponentialRampToValueAtTime(70,t+0.06);
   tg.gain.setValueAtTime(V*1.1,t);tg.gain.exponentialRampToValueAtTime(0.0001,t+0.07);th.connect(tg).connect(c.destination);th.start(t);th.stop(t+0.08);
   const k=c.createBufferSource();k.buffer=nbuf(c,0.025);const kb=c.createBiquadFilter();kb.type='bandpass';kb.frequency.value=2200;kb.Q.value=6;const kg=c.createGain();

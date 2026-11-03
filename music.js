@@ -4,7 +4,8 @@
 const FB=()=>window.VPPKA_FB,F=()=>FB().F,db=()=>FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nrm=s=>String(s||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
-const MAX=10*1024*1024,CH=900000,VOL=0.05;
+// v262: громкость музыки профиля — «Настройки сайта» → Музыка (по умолчанию 5%)
+const MAX=10*1024*1024,CH=900000,VOL=()=>Math.min(1,Math.max(0,(+(((window.VPPKA_CFG&&window.VPPKA_CFG().music)||{}).profileVol??5)||0)/100));
 // аудиофайлы: расширение → тип (в правилах — ^audio/(mpeg|ogg|mp4|aac|wav|webm|flac)$)
 const EXT={mp3:'audio/mpeg',mpga:'audio/mpeg',ogg:'audio/ogg',oga:'audio/ogg',opus:'audio/ogg',m4a:'audio/mp4',mp4:'audio/mp4',aac:'audio/aac',wav:'audio/wav',weba:'audio/webm',webm:'audio/webm',flac:'audio/flac'};
 const ACC='audio/*,.mp3,.ogg,.oga,.opus,.m4a,.aac,.wav,.weba,.flac';
@@ -44,7 +45,7 @@ const ytApi=()=>apiP||(apiP=new Promise((res,rej)=>{if(window.YT&&window.YT.Play
 function ytPlayer(p){const box=document.createElement('div');box.className='ytbg';box.setAttribute('aria-hidden','true');
  box.style.cssText='position:fixed;left:-10000px;top:0;width:200px;height:200px;overflow:hidden;opacity:0;pointer-events:none';
  const host=document.createElement('div');box.appendChild(host);document.body.appendChild(box);
- let P=null,ready=false,want=false,vol=VOL,seek=p.start||0,ps=false,dead=false;const ev={};
+ let P=null,ready=false,want=false,vol=VOL(),seek=p.start||0,ps=false,dead=false;const ev={};
  const fire=t=>(ev[t]||[]).splice(0).forEach(f=>{try{f()}catch(e){}});
  const o={paused:true,readyState:0,loop:true,
   get volume(){return vol},set volume(v){vol=v;if(ready)P.setVolume(Math.round(v*100))},
@@ -70,8 +71,8 @@ function ytPlayer(p){const box=document.createElement('div');box.className='ytbg
  return o}
 let busy='';async function apply(){const h=location.hash;if(!/^#(member|user)\//.test(h))return;await load();const r=trackFor(h);if(!r)return;const [uid,key]=r,M=window.VPPKA_MUSIC;
  const t=T[uid],sig=uid+(t.ver||t.url);if(M[key]&&M[key].sig===sig)return;const yp=t.url&&ytOf(t.url);
- if(yp){M[key]={player:()=>ytPlayer(yp),start:yp.start||0,vol:VOL,sig,btn:1};window.VPPKA_MUSIC_SYNC&&window.VPPKA_MUSIC_SYNC();return}if(busy===key)return;busy=key;
- try{const src=await srcOf(uid);if(location.hash.replace(/^#/,'').split('/').slice(0,2).join('/')!==key)return;M[key]={src,start:0,vol:VOL,sig,btn:1};window.VPPKA_MUSIC_SYNC&&window.VPPKA_MUSIC_SYNC()}catch(e){console.warn('музыка профиля',e)}finally{busy=''}}
+ if(yp){M[key]={player:()=>ytPlayer(yp),start:yp.start||0,vol:VOL(),sig,btn:1};window.VPPKA_MUSIC_SYNC&&window.VPPKA_MUSIC_SYNC();return}if(busy===key)return;busy=key;
+ try{const src=await srcOf(uid);if(location.hash.replace(/^#/,'').split('/').slice(0,2).join('/')!==key)return;M[key]={src,start:0,vol:VOL(),sig,btn:1};window.VPPKA_MUSIC_SYNC&&window.VPPKA_MUSIC_SYNC()}catch(e){console.warn('музыка профиля',e)}finally{busy=''}}
 // настройки — у каждого вошедшего (ЛК → Настройки), только своя музыка
 function setHtml(t){const cur=t?esc(t.title||(t.url?(ytOf(t.url)?'YouTube':'ссылка'):'файл')):'';return `<div class="phc" id="mus-box"><h4 class="phc-h">Музыка профиля</h4><small class="phc-hint">Играет фоном, когда открывают вашу карточку или профиль (негромко; каждый слушатель подстраивает громкость ползунком у кнопки музыки): видео не показывается, только звук, выключается общей кнопкой музыки. Подходит любая ссылка YouTube (видео, Shorts, трансляция, YouTube Music, плейлист, с таймкодом — с него и начнётся), файл до 10 МБ (mp3, ogg, m4a, aac, wav, flac, opus) или прямая https-ссылка на аудиофайл.${t?`<br>Сейчас: <b>${cur}</b>`:''}</small>
 <label class="phc-l" for="mus-u" style="display:block;margin-top:8px">Ссылка YouTube или файл до 10 МБ</label>

@@ -1,19 +1,29 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=261';
-import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=261';
-import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=261';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=262';
+import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=262';
+import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=262';
+import {anLoad,anHTML,anClick} from './admin-an.js?v=262';
+import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=262';
+import {layLoad,layHTML,layClick} from './admin-lay.js?v=262';
+import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=262';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
 const onAdmin=()=>(location.hash.slice(1)||'').split('/')[0]==='admin';
 // «Каналы Discord» (dch) — только владелец: в LITE его нет, поэтому сокращённой панели вкладка не показывается.
-const ALL_TABS=[...CONTENT,...COLS.map(([id,t])=>[id,t]),['dch','Каналы Discord'],['keys','Ключи доступа'],['raw','Коллекция']];
+const ALL_TABS=[['an','Объявления'],...CONTENT,...COLS.map(([id,t])=>[id,t]),['cfg','Настройки сайта'],['lay','Раскладка страниц'],['dch','Каналы Discord'],['keys','Ключи доступа'],['raw','Коллекция']];
+// v262: отдельные разделы-модули (своё состояние, загрузка и кнопки). cfg и lay — только владелец (в LITE их нет).
+const MOD={an:{load:anLoad,html:anHTML,click:anClick},cfg:{load:cfgLoad,html:cfgHTML,click:cfgClick,own:1},lay:{load:layLoad,html:layHTML,click:layClick,own:1}};
+const modLoaded=new Set();
+// Вкладки сгруппированы, чтобы панель была компактной (пустые для зрителя группы не показываются)
+const TAB_GROUPS=[['Публикации',['an','news','events','votes','banners','notifications']],['Тексты страниц',['site','home','about','program','charter','legal','contacts','leadership']],['Люди и доступ',['members','users','applications','keys','chats']],['Настройки',['cfg','lay','dch','raw']]];
 // «Ключи доступа» — только ступень 7+ (владелец видит всегда; сокращённой панели — если ключ ступени 7).
 // Сокращённая панель (ступень 5+, не владелец). Права — по firestore.rules: правила остаются единственной защитой, здесь только интерфейс.
 // add — создать, edit — сохранить правку, del — удалить; без edit документ открывается только для просмотра.
 const LITE={
+ an:{add:1,edit:1,del:1},
  news:{add:1,edit:1,del:1},
  events:{add:1,edit:1,del:1},
  members:{add:1,edit:1,del:1,hint:'Можно менять карточки со ступенью ниже вашей и уровнем ниже 100. Места m1, m4, m5 и m11 меняет только владелец.'},
@@ -59,7 +69,11 @@ function strip(v){if(Array.isArray(v))return v.map(strip);if(v&&typeof v==='obje
 function errText(e){if(!e)return 'Ошибка';if(e.code==='permission-denied')return 'Нет прав. Обратитесь к владельцу сайта.';return e.message||e.code||String(e)}
 function say(t,ok){state.msg=t||'';state.msgOk=!!ok}
 function page(title,body){return `<div class="crumbs"><a href="#home">Главная</a> / Администрирование</div><div class="pg"><h1>${esc(title)}</h1>${body}</div>`}
-function tabs(){return `<div class="adm-tabs">${TABS_NOW().map(([id,t])=>`<button type="button" data-adtab="${id}" class="${state.tab===id?'on':''}">${esc(t)}</button>`).join('')}</div>`}
+function tabs(){const now=new Map(TABS_NOW()),seen=new Set();const btn=id=>{seen.add(id);return `<button type="button" data-adtab="${id}" class="${state.tab===id?'on':''}">${esc(now.get(id))}</button>`};
+ // v262: порядок разделов и групп — content/settings.adminTabs (владелец перетаскивает, admin-order.js); в режиме порядка видны и пустые группы
+ const ord=ordOn(),g=ordDraft(TAB_GROUPS).map(([n,ids])=>{const b=ids.filter(id=>now.has(id)).map(btn).join('');return b||ord?`<div class="adm-tg" data-g="${esc(n)}"><span class="adm-tgl">${ord?'⠿ ':''}${esc(n)}</span><div class="adm-tgb">${b}</div></div>`:''}).join('');
+ const rest=[...now.keys()].filter(id=>!seen.has(id)).map(btn).join('');
+ return `${ordBar(TAB_GROUPS,superOn())}<nav class="adm-tabs${ord?' adm-ord':''}" aria-label="Разделы">${g}${rest?`<div class="adm-tg"><span class="adm-tgl">Прочее</span><div class="adm-tgb">${rest}</div></div>`:''}</nav>`}
 function msgLine(){return `<p class="${state.msgOk?'af-ok':'aerr'}" id="ad-msg">${esc(state.msg||'')}</p>`}
 function siteNow(){try{return (window.VPPKA_C&&window.VPPKA_C()||{}).site||{}}catch(e){return {}}}
 function editor(){
@@ -112,7 +126,7 @@ function render(){
  fixTab();
  const lite=!superOn();
  const head=lite?`<p class="amut">Сокращённая панель: ${esc(pw().roleName||'администратор')}, ступень ${esc(pw().tier)}. Тексты страниц, настройки сайта и Discord меняет только владелец${keysAllowed()?"":", ключи доступа — ступень 7"}.</p><style>.adm-lite [data-afact=savetpl],.adm-lite [data-afact=deltpl]{display:none}</style>`:'';
- const body=state.tab==='keys'?keysHTML():state.tab==='dch'?(superOn()?dchHTML():''):state.tab==='raw'?rawHTML():isContent(state.tab)?textsHTML():listHTML();
+ const M=MOD[state.tab],body=M?(M.own&&!superOn()?'':M.html()):state.tab==='keys'?keysHTML():state.tab==='dch'?(superOn()?dchHTML():''):state.tab==='raw'?rawHTML():isContent(state.tab)?textsHTML():listHTML();
  return page('Администрирование',`${head}${tabs()}${msgLine()}<div class="blk af-wrap${lite?' adm-lite':''}">${body}</div>`);
 }
 function refresh(){if(!onAdmin())return;const y=scrollY,focus=document.activeElement,af=focus&&focus.dataset&&focus.dataset.af||'',sel=focus&&focus.selectionStart,id=focus&&focus.id;const app=document.getElementById('app');if(!app)return;app.innerHTML=render();scrollTo(0,y);
@@ -221,10 +235,13 @@ async function onClick(e){
  const a=e.target.closest&&e.target.closest('#ad-prev a, #ad-live a');if(a){e.preventDefault()}
  const b=e.target.closest&&e.target.closest('button');if(!b||!onAdmin()||!canAdmin())return;
  const owner=superOn();
+ if(b.dataset.adord){ordRefresh(refresh);if(owner)await ordClick(b,TAB_GROUPS,refresh);return}
+ if(ordOn()&&b.dataset.adtab)return;
  if(b.id==='ad-close'){state.edit=null;state.dirty=false;state.msg='';refresh();return}
- if(b.dataset.adtab){if(!TABS_NOW().some(([id])=>id===b.dataset.adtab))return;if(!leave())return;state.tab=b.dataset.adtab;state.rows=null;state.q='';refresh();if(isContent(state.tab))openContent(state.tab);else if(state.tab==='dch')dchLoad(refresh,true);else if(state.tab==='keys')keysLoad(refresh,true);else if(state.tab!=='raw')openList(state.tab);return}
+ if(b.dataset.adtab){if(!TABS_NOW().some(([id])=>id===b.dataset.adtab))return;if(!leave())return;state.tab=b.dataset.adtab;state.rows=null;state.q='';refresh();if(MOD[state.tab]){modLoaded.add(state.tab);MOD[state.tab].load(refresh)}else if(isContent(state.tab))openContent(state.tab);else if(state.tab==='dch')dchLoad(refresh,true);else if(state.tab==='keys')keysLoad(refresh,true);else if(state.tab!=='raw')openList(state.tab);return}
  if(state.tab==='dch'){if(owner)await dchClick(b,refresh);return}
  if(state.tab==='keys'){await keysClick(b,refresh);return}
+ if(MOD[state.tab]){if(!MOD[state.tab].own||owner)await MOD[state.tab].click(b,refresh);return}
  if(b.id==='ad-save'){save();return}
  if(b.id==='ad-cancel'){if(!state.edit)return;if(state.edit.isNew||!state.edit.base){state.edit=null;state.dirty=false;state.msg='Изменения отменены.';refresh();return}state.edit.data=clone(state.edit.base);state.dirty=false;state.fieldErr={};state.expert=false;say('Изменения отменены.');refresh();return}
  if((b.id==='ad-add'||b.id==='ad-fromtpl')&&!caps(state.tab).add)return;
@@ -270,12 +287,13 @@ function onInput(e){if(!onAdmin()||!canAdmin())return;
  if(el.dataset.aft==='image'){const img=el.parentElement&&el.parentElement.querySelector('.af-prev');const v=el.value.trim();if(img){if(v){img.hidden=false;img.src=window.VPPKA_PH.src(v,'f')||window.VPPKA_PH.BLANK}else img.remove()}else if(v){el.insertAdjacentHTML('afterend',`<img class="af-prev" src="${esc(v)}" alt="">`)}}
  touch();schedulePreview()}
 async function onChange(e){if(!onAdmin()||!canAdmin())return;
+ if(MOD[state.tab]){const M=MOD[state.tab];if(M.change&&(!M.own||superOn()))M.change(e,refresh);return}
  if(state.tab==='keys'){keysInput(e.target);return}
  if(state.tab==='dch'&&superOn()&&e.target.dataset&&(e.target.dataset.dch||e.target.dataset.dchid)){dchChange(e.target,refresh);return}
  if(e.target.id==='ad-expert'){if(!superOn())return;if(!state.edit)return;if(e.target.checked){state.expert=true;refresh();return}try{const obj=JSON.parse(document.getElementById('ad-json').value);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw new Error('Нужен объект JSON.');state.edit.data=obj;state.expert=false;state.fieldErr={};touch();refresh()}catch(err){say('JSON: '+err.message);refresh()}return}
  const file=e.target.closest&&e.target.closest('[data-affile]');if(!file||!file.files||!file.files[0]||!state.edit)return;
  try{let url=await fileToData(file.files[0]);const pk=JSON.parse(file.dataset.affile).filter(x=>typeof x==='string').pop();if(['members','news','users'].includes(state.tab)&&/^(photo|photos|image|avatar)$/.test(pk||''))url=await window.VPPKA_PH.up(url);setPath(state.edit.data,JSON.parse(file.dataset.affile),url);touch();refresh();schedulePreview()}catch(err){say(err.message||String(err));refresh()}}
-async function ensure(){if(!onAdmin()||!canAdmin())return;fixTab();if(!state.booted){state.booted=true;if(superOn())loadTpls()}if(isContent(state.tab)){if(!state.edit&&!state.loading)openContent(state.tab)}else if(state.tab==='dch'){if(superOn())dchLoad(refresh)}else if(state.tab==='keys'){keysLoad(refresh)}else if(state.tab!=='raw'){if(!state.rows&&!state.loading)openList(state.tab)}}
+async function ensure(){if(!onAdmin()||!canAdmin())return;fixTab();if(!state.booted){state.booted=true;if(superOn())loadTpls()}if(MOD[state.tab]){if(!modLoaded.has(state.tab)&&(!MOD[state.tab].own||superOn())){modLoaded.add(state.tab);MOD[state.tab].load(refresh)}}else if(isContent(state.tab)){if(!state.edit&&!state.loading)openContent(state.tab)}else if(state.tab==='dch'){if(superOn())dchLoad(refresh)}else if(state.tab==='keys'){keysLoad(refresh)}else if(state.tab!=='raw'){if(!state.rows&&!state.loading)openList(state.tab)}}
 // auth.js вызывает route() после refreshPower, уже после install(). Пока power.owner ещё не выставлен, ensure выходит сразу — ждём флаг и грузим раздел, не затирая открытую правку.
 let armToken=0;
 function armEnsure(){const token=++armToken,t0=Date.now();const tick=()=>{if(token!==armToken||!onAdmin())return;if(canAdmin()){ensure();return}if(Date.now()-t0>20000)return;setTimeout(tick,400)};tick()}
