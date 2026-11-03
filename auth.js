@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=261';
+import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=262';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -216,7 +216,11 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  window.VPPKA_RELOAD=async()=>{await loadData();toD();route();};
  let liveN=null,liveM=null,livePend=false,liveNew=new Set();
  let liveMPub=false,mPub=null,mUid='',mUnsub=null,RESUBM=null;
- const memDocs=()=>liveM.docs.map(d=>{const o=fixD({...d.data(),id:d.id});if(liveMPub){delete o.discord;delete o.discordId;delete o.updatedBy;if(o.pk)o.discordId=o.pk;o._pub=true}delete o.pk;return o});
+ const memDocs=()=>phFill(liveM.docs.map(d=>{const o=fixD({...d.data(),id:d.id});if(liveMPub){delete o.discord;delete o.discordId;delete o.updatedBy;if(o.pk)o.discordId=o.pk;o._pub=true}delete o.pk;return o}));
+ // «Одно фото — везде»: карточка без фото показывает фото другой карточки того же человека (Discord ID, у гостей — pk),
+ // а своя карточка — фото своего профиля. Только показ: в базе пустые места заполняет бот (photosync.py).
+ function phFill(L){const by={};L.forEach(m=>{if(m.photo&&m.discordId&&!by[m.discordId])by[m.discordId]=m.photo});const pd=String((profile&&profile.discordId)||''),pp=profile&&(profile.photo||profile.avatar)||'';
+  return L.map(m=>{if(m.photo||!m.name||/^вакансия$/i.test(String(m.name).trim()))return m;const d=String(m.discordId||''),ph=(d&&by[d])||(d&&d===pd&&pp)||'';return ph?{...m,photo:ph}:m})}
  // публичный статик карточек — pubStatik/{memberId}.s (читают все, пишут бот и владелец). Не смешиваем с members:
  // карточки сохраняются целиком, и лишнее поле statik правила members не примут.
  let liveS={};window.VPPKA_STATIK=id=>liveS[id]||'';
@@ -292,8 +296,8 @@ auth=A.getAuth(app);db=F.getFirestore(app);
   if(authReady&&profile)meSet({...m,ph:meRef(ph),mid:(mem&&mem.id)||''});
  }
 
- async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=261').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=261').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=261').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=261').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=261').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=261').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=261').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=261').then(m=>m.install()).catch(e=>console.error('admin',e));
+ async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership','settings'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=262').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=262').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=262').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=262').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=262').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=262').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=262').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=262').then(m=>m.install()).catch(e=>console.error('admin',e));
 // аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false,oaRan=false;
 // authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена

@@ -66,9 +66,12 @@ function form(e){e=e||{};return `<form class="blk ev-form" id="evForm"><h2>${e.i
 <label>Ссылка на изображение (необязательно)<input name="image" maxlength="2000" value="${esc(e.image)}"></label>
 <div class="ev-adm"><button class="btn sm" type="submit">Сохранить</button> <button class="btn sm o" type="button" data-evcancel>Отмена</button><span class="ev-err"></span></div></form>`}
 function page(){const adm=can(),u=up(),p=past();
- const body=EV===null?'<p class="ev-empty">Загрузка…</p>':`${adm?(editId!==null?form(editId?EV.find(x=>x.id===editId):null):'<p><button class="btn sm" data-evnew>+ Добавить мероприятие</button></p>'):''}
+ // v262: блоки «Ближайшие» и «Прошедшие» — в раскладке страницы (window.VPPKA_LAY); форма/кнопка админа — в начале «Ближайших», корзина — после
+ const parts=EV===null?null:{up:`${adm?(editId!==null?form(editId?EV.find(x=>x.id===editId):null):'<p><button class="btn sm" data-evnew>+ Добавить мероприятие</button></p>'):''}
 <div class="blk"><h2>Ближайшие</h2>${u.length?`<div class="ev-l">${u.map(e=>item(e,adm)).join('')}</div>`:'<p class="ev-empty">Пока нет запланированных мероприятий.</p>'}</div>
-${p.length?`<details class="blk ev-past"${p.some(e=>e.id===markId)?' open':''}><summary>Прошедшие (${p.length})</summary><div class="ev-l">${p.map(e=>item(e,adm)).join('')}</div></details>`:''}${trash()}`;
+`,past:p.length?`<details class="blk ev-past"${p.some(e=>e.id===markId)?' open':''}><summary>Прошедшие (${p.length})</summary><div class="ev-l">${p.map(e=>item(e,adm)).join('')}</div></details>`:'',
+  votes:window.VPPKA_VT_SIDE?window.VPPKA_VT_SIDE():'',docs:'<div class="blk"><h2>Документы</h2><ul><li><a href="#program">Программа партии</a></li><li><a href="#charter">Устав партии</a></li><li><a href="#legal">Правовая база</a></li></ul></div>'};
+ const body=parts?(window.VPPKA_LAY?window.VPPKA_LAY('events',parts):parts.up+parts.past)+trash():'<p class="ev-empty">Загрузка…</p>';
  return `<div class="crumbs"><a href="#home">Главная</a> / Мероприятия</div><div class="pg"><h1>Мероприятия</h1>${window.VPPKA_SUBTABS?window.VPPKA_SUBTABS('events'):''}${body}</div>`}
 function side(){const u=up().filter(e=>!e.hidden).slice(0,3);return `<div class="blk ev-side"><h2>Ближайшие мероприятия</h2>${EV===null?'<p class="ev-empty">Загрузка…</p>':u.length?`<ul class="ev-sl">${u.map(e=>`<li><a href="#events"><span class="ev-d">${esc(fmt(e.at))}</span><b>${esc(e.title)}</b>${e.place?`<small>📍 ${esc(e.place)}</small>`:''}</a></li>`).join('')}</ul>`:'<p class="ev-empty">Ближайших мероприятий пока нет.</p>'}</div>`}
 const cur=()=>(location.hash.slice(1)||'home').split('/')[0];
