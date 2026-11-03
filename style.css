@@ -1130,8 +1130,14 @@ body.le-dragging,body.le-dragging *{cursor:grabbing!important}
 .le-info{display:grid;min-width:0}.le-info b{font:700 13px var(--fd);text-transform:uppercase;letter-spacing:.06em;color:#f0e6d6}.le-info small{color:var(--mut);font-size:12px}
 .le-act{display:flex;gap:6px;flex:0 0 auto}
 @media(max-width:560px){body.le-on{padding-bottom:118px}.le-bw{flex-direction:column;align-items:stretch;gap:6px}.le-act .btn{flex:1}}
-/* v262: шаблоны карточек (layedit.js): размер и скрытие элементов; в режиме правки — выбор и перетаскивание */
-.tp-s{zoom:.85}.tp-l{zoom:1.2}.tp-hide{display:none!important}
+/* v263: шаблоны карточек (layedit.js): свободная раскладка — сдвиг/масштаб/слой элементов; карточка масштабируется целиком (zoom) */
+.tp-hide{visibility:hidden!important}
+.tp-ov{position:fixed;z-index:10001;pointer-events:none}
+#tp-gx,#tp-gy{border:0 dashed var(--gold);border-left-width:1px;border-top-width:1px;box-shadow:0 0 4px #000}
+#tp-hd{pointer-events:auto;width:22px;height:22px;display:grid;place-items:center;background:var(--red);color:#fff;font-size:13px;line-height:1;cursor:nwse-resize;touch-action:none;border:1px solid #0008}
+@media(pointer:coarse){#tp-hd{width:30px;height:30px;margin:-4px 0 0 -4px}}
+/* правка: всплывающее «Новая новость» — над панелью правки, не поверх кнопок */
+body.le-on .ntoast{bottom:calc(var(--le-bar-h,120px) + 10px)!important}
 .le-on [data-tpi]{pointer-events:auto;outline:1px dashed rgba(176,137,72,.6);outline-offset:-1px;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .le-on .tp-off{opacity:.3;filter:grayscale(1)}
 .le-on [data-tpi].tp-sel{outline:2px solid var(--red);outline-offset:-2px}
@@ -1139,7 +1145,7 @@ body.le-dragging,body.le-dragging *{cursor:grabbing!important}
 .le-on [data-tpi].le-hold{outline:2px solid var(--gold)}
 #le-bar .le-sel{border-bottom:1px solid var(--ln);background:#1a1310}
 .le-szb{display:flex}.le-szb button{border:1px solid var(--gold);background:#14110d;color:var(--gold);padding:4px 10px;font:700 12px var(--fd);cursor:pointer;margin-left:-1px}.le-szb button.on{background:var(--gold);color:#14110d}
-@media(max-width:560px){.le-sel .le-act{flex-wrap:wrap}}
+@media(max-width:560px){.le-sel .le-hint{display:none}.le-sel .le-act{flex-wrap:wrap;gap:4px}.le-sel .le-act .btn{flex:1 1 auto;padding:5px 7px;font-size:11px}.le-sel .le-szb button{padding:4px 9px}}
 /* v262: #admin — порядок разделов перетаскиванием (admin-order.js) */
 .adm-ordb{display:flex;justify-content:flex-end;margin:10px 0 -4px}.adm-ordb.on{justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;border:1px solid var(--gold);background:#17120d;padding:6px 10px;margin-bottom:0}
 .adm-ordb .amut{margin:0;font-size:12px}.adm-orda{display:flex;gap:6px;flex-wrap:wrap}
