@@ -45,8 +45,8 @@ export function toDemo(content) {
           no: '000',
           basis: 'Основание: образец приказа от 07.11.2026',
           grant: 'награждён юбилейной медалью «109 лет Октябрьской революции» (1917—2026).',
-          image: 'img/demo/medal-109.svg',
-          plate: 'img/demo/medal-109-large.svg',
+          image: 'img/demo/medal-109.webp',
+          plate: 'img/demo/medal-109.webp',
           cert: true,
         },
         {

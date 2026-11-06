@@ -93,29 +93,27 @@
   }
   let backEl = null;
   let scale = 1;
-  let fitTimer = 0;
   function applyZoom(z) {
     const fit = dialog() && dialog().querySelector('.aw-fit');
     if (!fit) return;
     scale = Math.min(2.8, Math.max(0.35, z));
     fit.style.transform = 'scale(' + scale + ')';
   }
-  function place(readable) {
+  // Масштаб считается по открытому листу 210×75. Корочка — та же высота и половина ширины, без повторной подгонки при раскрытии.
+  function place() {
     const v = dialog();
-    const b = book();
-    if (!v || !b) return;
+    if (!v) return;
     const scene = v.querySelector('.aw-scene');
+    const frame = v.querySelector('.aw-fit');
+    if (!scene || !frame) return;
     const availW = Math.max(120, scene.clientWidth - 24);
     const availH = Math.max(120, scene.clientHeight - 16);
-    let z = Math.min(availW / b.offsetWidth, availH / b.offsetHeight);
-    if (readable && window.matchMedia && window.matchMedia('(max-width:800px)').matches) z = Math.min(2.6, Math.max(z, 240 / b.offsetHeight));
-    applyZoom(z);
+    applyZoom(Math.min(availW / frame.offsetWidth, availH / frame.offsetHeight));
   }
   function dialog() { return document.getElementById('aw-view'); }
   function closeView() {
     const v = dialog();
     if (!v) return;
-    clearTimeout(fitTimer);
     v.remove();
     document.body.classList.remove('aw-lock');
     if (backEl && backEl.focus) backEl.focus();
@@ -143,9 +141,6 @@
     if (cover) cover.setAttribute('aria-expanded', 'true');
     const back = dialog().querySelector('.aw-back');
     if (back) { back.hidden = false; back.focus(); }
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    clearTimeout(fitTimer);
-    fitTimer = setTimeout(() => place(false), reduce ? 0 : 820);
   }
   function openAt(i, from) {
     const it = shown[i];
@@ -162,7 +157,7 @@
     document.body.appendChild(v);
     const cover = v.querySelector('.aw-cover');
     if (cover) cover.focus();
-    place(false);
+    place();
   }
   function focusables(v) {
     return [...v.querySelectorAll('button,a[href]')].filter(el => !el.disabled && !el.hidden && el.tabIndex !== -1);
@@ -175,7 +170,7 @@
     const zoom = e.target.closest && e.target.closest('[data-awz]');
     if (zoom) {
       e.preventDefault();
-      if (zoom.dataset.awz === 'fit') place(false);
+      if (zoom.dataset.awz === 'fit') place();
       else applyZoom(scale + (zoom.dataset.awz === 'in' ? 0.25 : -0.25));
       return;
     }
