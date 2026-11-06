@@ -37,7 +37,7 @@
         date: String(x.date || '').replace(/\s+/g, ' ').trim().slice(0, 40),
         no: (String(x.no || x.num || '000').replace(/[^\dA-Za-zА-Яа-яЁё\-]/g, '').slice(0, 12)) || '000',
         basis: String(x.basis || '').replace(/\s+/g, ' ').trim().slice(0, 200),
-        grant: String(x.grant || '').replace(/\s+/g, ' ').trim().slice(0, 240),
+        grant: String(x.grant || '').replace(/[^\S\n]+/g, ' ').trim().slice(0, 400),
         coverTo: String(x.coverTo || '').replace(/\s+/g, ' ').trim().slice(0, 80),
         image: image(x.image || x.icon),
         plate: image(x.plate) || image(x.image || x.icon),
@@ -86,11 +86,13 @@
   function rightPage(it, person) {
     const who = person || holder;
     const pass = who.pass ? esc(who.pass) : 'не указан';
-    const basis = it.basis ? `<p>${esc(it.basis)}</p>` : '';
-    const issued = it.date ? `<p>Дата выдачи: ${esc(it.date)}</p>` : '';
+    const lines = String(it.grant || ('награждён ' + (it.head ? it.head + ' ' : '') + it.title + (it.years ? ' (' + it.years + ')' : '') + '.')).split('\n').map(s => s.trim()).filter(Boolean);
+    const body = `<p>статик / № паспорта: ${pass}</p>` + lines.map(l => `<p>${esc(l)}</p>`).join('')
+      + (it.basis ? `<p>${esc(it.basis)}</p>` : '')
+      + (it.date ? `<p>Дата выдачи: ${esc(it.date)}</p>` : '')
+      + '<p>Председатель ЦК ВППКА</p>';
     const file = it.pdf ? `<p class="aw-file"><a href="${esc(it.pdf)}" target="_blank" rel="noopener">Файл PDF</a></p>` : '';
-    const line = it.grant || ('награждён ' + (it.head ? it.head + ' ' : '') + it.title + (it.years ? ' (' + it.years + ')' : '') + '.');
-    return `<div class="aw-col aw-col-r"><div class="aw-doc">УДОСТОВЕРЕНИЕ</div><div class="aw-num">№ ${esc(it.no)}</div><p class="aw-that">Настоящим удостоверяется, что</p><div class="aw-fio">${esc(who.name)}</div><div class="aw-cap">(фамилия, имя, отчество)</div><p>статик / № паспорта: ${pass}</p><p>${esc(line)}</p>${basis}${issued}<div class="aw-sign"><div><div>Председатель ЦК ВППКА</div><div class="aw-mark">образец</div><div class="aw-cap">(подпись)</div></div>${SEAL}</div>${file}<p class="aw-foot">Образец бланка. Подпись и печать ненастоящие.</p></div>`;
+    return `<div class="aw-col aw-col-r"><div class="aw-rh"><span class="aw-doc">УДОСТОВЕРЕНИЕ</span><span class="aw-num">№ ${esc(it.no)}</span></div><p class="aw-that">Настоящим удостоверяется, что</p><div class="aw-fio">${esc(who.name)}</div><div class="aw-cap">(фамилия, имя, отчество)</div><div class="aw-body">${body}</div><div class="aw-sign"><div class="aw-sig"><div class="aw-script">образец</div><div class="aw-cap">(подпись)</div></div>${SEAL}</div>${file}</div>`;
   }
   function coverFace(it) {
     const sub = esc(it.coverTo || (it.head ? 'к ' + it.head.charAt(0).toLowerCase() + it.head.slice(1) : ''));
@@ -99,7 +101,7 @@
   }
   function viewHtml(it, person) {
     const left = it.spread ? `<img class="aw-plate" src="${esc(it.spread)}" alt="Разворот: ${esc(it.title)}">` : leftPage(it);
-    return `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div><div class="aw-scene"><div class="aw-fit"><div class="aw-book"><div class="aw-spread" aria-hidden="true">${rightPage(it, person)}</div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in">${left}</span></span></button></div></div></div>`;
+    return `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div><div class="aw-scene"><div class="aw-fit"><div class="aw-book"><div class="aw-spread" aria-hidden="true">${rightPage(it, person)}</div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in">${left}</span></span></button><p class="aw-foot">Внутриигровой документ. Образец бланка, не печать.</p></div></div></div>`;
   }
   let backEl = null;
   let scale = 1;

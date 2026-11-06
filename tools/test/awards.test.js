@@ -77,5 +77,8 @@ test('в вёрстке корочка откидывается трансфор
   assert.match(css, /--sheet:min\(980px/);
   assert.match(css, /height:calc\(var\(--sheet\) \/ 2\.8\)/);
   assert.doesNotMatch(css, /\.aw-spread\{grid-template-columns:1fr\}/);
+  assert.match(css, /drop-shadow\(0 3px 3px/);
+  assert.match(css, /hover:hover\) and \(pointer:fine\)/);
+  assert.doesNotMatch(css, /\.aw-img\{[^}]*animation:[^;]*infinite/);
   assert.doesNotMatch(css, /\.aw-cover\{[^}]*animation:\s*[^;]*infinite/);
 });
