@@ -28,7 +28,7 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img ${PHA(u,'t')} alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
 
- <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=266').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
+ <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=267').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
  <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
  ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
 
@@ -232,7 +232,7 @@ window.VPPKA_EXPEL=async id=>{const m=xMem().find(x=>x.id===id);if(!canX(m))retu
 // v262: окно «Объявления» на главной (сразу под шапкой). Данные — notifications (type other|convocation), видны всем.
 // Поля: title, text, place (место), at (время события, мс; вводится и показывается по Москве), when (строка «Когда» — для Discord и старых записей).
 // Показываем до 3 свежих; прошедшее событие сутки помечено «Состоялось», потом уходит; без времени — 7 дней (созыв 14), отменённое — сутки.
-const DCH='https://discord.com/channels/1557758930959081502/1560401813856059553',MSK=3*36e5,HR=36e5,DAY=864e5;let hn=[],hnSub=null,hnEd='';
+const DCH='https://discord.com/channels/1557758930959081502/1560401813856059553',MSK=3*36e5,HR=36e5,DAY=864e5;let hn=[],hnSub=null,hnEd='',hnReady=false;
 const WD=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'],MN=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'],MS=['ЯНВ','ФЕВ','МАР','АПР','МАЯ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
 const mk=d=>new Date(+d+MSK),p2=n=>String(n).padStart(2,'0'),hnMs=t=>t?.toMillis?.()||0;
 const AN={toMs:v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);return m?Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5])-MSK:0},
@@ -258,7 +258,7 @@ function anCard(x,now){const st=hnState(x,now),a=hnAt(x),cd=tier()>=4,d=a?mk(a):
 <div class="an-bd"><div class="an-hd">${tg||x.pinned?`<span class="an-tgs">${tg?`<span class="an-tg">${tg}</span>`:''}${x.pinned?'<span class="an-tg an-pin">Закреплено</span>':''}</span>`:''}${cd?`<span class="an-adm"><button class="btn sm o" data-anedit="${esc(x.id)}">Изменить</button><button class="btn sm o kp-del" data-andel="${esc(x.id)}" data-ty="${x.type}">Удалить</button></span>`:''}</div>
 <h3>${esc(x.title)}</h3>${meta?`<ul class="an-meta">${meta}</ul>`:''}${x.text?`<div class="an-tx"><p>${anTx(x.text)}</p></div><button class="an-more" data-anmore="1" aria-expanded="false">Подробнее ▾</button>`:''}${x.cancelled&&x.reason?`<p class="an-r">Причина отмены: ${esc(x.reason)}</p>`:''}
 <small class="an-ft">${au?`✍ ${esc(au)} · `:''}опубл. ${(()=>{const t=hnMs(x.createdAt);return t?mk(t).toISOString().slice(0,10).split('-').reverse().join('.'):''})()}</small></div></article>`}
-function hnHtml(){const g=hnCfg(),now=Date.now(),L=hnActive().slice(0,Math.min(3,Math.max(1,+g.announceMax||3))),cd=tier()>=4;
+function hnHtml(){if(!hnReady)return `<section class="blk anw"><div class="an-top"><h2>Объявления</h2></div><p class="amut an-wait">Загрузка…</p></section>`;const g=hnCfg(),now=Date.now(),L=hnActive().slice(0,Math.min(3,Math.max(1,+g.announceMax||3))),cd=tier()>=4;
  return `<section class="blk anw"><div class="an-top"><h2>Объявления</h2><span class="an-lk">${cd?'<button class="btn sm" data-annew="1" title="Новое объявление">+ Добавить</button>':''}<a href="${DCH}" target="_blank" rel="noopener">Канал в Discord →</a></span></div>
 <div class="an-l an-n${L.length}">${L.map(x=>anCard(x,now)).join('')||'<p class="amut an-empty">Актуальных объявлений нет. Новые появятся здесь и в канале «📃 обьявления» в Discord.</p>'}</div></section>`}
 // Текст объявления свёрнут; «Подробнее ▾» раскрывает его в карточке
@@ -276,7 +276,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-an
   try{await f.updateDoc(f.doc(db(),'notifications',t.dataset.ansave),{title:ti,text:v('an-tx'),place:v('an-pl'),at:at||f.deleteField(),when:at?AN.when(at):f.deleteField(),editedBy:FB().user.uid,editedAt:f.serverTimestamp()});hnEd='';hnPaint()}
   catch(x){t.disabled=false;er.textContent='Ошибка: '+(x.code==='permission-denied'?'нет прав.':(x.code||x.message))}}});
 window.VPPKA_HN=()=>{hnStart();return hnActive()};
-function hnStart(){if(hnSub||!FB()||!F())return;const f=F();hnSub=f.onSnapshot(f.query(f.collection(db(),'notifications'),f.where('type','in',['convocation','other'])),s=>{hn=s.docs.map(x=>({...x.data(),id:x.id}));hnPaint()},e=>{console.warn('home notices',e.code);hnSub=null})}
+function hnStart(){if(hnSub||!FB()||!F())return;const f=F();hnSub=f.onSnapshot(f.query(f.collection(db(),'notifications'),f.where('type','in',['convocation','other'])),s=>{hn=s.docs.map(x=>({...x.data(),id:x.id}));hnReady=true;hnPaint()},e=>{console.warn('home notices',e.code);hnReady=true;hnSub=null;hnPaint()})}
 setInterval(()=>{if(!hnSub)hnStart();hnPaint()},60000);
 
 // «Заявки на вступление» на вкладке «Члены партии» (ступень 3+, как в панели заявок)
@@ -294,7 +294,7 @@ document.addEventListener('click',async e=>{const ok=e.target.closest('[data-aqo
    window.VPPKA_APPS_RESET&&window.VPPKA_APPS_RESET();if(m)m.textContent=(ok?'Принят(а): ':'Отказано: ')+n;rosterSync().catch(x=>console.warn('roster',x.code||x))}
   catch(x){(ok||no).disabled=false;if(m)m.textContent='Ошибка: '+(x.code==='permission-denied'?'нет прав.':(x.code||x.message))}return}
  if(op){location.hash='#apps';let i=0;const t=setInterval(()=>{const el=document.getElementById('app-'+op.dataset.aqopen);if(el||++i>40){clearInterval(t);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('aq-hl');setTimeout(()=>el.classList.remove('aq-hl'),2500)}}},150)}});
-export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace('<div id="hnote"></div>','<div id="hnote">'+hnHtml()+'</div>')};if(/^#?(home)?$/.test(location.hash))window.route();P.party=()=>{const h0=op();const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"/]+)(?:\/[^"]*)?"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const pw=FB().power||{},ab=[(pw.rank>0)&&'<a class="btn sm o" href="#apps">Заявки в партию</a>',(pw.members||rank()>=1000)&&'<a class="btn sm o" href="#members">Участники партии</a>'].filter(Boolean).join(' ');const hx=ab?h.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="adm-bar">'+ab+'</div>'):h;const g=appBlock()+guestBlock();return g?hx.replace(/<\/div>(\s*)$/,g+'</div>$1'):hx};const on=P.news,ol=P.leadership;installAssign();
+export function install(){const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace('<div id="hnote"></div>','<div id="hnote">'+hnHtml()+'</div>')};hnStart();const slot=document.getElementById('hnote');if(slot&&!slot.innerHTML.trim())slot.innerHTML=hnHtml();P.party=()=>{const h0=op();const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"/]+)(?:\/[^"]*)?"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const pw=FB().power||{},ab=[(pw.rank>0)&&'<a class="btn sm o" href="#apps">Заявки в партию</a>',(pw.members||rank()>=1000)&&'<a class="btn sm o" href="#members">Участники партии</a>'].filter(Boolean).join(' ');const hx=ab?h.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="adm-bar">'+ab+'</div>'):h;const g=appBlock()+guestBlock();return g?hx.replace(/<\/div>(\s*)$/,g+'</div>$1'):hx};const on=P.news,ol=P.leadership;installAssign();
  P.news=id=>{const h=on(id);return id===undefined&&tier()>=4?h.replace(/<\/div>$/,newsPanel()+'</div>'):h};
  P.leadership=()=>{let h=ol();const extra=(tier()>=4||chair()||isSuper()?memPanel():'')+postPanel();return extra?h.replace(/<\/div>$/,extra+'</div>'):h};
  P.apps=appsPage;P.members=membersPage;const omb=P.member;P.member=(id,from)=>{const h=omb(id,from),b=rkBtn(xMem().find(x=>x.id===id));return b?h.replace('</table>','</table><div class="rk-row">'+b+'</div>'):h};
@@ -315,9 +315,9 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
    // Отправка в Discord: своя строка из «Каналы Discord» или канал новостей «как обычно» — через бота (discordOut)
    let dtNote='';const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=266');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=267');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    // «как обычно» — тоже через бота (b_news): вебхуки config/discord видит только владелец
-   else{try{const m=await import('./discord-targets.js?v=266');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   else{try{const m=await import('./discord-targets.js?v=267');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    editNews=null;await done('Сохранено.'+dtNote);}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}

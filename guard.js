@@ -5,7 +5,33 @@
  var ok=false;
  try{ok=window.top===window.self||window.top.location.origin===location.origin}catch(e){ok=false}
  if(!ok){try{window.top.location.replace(location.href)}catch(e){}return}
- var s=document.getElementById('afb');if(s&&s.parentNode)s.parentNode.removeChild(s);
+ var s=document.getElementById('afb');
+ function reveal(){if(s&&s.parentNode)s.parentNode.removeChild(s);s=null}
+ // Номер сборки — из ?v= этого файла (его поднимает tools/bump.mjs). Пока страница скрыта,
+ // сверяем его с version.json. Если сервер уже новее, один раз перезагружаем до первого кадра.
+ // Повтор внутри 15 с не делаем: иначе при задержке CDN страница перезагружалась бы бесконечно.
+ var build='';
+ try{build=(document.currentScript&&document.currentScript.src.match(/[?&]v=(\d+)/)||[])[1]||''}catch(e){}
+ if(build)document.documentElement.setAttribute('data-build',build);
+ try{var cu=new URL(location.href);if(cu.searchParams.has('_r')){cu.searchParams.delete('_r');var qs=cu.searchParams.toString();history.replaceState(null,'',cu.pathname+(qs?'?'+qs:'')+cu.hash)}}catch(e){}
+ function gate(){
+  if(!build||!navigator.onLine){reveal();return}
+  fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
+   var live=j&&j.v!=null?String(j.v):'';
+   if(live&&live!==String(build)){
+    var k='vppka-reload-at',t=0;
+    try{t=+sessionStorage.getItem(k)||0}catch(e){}
+    if(Date.now()-t>15000){
+     try{sessionStorage.setItem(k,String(Date.now()))}catch(e){}
+     // Обычный reload берёт index.html из HTTP-кэша (max-age=600) и снова показывает старую сборку.
+     var n=new URL(location.href);n.searchParams.set('_r',String(Date.now()));location.replace(n.pathname+n.search+n.hash);
+     return;
+    }
+   }
+   reveal();
+  }).catch(reveal);
+ }
+ gate();
  // v257: возврат из Discord OAuth (?code&state или ?error&state) — сразу убрать из адреса и истории, передать в auth.js
  try{var q=new URLSearchParams(location.search);if(q.has('state')&&(q.has('code')||q.has('error'))){
   try{sessionStorage.setItem('vppka-oa-ret',JSON.stringify({code:q.get('code')||'',state:q.get('state')||'',error:q.get('error')||''}))}catch(e){}

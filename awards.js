@@ -230,6 +230,7 @@
     if (e.shiftKey && document.activeElement === a) { e.preventDefault(); b.focus(); }
     else if (!e.shiftKey && document.activeElement === b) { e.preventDefault(); a.focus(); }
   });
+  if (typeof window.addEventListener === 'function') window.addEventListener('hashchange', () => { const p = (location.hash.slice(1) || '').split('/'); if (p[0] !== 'member' || p[1] !== 'm11') closeView(); });
   document.addEventListener('error', e => {
     const img = e.target;
     if (!img || !img.classList || !img.classList.contains('aw-img')) return;

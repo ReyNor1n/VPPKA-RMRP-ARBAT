@@ -7,4 +7,7 @@ const sw=fs.readFileSync(R+'sw.js','utf8');const c=+(sw.match(/vppka-v(\d+)/)||[
 // Публичный номер версии V<major>.<minor> меняется ТОЛЬКО по команде владельца: --next (+0.1) или --label V3.0. Без флагов метка остаётся прежней.
 let old={};try{old=JSON.parse(fs.readFileSync(R+'version.json','utf8'))}catch{}const ai=process.argv.indexOf('--label');let label;
 if(ai>0)label=process.argv[ai+1];else if(!process.argv.includes('--next')&&old.label)label=old.label;else{const m=String(old.label||'').match(/^V(\d+)\.(\d+)$/);label=m?`V${m[1]}.${+m[2]+1}`:'V2.0'}
-fs.writeFileSync(R+'version.json',JSON.stringify({v:String(v),label,cache:'vppka-v'+c,at:new Date().toISOString()})+'\n');console.log('v='+v,'label='+label,'cache=vppka-v'+c);
+fs.writeFileSync(R+'version.json',JSON.stringify({v:String(v),label,cache:'vppka-v'+c,at:new Date().toISOString()})+'\n');
+const sm=R+'sitemap.xml';
+if(fs.existsSync(sm)){const day=new Date().toISOString().slice(0,10);fs.writeFileSync(sm,fs.readFileSync(sm,'utf8').replace(/<lastmod>[^<]*<\/lastmod>/,'<lastmod>'+day+'</lastmod>'))}
+console.log('v='+v,'label='+label,'cache=vppka-v'+c);
