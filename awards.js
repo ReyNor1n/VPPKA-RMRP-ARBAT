@@ -72,22 +72,25 @@
     cert: true
   }];
   function block(m) {
-    if (!m || m.id !== 'm11') return '';
-    const own = list(m.awards);
-    const items = own.length ? own : list(M11);
-    if (!items.length) return '';
-    shown = items;
-    holder = {
-      name: String((m && m.name) || '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'не указано',
-      pass: String((m && (m.statik || m.passport)) || '').replace(/\s+/g, ' ').trim().slice(0, 32),
-    };
+    if (!m || !m.id) return '';
+    let items = [];
+    if (m.id === 'm11') {
+      const own = list(m.awards);
+      items = own.length ? own : list(M11);
+      shown = items;
+      holder = {
+        name: String((m && m.name) || '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'не указано',
+        pass: String((m && (m.statik || m.passport)) || '').replace(/\s+/g, ' ').trim().slice(0, 32),
+      };
+    }
     const cells = items.map((it, i) => {
       const tip = esc(it.date ? it.title + ', ' + it.date : it.title);
       const face = icon(it);
       if (!it.cert) return `<span class="aw-hold" title="${tip}" role="img" aria-label="${tip}">${face}</span>`;
       return `<button type="button" class="aw-btn" data-aw="${i}" title="${tip}" aria-label="${tip}. Открыть удостоверение">${face}</button>`;
     }).join('');
-    return `<div class="mpg-side"><section class="blk awards"><h2>Награды</h2><div class="aw-grid">${cells}</div></section></div>`;
+    const body = items.length ? `<div class="aw-grid">${cells}</div>` : '<p class="amut aw-empty">Наград пока нет</p>';
+    return `<div class="mpg-side"><section class="blk awards"><h2>Награды</h2>${body}</section></div>`;
   }
   const SEAL = '<svg class="aw-seal" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="36" fill="none" stroke="#2a4f86" stroke-width="2"/><circle cx="40" cy="40" r="30" fill="none" stroke="#2a4f86" stroke-width="1"/><text x="40" y="36" text-anchor="middle" font-size="11" fill="#2a4f86" font-family="Times New Roman,Times,serif">ОБРАЗЕЦ</text><text x="40" y="52" text-anchor="middle" font-size="8" fill="#2a4f86" font-family="Times New Roman,Times,serif">НЕ ПЕЧАТЬ</text></svg>';
   const RULE = '<span class="aw-cv-rule" aria-hidden="true"><i></i><b></b><i></i></span>';

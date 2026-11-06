@@ -248,5 +248,6 @@ let n=0;const boot=()=>{tog();const w=sessionStorage.getItem('vppka_le');if(w&&w
 // шаблоны карточек — для всех посетителей: после каждой перерисовки #app
 const startMO=()=>{const app=document.getElementById('app');if(!app||MO)return;MO=new MutationObserver(()=>applyAll());MO.observe(app,{childList:true,subtree:true});applyAll()};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',startMO):startMO();
-window.VPPKA_LAYEDIT={enter,exit,state:()=>LE,applyAll};
+window.VPPKA_LAY_READY=true;window.VPPKA_LAYEDIT={enter,exit,state:()=>LE,applyAll};
+if(window.VPPKA_TPL_READY&&(location.hash.slice(1)||'').split('/')[0]==='member'&&document.querySelector('.mpg-skel'))window.route&&window.route();
 })();

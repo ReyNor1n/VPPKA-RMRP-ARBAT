@@ -14,11 +14,16 @@ const list = window.VPPKA_AWARD_LIST;
 const block = window.VPPKA_AWARDS;
 const view = window.VPPKA_AWARD_VIEW;
 
-test('награда запуска только у m11', () => {
-  assert.equal(block({ id: 'm1', name: 'Другой', awards: [{ title: 'Медаль', cert: true }] }), '');
+test('награда запуска только у m11, у остальных пустой раздел', () => {
+  const other = block({ id: 'm1', name: 'Другой', awards: [{ title: 'Медаль', cert: true, image: 'img/demo/medal-109.webp' }] });
+  assert.match(other, /Награды/);
+  assert.match(other, /Наград пока нет/);
+  assert.equal(other.includes('medal-109'), false);
+  assert.equal(other.includes('<button'), false);
   const html = block({ id: 'm11' });
   assert.match(html, /medal-109\.webp/);
   assert.match(html, /Награды/);
+  assert.equal(html.includes('Наград пока нет'), false);
   const dlg = view(list([{ title: '«109 лет Октябрьской революции»', no: '001', full: true, cert: true, spread: 'img/awards/m11-109.webp', coverTo: 'к юбилейной медали', years: '1917 — 2026' }])[0]);
   assert.match(dlg, /aw-half-l/);
   assert.match(dlg, /aw-half-r/);
