@@ -17,8 +17,22 @@
   };
   window.VPPKA_VT_PAGE = function () { return page('Голосования'); };
   window.VPPKA_VT_SIDE = function () { return ''; };
+  function esc(s) {
+    return String(s || '').replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function demoSide() {
+    if (location.hash.indexOf('#member/') !== 0) return;
+    var side = document.querySelector('.mpg-side');
+    if (!side || side.querySelector('.act')) return;
+    var nameEl = document.querySelector('.prof-n');
+    var name = nameEl ? nameEl.textContent.replace(/\s+/g, ' ').trim() : 'Участник демонстрации';
+    side.insertAdjacentHTML('afterbegin', '<div class="blk act"><h2>Активность</h2><div class="act-top"><span>' + esc(name) + '</span><span class="badge">★ Новичок</span></div><div class="at-grid"><div class="at-st"><b>1</b><span>посещено</span></div><div class="at-st"><b>100%</b><span>явка</span></div><div class="at-st"><b>1</b><span>всего</span></div><div class="at-st"><b class="sm">01.11</b><span>последнее</span></div></div><div class="at-bar"><i style="width:100%"></i></div><div class="cm-h">Последние мероприятия</div><ul class="at-rl"><li><span>Демонстрационный созыв · 01.11.2026</span><span class="y">✔ был</span></li></ul></div>');
+  }
   window.__VPPKA_STAGING_PATCH = function () {
     markTitle();
+    setTimeout(demoSide, 0);
     var P = window.P;
     if (!P || P.__stg) return;
     P.__stg = 1;
