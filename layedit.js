@@ -63,9 +63,12 @@ function tightenCreator(root){const cr=root.querySelector('tr.creator-r');if(!cr
  const rows=[...root.querySelectorAll('.tbl tr')].filter(tr=>tr!==cr);if(!rows.length)return;
  const bottom=Math.max(...rows.map(tr=>tr.getBoundingClientRect().bottom)),top=cr.getBoundingClientRect().top,gap=top-bottom;if(gap<=28)return;
  const zoom=parseFloat(getComputedStyle(root).zoom)||1;cr.style.marginTop=Math.round(-(gap-10)/zoom)+'px'}
+// Сдвиги строк сохранены на узкой таблице (одна колонка, вторая колонка — это x). На широкой таблице CSS уже ставит две колонки, и те же x/y накладывают поля. Там строки остаются в сетке; явно заданные x/y узкой карточки не меняются.
+function splitTable(root){const tb=root.querySelector('.tbl tbody');if(!tb)return false;return getComputedStyle(tb).gridTemplateColumns.trim().split(/\s+/).filter(Boolean).length>1}
 function applyCard(root,ty,m,edit){
  if(m){if(root.dataset.tpw!==String(m.W)){root.dataset.tpw=m.W;RO.observe(root)}fitZoom(root)}else if(root.dataset.tpw){delete root.dataset.tpw;root.style.zoom='';RO.unobserve(root)}
- for(const {id,el,tail} of itemsOf(root,ty)){const e=m&&m.it[id]||null;for(const k of [el,tail])k&&styleEl(k,e,edit);
+ const wide=!edit&&splitTable(root);
+ for(const {id,el,tail} of itemsOf(root,ty)){let e=m&&m.it[id]||null;if(e&&wide&&id.startsWith('row:'))e=null;for(const k of [el,tail])k&&styleEl(k,e,edit);
   const tag=ty+'|'+id;if(edit){if(el.dataset.tpi!==tag)el.dataset.tpi=tag}else if(el.dataset.tpi)delete el.dataset.tpi}
  if(ty==='prof'){if(edit){const cr=root.querySelector('tr.creator-r');if(cr)cr.style.marginTop=''}else tightenCreator(root)}}
 let MO=null;
