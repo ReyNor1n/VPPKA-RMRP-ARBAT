@@ -184,6 +184,15 @@ test('демо-сборка не содержит боевой backend и пер
     assert.equal(text.includes('img/members'), false);
     assert.equal(text.includes('img/uploads'), false);
     assert.match(content.leadership.members.find(m => m.id === 'm1').name, /Тестов Иван Петрович/);
+    const heavy = content.leadership.members.find(m => m.id === 'm11');
+    assert.equal(heavy.metal, 'gold');
+    assert.equal(heavy.photo, 'img/demo/heavy-portrait.jpg');
+    assert.equal(heavy.statik, '000-001');
+    assert.equal(text.includes('707-932'), false);
+    assert.equal(text.includes('Ульянов'), false);
+    const css = await readFile(path.join(dir, 'style.css'), 'utf8');
+    assert.match(css, /tex-grain\.webp/);
+    assert.doesNotMatch(css, /tex-grain\.svg/);
     await assert.rejects(access(path.join(dir, 'CNAME')));
     await assert.rejects(access(path.join(dir, 'img', 'members')));
     await assert.rejects(access(path.join(dir, 'tools')));

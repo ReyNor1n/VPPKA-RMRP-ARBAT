@@ -28,6 +28,15 @@ export function toDemo(content) {
     if (!vac) m.name = DEMO_NAMES[m.id] || ('Участник Демонстрационный ' + n++);
     if (String(m.id || '').startsWith('p_')) m.id = 'p_demo_' + n++;
     for (const k of DROP) delete m[k];
+    // Синтетический тяжёлый профиль: латунь, крупное фото, паспорт-заглушка. Не боевые ФИО и не 707-932.
+    if (m.id === 'm11') {
+      m.metal = 'gold';
+      m.photo = 'img/demo/heavy-portrait.jpg';
+      m.statik = '000-001';
+      m.quote = 'Проверка скорости тестовой версии.';
+      m.bio = 'Демонстрационная карточка того же типа, что тяжёлый профиль на боевом сайте: крупный портрет, латунная рамка и блик. Людей и документов боевой базы здесь нет.';
+      m.achievements = 'Синтетический аналог. Фото нарисовано для теста, это не снимок человека.';
+    }
   }
   if (Array.isArray(c.home?.trio)) {
     for (const t of c.home.trio) {

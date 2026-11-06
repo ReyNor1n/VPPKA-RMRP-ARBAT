@@ -275,8 +275,9 @@ footer{margin-top:24px}footer .cols{grid-template-columns:1fr;gap:18px}footer a{
 @media(max-width:900px){.about-hero{grid-template-columns:1fr;gap:16px}}
 h1 .amu{position:static;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-left:14px;width:34px;height:34px;color:#fff;font-size:16px;cursor:pointer}h1 .amu:hover{opacity:1}body>.amu{display:none}.amu[hidden]{display:none}
 .ntoast a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.vbanner{position:relative;width:100%;aspect-ratio:16/6;min-height:120px;max-height:320px;overflow:hidden;margin:0 0 18px;background:#000}
+.vbanner{position:relative;width:100%;aspect-ratio:16/6;min-height:120px;max-height:320px;overflow:hidden;margin:0 0 18px;background:#000;contain:paint;isolation:isolate}
 .vbanner video{width:100%;height:100%;object-fit:cover;display:block}
+.vb-play{position:absolute;right:10px;bottom:10px;z-index:3}
 .vb-d{margin:12px 0}.vb-d summary{cursor:pointer;padding:10px 0;color:var(--gold,#e0b04a)}.vb-d input{width:100%;padding:8px;margin:6px 0;background:#111;border:1px solid #333;color:#fff;border-radius:6px}
 .vbanner img{width:100%;height:100%;object-fit:cover;display:block}
 .adm-bar{display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 16px}
@@ -794,7 +795,7 @@ body{font-size:15.5px;line-height:1.65}
 h1,h2,h3{font-weight:700;letter-spacing:.03em}
 h1,h2{text-transform:uppercase}
 .pg h1,.doc .hdr h1,.intro h1,.prof-n,.hd .nm{font-weight:800}
-.pg h1,.doc .hdr h1,.intro h1,main h2,.hd .nm{-webkit-mask:url(img/worn.svg) 0 0/400px 200px;mask:url(img/worn.svg) 0 0/400px 200px}
+.pg h1,.doc .hdr h1,.intro h1,main h2,.hd .nm{-webkit-mask:url(img/worn.webp) 0 0/400px 200px;mask:url(img/worn.webp) 0 0/400px 200px}
 .hd .nm{text-transform:uppercase}
 .nav a,.ndd-t{font-weight:600}
 .lgrid .lc-n{font:700 19px/1.12 var(--fd);letter-spacing:.02em}
@@ -818,10 +819,11 @@ h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthes
 /* v248: карточки — партбилет и наградной металл. Прямые углы, без неона.
    Латунь (владелец) и сталь (зам) — с зерном, патиной, шлифовкой и медленным бликом. */
 :root{
- --grain:url(img/tex-grain.svg) 0 0/180px 180px;
- --brush:url(img/tex-brush.svg) 0 0/360px 180px;
- --patina:url(img/tex-patina.svg) 0 0/420px 420px;
- --patina-soft:url(img/tex-patina-soft.svg) 0 0/520px 520px;
+ /* Шум запечён из tex-*.svg (feTurbulence). Живой фильтр вместе с бликом перерисовывал карточку каждый кадр. */
+ --grain:url(img/tex-grain.webp) 0 0/180px 180px;
+ --brush:url(img/tex-brush.webp) 0 0/360px 180px;
+ --patina:url(img/tex-patina.webp) 0 0/420px 420px;
+ --patina-soft:url(img/tex-patina-soft.webp) 0 0/520px 520px;
  --brass:linear-gradient(128deg,#6e5019 0%,#a9802f 16%,#d8b768 31%,#a47a2b 47%,#c9a24f 63%,#7a5a1f 82%,#a8843a 100%);
  --steel:linear-gradient(128deg,#4b525a 0%,#878f98 16%,#c4cad0 31%,#7a828b 47%,#aab1b8 63%,#525a62 82%,#8e959d 100%);
  --cloth:linear-gradient(180deg,#5c121a,#3c0a10);
@@ -843,7 +845,7 @@ h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthes
 .lgrid .lc-n{color:#efe4cc;text-shadow:0 1px 0 #000}
 .lgrid .lc-r{align-self:flex-start;color:#f3e4c2;text-shadow:0 1px 0 rgba(0,0,0,.45);background:var(--grain),linear-gradient(180deg,#9c1d27,#76121b);box-shadow:inset 0 1px 0 rgba(255,190,170,.2),inset 0 -1px 0 rgba(0,0,0,.35),0 1px 0 rgba(0,0,0,.5)}
 /* Штамп: красная мастика поперёк кромки таблички */
-.lgrid .lc:not(.lc-vac) .lc-inf:after{content:"ВППКА";position:absolute;font:10px/1 var(--fh);color:#c3222e;border:1.5px solid currentColor;outline:1px solid currentColor;opacity:.8;transform:rotate(-7deg);pointer-events:none;-webkit-mask:url(img/ink.svg) 0 0/140px 70px;mask:url(img/ink.svg) 0 0/140px 70px}
+.lgrid .lc:not(.lc-vac) .lc-inf:after{content:"ВППКА";position:absolute;font:10px/1 var(--fh);color:#c3222e;border:1.5px solid currentColor;outline:1px solid currentColor;opacity:.8;transform:rotate(-7deg);pointer-events:none;-webkit-mask:url(img/ink.webp) 0 0/140px 70px;mask:url(img/ink.webp) 0 0/140px 70px}
 .lgrid .lc:is(.t-cc1,.t-cc2,.t-cc3):not(.lc-vac) .lc-inf:after{content:"ЦК ВППКА"}
 /* ЦК: табличка — красная корочка партбилета, звание тиснёно золотом */
 .lgrid .lc:is(.t-cc1,.t-cc2,.t-cc3) .lc-inf{background:var(--grain),var(--cloth)!important;box-shadow:inset 0 0 0 3px rgba(0,0,0,.18),inset 0 0 0 4px rgba(214,174,92,.42),0 0 0 1px #1a0507,0 4px 10px rgba(0,0,0,.6)}
@@ -873,7 +875,7 @@ h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthes
 #pm-grid .pm-card .pm-av:before{background:var(--pin)!important;inset:auto!important;top:12px!important;left:12px!important;width:22px;height:22px;z-index:3!important;filter:drop-shadow(0 1px 1px rgba(0,0,0,.75))}
 #pm-grid .pm-inf{margin:-64px 6px 6px;background:var(--grain),var(--brush),linear-gradient(180deg,#26211b,#16130f);box-shadow:inset 0 1px 0 rgba(255,232,190,.12),inset 0 -1px 0 rgba(0,0,0,.6),0 0 0 1px #0b0907,0 4px 10px rgba(0,0,0,.6)}
 #pm-grid .pm-inf:before{display:none}
-#pm-grid .pm-inf:after{content:"ВППКА";position:absolute;font:10px/1 var(--fh);color:#c3222e;border:1.5px solid currentColor;outline:1px solid currentColor;opacity:.8;transform:rotate(-7deg);pointer-events:none;-webkit-mask:url(img/ink.svg) 0 0/140px 70px;mask:url(img/ink.svg) 0 0/140px 70px}
+#pm-grid .pm-inf:after{content:"ВППКА";position:absolute;font:10px/1 var(--fh);color:#c3222e;border:1.5px solid currentColor;outline:1px solid currentColor;opacity:.8;transform:rotate(-7deg);pointer-events:none;-webkit-mask:url(img/ink.webp) 0 0/140px 70px;mask:url(img/ink.webp) 0 0/140px 70px}
 #pm-grid .pm-n{color:#efe4cc;text-shadow:0 1px 0 #000}
 #pm-grid .pm-r{align-self:flex-start;color:#f3e4c2;letter-spacing:.06em;background:var(--grain),linear-gradient(180deg,#9c1d27,#76121b);box-shadow:inset 0 1px 0 rgba(255,190,170,.2),inset 0 -1px 0 rgba(0,0,0,.35),0 1px 0 rgba(0,0,0,.5)}
 #pm-grid .pm-j{color:#a89c86}
@@ -897,7 +899,9 @@ h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthes
 /* Медленный блик по металлу (только латунь/сталь; при «уменьшить движение» — без анимации) */
 .lgrid .lc.gold-card:after,.lgrid .lc.silver-card:after,#pm-grid .pm-card.gold-card:after,#pm-grid .pm-card.silver-card:after,
 .prof.blk.ldr-card.gold-card:after,.prof.blk.ldr-card.silver-card:after{content:""!important;display:block!important;position:absolute;inset:0;z-index:5;pointer-events:none;
- background:var(--sheen-g) -160% 0/260% 100% no-repeat!important;mix-blend-mode:soft-light;animation:v248Sh 9s ease-in-out infinite!important}
+ background:var(--sheen-g) -160% 0/260% 100% no-repeat!important;mix-blend-mode:normal;animation:v248Sh 9s ease-in-out infinite!important}
+/* На большом профиле бегущий блик каждый кадр перерисовывал фото и баннер (секунды растеризации). Блик остаётся, без бесконечной анимации. На мелких карточках анимация дешёвая и остаётся. */
+.prof.blk.ldr-card.gold-card:after,.prof.blk.ldr-card.silver-card:after{animation:none!important;background-position:18% 0!important}
 .lgrid .lc.silver-card:after,#pm-grid .pm-card.silver-card:after,.prof.blk.ldr-card.silver-card:after{background:var(--sheen-s) -160% 0/260% 100% no-repeat!important}
 @keyframes v248Sh{0%,62%{background-position:-160% 0}100%{background-position:160% 0}}
 @media(prefers-reduced-motion:reduce){.gold-card:after,.silver-card:after{animation:none!important;display:none!important}}
@@ -916,7 +920,7 @@ h1,h2,h3,.hd .nm,.prof-n,.btn{font-family:var(--fh);font-weight:400;font-synthes
 .prof.blk.gold-card .ldr-badge span{color:#2a1a06!important;text-shadow:0 1px 0 rgba(255,238,190,.45)!important;border-top-color:rgba(60,36,6,.5)!important}
 .prof.blk.silver-card .ldr-badge span{color:#15191e!important;text-shadow:0 1px 0 rgba(245,250,255,.45)!important;border-top-color:rgba(20,26,32,.5)!important}
 .prof-ph{position:relative}
-.prof-stamp{position:absolute;z-index:3;color:#b8141f;opacity:.78;transform:rotate(-14deg);pointer-events:none;font-family:var(--fh);-webkit-mask:url(img/ink.svg) 0 0/200px 100px;mask:url(img/ink.svg) 0 0/200px 100px}
+.prof-stamp{position:absolute;z-index:3;color:#b8141f;opacity:.78;transform:rotate(-14deg);pointer-events:none;font-family:var(--fh);-webkit-mask:url(img/ink.webp) 0 0/200px 100px;mask:url(img/ink.webp) 0 0/200px 100px}
 .prof.blk.gold-card .tbl td:first-child,.prof.blk.gold-card .prof-r,.prof.blk.gold-card .role{color:#e6c97f!important}
 .prof.blk.silver-card .tbl td:first-child,.prof.blk.silver-card .prof-r,.prof.blk.silver-card .role{color:#d9e0e8!important}
 .prof.blk:is(.gold-card,.silver-card) .amut{color:#cfc3ad!important}
