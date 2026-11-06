@@ -1,13 +1,13 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=267';
-import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=267';
-import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=267';
-import {anLoad,anHTML,anClick} from './admin-an.js?v=267';
-import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=267';
-import {layLoad,layHTML,layClick} from './admin-lay.js?v=267';
-import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=267';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=268';
+import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=268';
+import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=268';
+import {anLoad,anHTML,anClick} from './admin-an.js?v=268';
+import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=268';
+import {layLoad,layHTML,layClick} from './admin-lay.js?v=268';
+import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=268';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
