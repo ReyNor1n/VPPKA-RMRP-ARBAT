@@ -119,7 +119,7 @@
     if (it.full && it.spread) {
       const src = esc(it.spread);
       const bar = `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div>`;
-      return `${bar}<div class="aw-scene"><div class="aw-fit"><div class="aw-book"><div class="aw-spread aw-half aw-half-r" style="background-image:url('${src}')" role="img" aria-label="Удостоверение № ${esc(it.no)}"></div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in aw-half aw-half-l" style="background-image:url('${src}')"></span></span></button></div></div></div>`;
+      return `${bar}<div class="aw-scene"><div class="aw-fit"><div class="aw-book"><img class="aw-cert" src="${src}" alt="Удостоверение № ${esc(it.no)}"><div class="aw-spread aw-half aw-half-r" style="background-image:url('${src}')"></div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in aw-half aw-half-l" style="background-image:url('${src}')"></span></span></button></div></div></div>`;
     }
     const left = leftPage(it);
     return `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div><div class="aw-scene"><div class="aw-fit"><div class="aw-book"><div class="aw-spread" aria-hidden="true">${rightPage(it, person)}</div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in">${left}</span></span></button><p class="aw-foot">Внутриигровой документ. Образец бланка, не печать.</p></div></div></div>`;
@@ -139,9 +139,13 @@
     const scene = v.querySelector('.aw-scene');
     const frame = v.querySelector('.aw-fit');
     if (!scene || !frame) return;
-    const availW = Math.max(120, scene.clientWidth - 24);
-    const availH = Math.max(120, scene.clientHeight - 16);
-    applyZoom(Math.min(availW / frame.offsetWidth, availH / frame.offsetHeight));
+    const w = frame.offsetWidth, h = frame.offsetHeight;
+    if (!(w >= 8 && h >= 8)) return;
+    const availW = Math.max(160, scene.clientWidth - 48);
+    const availH = Math.max(120, scene.clientHeight - 40);
+    applyZoom(Math.min(availW / w, availH / h));
+    scene.scrollLeft = Math.max(0, (scene.scrollWidth - scene.clientWidth) / 2);
+    scene.scrollTop = Math.max(0, (scene.scrollHeight - scene.clientHeight) / 2);
   }
   function dialog() { return document.getElementById('aw-view'); }
   function closeView() {
@@ -156,6 +160,7 @@
   function fold() {
     const b = book();
     if (!b || !b.classList.contains('open')) return;
+    b.classList.remove('aw-settled');
     b.classList.remove('open');
     const spread = b.querySelector('.aw-spread');
     if (spread) spread.setAttribute('aria-hidden', 'true');
@@ -172,6 +177,9 @@
     if (spread) spread.setAttribute('aria-hidden', 'false');
     const cover = b.querySelector('.aw-cover');
     if (cover) cover.setAttribute('aria-expanded', 'true');
+    const settle = () => { if (b.classList.contains('open')) b.classList.add('aw-settled'); };
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) settle();
+    else if (cover) cover.addEventListener('transitionend', function onEnd(e) { if (e.propertyName !== 'transform') return; cover.removeEventListener('transitionend', onEnd); settle(); });
     const back = dialog().querySelector('.aw-back');
     if (back) { back.hidden = false; back.focus(); }
   }
