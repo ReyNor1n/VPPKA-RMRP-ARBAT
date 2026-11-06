@@ -39,6 +39,7 @@ export function toDemo(content) {
       m.awards = [
         {
           head: 'Юбилейная медаль',
+          coverTo: 'к юбилейной медали',
           title: '«109 лет Октябрьской революции»',
           years: '1917 — 2026',
           date: '07.11.2026',

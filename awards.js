@@ -38,6 +38,7 @@
         no: (String(x.no || x.num || '000').replace(/[^\dA-Za-zА-Яа-яЁё\-]/g, '').slice(0, 12)) || '000',
         basis: String(x.basis || '').replace(/\s+/g, ' ').trim().slice(0, 200),
         grant: String(x.grant || '').replace(/\s+/g, ' ').trim().slice(0, 240),
+        coverTo: String(x.coverTo || '').replace(/\s+/g, ' ').trim().slice(0, 80),
         image: image(x.image || x.icon),
         plate: image(x.plate) || image(x.image || x.icon),
         note: String(x.note || '').replace(/\s+/g, ' ').trim().slice(0, 300),
@@ -51,7 +52,6 @@
   }
   let shown = [];
   let holder = { name: 'не указано', pass: '' };
-  const STAR = '<svg class="aw-star" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,1.6 14.6,8.7 22.1,8.9 16.2,13.6 18.3,20.9 12,16.7 5.7,20.9 7.8,13.6 1.9,8.9 9.4,8.7" fill="#a5141f" stroke="#e6c97f" stroke-width="1.2" stroke-linejoin="round"/></svg>';
   function icon(it) {
     return it.image
       ? `<img class="aw-img" src="${esc(it.image)}" alt="" width="56" height="56" loading="lazy" decoding="async">`
@@ -74,22 +74,32 @@
     return `<div class="mpg-side"><section class="blk awards"><h2>Награды</h2><div class="aw-grid">${cells}</div></section></div>`;
   }
   const SEAL = '<svg class="aw-seal" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="36" fill="none" stroke="#2a4f86" stroke-width="2"/><circle cx="40" cy="40" r="30" fill="none" stroke="#2a4f86" stroke-width="1"/><text x="40" y="36" text-anchor="middle" font-size="11" fill="#2a4f86" font-family="Times New Roman,Times,serif">ОБРАЗЕЦ</text><text x="40" y="52" text-anchor="middle" font-size="8" fill="#2a4f86" font-family="Times New Roman,Times,serif">НЕ ПЕЧАТЬ</text></svg>';
-  function pages(it, person) {
-    if (it.spread) return `<div class="aw-sheet aw-sheet-img"><img src="${esc(it.spread)}" alt="Разворот удостоверения: ${esc(it.title)}"></div>`;
-    const who = person || holder;
+  const RULE = '<span class="aw-cv-rule" aria-hidden="true"><i></i><b></b><i></i></span>';
+  const RULEB = '<span class="aw-cv-rule aw-cv-rule-b" aria-hidden="true"><i></i></span>';
+  function leftPage(it) {
     const head = esc(it.head || 'Медаль');
     const award = esc(it.title);
     const years = it.years ? `<div class="aw-years">${esc(it.years)}</div>` : '';
-    const plate = it.plate ? `<img class="aw-plate" src="${esc(it.plate)}" alt="">` : '<div class="aw-plate aw-plate-miss" aria-hidden="true">★</div>';
+    const plate = it.plate ? `<div class="aw-plate-box"><img class="aw-plate" src="${esc(it.plate)}" alt=""></div>` : '<div class="aw-plate aw-plate-miss" aria-hidden="true">★</div>';
+    return `<div class="aw-col aw-col-l"><div class="aw-kicker">${head}</div><div class="aw-sub">${award}</div>${years}${plate}</div>`;
+  }
+  function rightPage(it, person) {
+    const who = person || holder;
     const pass = who.pass ? esc(who.pass) : 'не указан';
     const basis = it.basis ? `<p>${esc(it.basis)}</p>` : '';
     const issued = it.date ? `<p>Дата выдачи: ${esc(it.date)}</p>` : '';
     const file = it.pdf ? `<p class="aw-file"><a href="${esc(it.pdf)}" target="_blank" rel="noopener">Файл PDF</a></p>` : '';
     const line = it.grant || ('награждён ' + (it.head ? it.head + ' ' : '') + it.title + (it.years ? ' (' + it.years + ')' : '') + '.');
-    return `<div class="aw-sheet"><div class="aw-col aw-col-l"><div class="aw-kicker">${head}</div><div class="aw-sub">${award}</div>${years}${plate}</div><div class="aw-col aw-col-r"><div class="aw-doc">УДОСТОВЕРЕНИЕ</div><div class="aw-num">№ ${esc(it.no)}</div><p class="aw-that">Настоящим удостоверяется, что</p><div class="aw-fio">${esc(who.name)}</div><div class="aw-cap">(фамилия, имя, отчество)</div><p>статик / № паспорта: ${pass}</p><p>${esc(line)}</p>${basis}${issued}<div class="aw-sign"><div><div>Председатель ЦК ВППКА</div><div class="aw-mark">образец</div><div class="aw-cap">(подпись)</div></div>${SEAL}</div>${file}<p class="aw-foot">Образец бланка. Подпись и печать ненастоящие.</p></div></div>`;
+    return `<div class="aw-col aw-col-r"><div class="aw-doc">УДОСТОВЕРЕНИЕ</div><div class="aw-num">№ ${esc(it.no)}</div><p class="aw-that">Настоящим удостоверяется, что</p><div class="aw-fio">${esc(who.name)}</div><div class="aw-cap">(фамилия, имя, отчество)</div><p>статик / № паспорта: ${pass}</p><p>${esc(line)}</p>${basis}${issued}<div class="aw-sign"><div><div>Председатель ЦК ВППКА</div><div class="aw-mark">образец</div><div class="aw-cap">(подпись)</div></div>${SEAL}</div>${file}<p class="aw-foot">Образец бланка. Подпись и печать ненастоящие.</p></div>`;
+  }
+  function coverFace(it) {
+    const sub = esc(it.coverTo || (it.head ? 'к ' + it.head.charAt(0).toLowerCase() + it.head.slice(1) : ''));
+    const years = it.years ? `<span class="aw-cv-years">${esc(it.years)}</span>` : '';
+    return `<span class="aw-face"><span class="aw-cv-top">ВППКА «КОММУНИСТЫ АРБАТА»</span>${RULE}<span class="aw-cv-mid"><span class="aw-cv-title">УДОСТОВЕРЕНИЕ</span>${sub ? `<span class="aw-cv-sub">${sub}</span>` : ''}<span class="aw-cv-name">${esc(it.title)}</span>${years}</span>${RULEB}<span class="aw-cv-bot">Центральный комитет</span></span>`;
   }
   function viewHtml(it, person) {
-    return `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div><div class="aw-scene"><div class="aw-fit"><div class="aw-book"><div class="aw-spread" aria-hidden="true">${pages(it, person)}</div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin"><span class="aw-face">${STAR}<span class="aw-word">УДОСТОВЕРЕНИЕ</span><span class="aw-party">ВППКА</span></span><span class="aw-face-in" aria-hidden="true"><span class="aw-party">ВППКА</span></span></span></button></div></div></div>`;
+    const left = it.spread ? `<img class="aw-plate" src="${esc(it.spread)}" alt="Разворот: ${esc(it.title)}">` : leftPage(it);
+    return `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div><div class="aw-scene"><div class="aw-fit"><div class="aw-book"><div class="aw-spread" aria-hidden="true">${rightPage(it, person)}</div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in">${left}</span></span></button></div></div></div>`;
   }
   let backEl = null;
   let scale = 1;

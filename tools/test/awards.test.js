@@ -43,6 +43,9 @@ test('книжечка только при удостоверении и с на
   assert.match(html, /data-aw="0"/);
   const dlg = view(items[0], { name: 'Технический Демон Александрович', pass: '000-001' });
   assert.match(dlg, /УДОСТОВЕРЕНИЕ/);
+  assert.match(dlg, /КОММУНИСТЫ АРБАТА/);
+  assert.match(dlg, /Центральный комитет/);
+  assert.equal(dlg.includes('aw-star'), false);
   assert.match(dlg, /Медаль «109 лет»/);
   assert.match(dlg, /Технический Демон Александрович/);
   assert.match(dlg, /000-001/);
@@ -67,7 +70,8 @@ test('чужой адрес и битая ссылка не становятся
 
 test('в вёрстке корочка откидывается трансформом и уважает reduced-motion', async () => {
   const css = await readFile(new URL('../../style.css', import.meta.url), 'utf8');
-  assert.match(css, /\.aw-book\.open \.aw-cover\{transform:rotateY\(-178deg\)\}/);
+  assert.match(css, /\.aw-book\.open \.aw-cover\{transform:rotateY\(-180deg\)\}/);
+  assert.match(css, /\.aw-cover\{[^}]*right:0/);
   assert.match(css, /transition:transform \.8s/);
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /--sheet:min\(980px/);
