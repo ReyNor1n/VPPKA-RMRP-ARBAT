@@ -193,6 +193,10 @@ test('демо-сборка не содержит боевой backend и пер
     assert.equal(prod.leadership.members.some(m => m.awards), false);
     assert.equal(text.includes('707-932'), false);
     assert.equal(text.includes('Ульянов'), false);
+    const awardsJs = await readFile(path.join(dir, 'awards.js'), 'utf8');
+    assert.equal(awardsJs.includes('707-932'), false);
+    assert.equal(awardsJs.includes('Ульянов'), false);
+    await assert.rejects(access(path.join(dir, 'img', 'awards')));
     const css = await readFile(path.join(dir, 'style.css'), 'utf8');
     assert.match(css, /tex-grain\.webp/);
     assert.doesNotMatch(css, /tex-grain\.svg/);

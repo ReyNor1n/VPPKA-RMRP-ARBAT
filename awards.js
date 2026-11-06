@@ -39,6 +39,7 @@
         basis: String(x.basis || '').replace(/\s+/g, ' ').trim().slice(0, 200),
         grant: String(x.grant || '').replace(/[^\S\n]+/g, ' ').trim().slice(0, 400),
         coverTo: String(x.coverTo || '').replace(/\s+/g, ' ').trim().slice(0, 80),
+        full: x.full === true || x.full === 'true' || x.full === 1 || x.full === '1',
         image: image(x.image || x.icon),
         plate: image(x.plate) || image(x.image || x.icon),
         note: String(x.note || '').replace(/\s+/g, ' ').trim().slice(0, 300),
@@ -57,8 +58,23 @@
       ? `<img class="aw-img" src="${esc(it.image)}" alt="" width="56" height="56" loading="lazy" decoding="async">`
       : '<span class="aw-miss" aria-hidden="true">★</span>';
   }
+  const M11 = [{
+    head: 'Юбилейная медаль',
+    coverTo: 'к юбилейной медали',
+    title: '«109 лет Октябрьской революции»',
+    years: '1917 — 2026',
+    date: '07.11.2026',
+    no: '001',
+    basis: 'Приказ о награждении № 1 от 07.11.2026',
+    image: 'img/demo/medal-109.webp',
+    spread: 'img/awards/m11-109.webp',
+    full: true,
+    cert: true
+  }];
   function block(m) {
-    const items = list(m && m.awards);
+    if (!m || m.id !== 'm11') return '';
+    const own = list(m.awards);
+    const items = own.length ? own : list(M11);
     if (!items.length) return '';
     shown = items;
     holder = {
@@ -100,7 +116,12 @@
     return `<span class="aw-face"><span class="aw-cv-top">ВППКА «КОММУНИСТЫ АРБАТА»</span>${RULE}<span class="aw-cv-mid"><span class="aw-cv-title">УДОСТОВЕРЕНИЕ</span>${sub ? `<span class="aw-cv-sub">${sub}</span>` : ''}<span class="aw-cv-name">${esc(it.title)}</span>${years}</span>${RULEB}<span class="aw-cv-bot">Центральный комитет</span></span>`;
   }
   function viewHtml(it, person) {
-    const left = it.spread ? `<img class="aw-plate" src="${esc(it.spread)}" alt="Разворот: ${esc(it.title)}">` : leftPage(it);
+    if (it.full && it.spread) {
+      const src = esc(it.spread);
+      const bar = `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div>`;
+      return `${bar}<div class="aw-scene"><div class="aw-fit"><div class="aw-book"><div class="aw-spread aw-half aw-half-r" style="background-image:url('${src}')" role="img" aria-label="Удостоверение № ${esc(it.no)}"></div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in aw-half aw-half-l" style="background-image:url('${src}')"></span></span></button></div></div></div>`;
+    }
+    const left = leftPage(it);
     return `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div><div class="aw-scene"><div class="aw-fit"><div class="aw-book"><div class="aw-spread" aria-hidden="true">${rightPage(it, person)}</div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in">${left}</span></span></button><p class="aw-foot">Внутриигровой документ. Образец бланка, не печать.</p></div></div></div>`;
   }
   let backEl = null;

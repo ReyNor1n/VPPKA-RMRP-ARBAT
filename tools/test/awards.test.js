@@ -14,6 +14,17 @@ const list = window.VPPKA_AWARD_LIST;
 const block = window.VPPKA_AWARDS;
 const view = window.VPPKA_AWARD_VIEW;
 
+test('награда запуска только у m11', () => {
+  assert.equal(block({ id: 'm1', name: 'Другой', awards: [{ title: 'Медаль', cert: true }] }), '');
+  const html = block({ id: 'm11' });
+  assert.match(html, /medal-109\.webp/);
+  assert.match(html, /Награды/);
+  const dlg = view(list([{ title: '«109 лет Октябрьской революции»', no: '001', full: true, cert: true, spread: 'img/awards/m11-109.webp', coverTo: 'к юбилейной медали', years: '1917 — 2026' }])[0]);
+  assert.match(dlg, /aw-half-l/);
+  assert.match(dlg, /aw-half-r/);
+  assert.equal(dlg.includes('Технический Демон'), false);
+});
+
 test('пустой список не рисует блок', () => {
   assert.equal(block({}), '');
   assert.equal(block({ awards: [] }), '');
@@ -21,7 +32,7 @@ test('пустой список не рисует блок', () => {
 });
 
 test('название экранируется, без документа иконка не кнопка', () => {
-  const html = block({ awards: [{ title: '<img src=x onerror=alert(1)>', image: 'javascript:alert(1)' }] });
+  const html = block({ id: 'm11', awards: [{ title: '<img src=x onerror=alert(1)>', image: 'javascript:alert(1)' }] });
   assert.match(html, /Награды/);
   assert.equal(html.includes('<button'), false);
   assert.equal(html.includes('javascript:'), false);
@@ -38,7 +49,7 @@ test('книжечка только при удостоверении и с на
   assert.equal(items[1].cert, false);
   assert.equal(items[1].image, '');
   assert.equal(list([{ title: 'Сеть', image: 'https://cdn.example/m.svg' }])[0].image, 'https://cdn.example/m.svg');
-  const html = block({ awards: items });
+  const html = block({ id: 'm11', awards: items });
   assert.equal((html.match(/<button/g) || []).length, 1);
   assert.match(html, /data-aw="0"/);
   const dlg = view(items[0], { name: 'Технический Демон Александрович', pass: '000-001' });

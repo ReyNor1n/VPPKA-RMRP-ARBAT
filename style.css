@@ -743,6 +743,7 @@ body:has(.ntoast) #installBtn{bottom:calc(84px + env(safe-area-inset-bottom))}bo
   .mpg>.pvx,.mpg>.rh{padding:14px 16px 12px;margin:12px 0 0}
   .mpg>.rh{margin-left:12px}
   .mpg>.act{width:auto;margin-left:12px}
+  .mpg:not(.mpg-award)>.act{grid-column:2;grid-row:3/span 2;margin:12px 0 0 16px;height:0;min-height:calc(100% - 12px);overflow:auto;box-sizing:border-box}
   .mpg>.pvx,.mpg>.rh,.mpg>.act,.mpg:has(.pvx,.rh,.act)>.prof{margin-bottom:0}
   .mpg>.pvx,.mpg>.rh,.mpg>.rh small,.mpg>.rh b{overflow-wrap:anywhere}
 }
@@ -1206,6 +1207,11 @@ body.aw-lock{overflow:hidden}
 .aw-seal{width:4.2em;height:4.2em;flex:none}
 .aw-foot{position:absolute;left:0;right:0;bottom:.28em;margin:0;text-align:center;font:.42em/1.2 "Times New Roman",Times,Georgia,serif;color:#6a5e52;z-index:5;pointer-events:none;opacity:0}
 .aw-book.open .aw-foot{opacity:1}
+.aw-half{background-color:#f6f1e4;background-repeat:no-repeat;background-size:200% 100%;padding:0;box-shadow:none;overflow:hidden}
+.aw-cover{width:calc(50% + 1px)}
+.aw-spread.aw-half{width:calc(50% + 1px)}
+.aw-half-l{background-position:left center}
+.aw-half-r{background-position:right center}
 .aw-file{margin-top:.3em;font-size:.7em}
 .aw-file a{color:#6e1c28}
 .aw-cover{position:absolute;top:0;right:0;width:50%;height:100%;margin:0;padding:0;border:0;background:transparent;transform-origin:left center;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.45,.05,.2,1);z-index:2;cursor:pointer}
