@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=266';
+import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=267';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -212,7 +212,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  // одна подписка вместо getDocs+onSnapshot: первый снимок используется как начальная загрузка (экономия чтений)
  let liveOn=false,liveRes=null;
  async function loadData(){if(liveOn){return}liveOn=true;try{if(auth.authStateReady)await Promise.race([auth.authStateReady(),new Promise(r=>setTimeout(r,3000))])}catch(e){}await new Promise(res=>{liveRes=res;setTimeout(res,8000);liveSubs()});}
- const toD=()=>{const D={...(window.VPPKA_DATA||{})};if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=memDocs().filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));window.VPPKA_DATA=(D.news||D.members)?D:null};
+ const toD=()=>{const D={...(window.VPPKA_DATA||{})};if(liveN)D.news=liveN.empty?[]:liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM)D.members=liveM.empty?[]:memDocs().filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));window.VPPKA_DATA=(liveN||liveM)?D:(window.VPPKA_DATA||null)};
  window.VPPKA_RELOAD=async()=>{await loadData();toD();route();};
  let liveN=null,liveM=null,livePend=false,liveNew=new Set();
  let liveMPub=false,mPub=null,mUid='',mUnsub=null,RESUBM=null;
@@ -226,22 +226,23 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  let liveS={};window.VPPKA_STATIK=id=>liveS[id]||'';
  const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
  const liveApply=()=>{if(!liveN&&!liveM)return;if(busy()){livePend=true;return}livePend=false;const D={...(window.VPPKA_DATA||{})};
-  if(liveN&&!liveN.empty)D.news=liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM&&!liveM.empty)D.members=memDocs().filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
-  window.VPPKA_DATA=(D.news||D.members)?D:null;const y=scrollY;route();scrollTo(0,y);
+  if(liveN)D.news=liveN.empty?[]:liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM)D.members=liveM.empty?[]:memDocs().filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
+  window.VPPKA_DATA=D;window.VPPKA_FRESH='live';const y=scrollY;route();scrollTo(0,y);
   liveNew.forEach(id=>document.querySelectorAll('a[href="#news/'+id+'"]').forEach(a=>{const it=a.closest('.it,.card,div');it&&it.classList.add('fresh')}));liveNew.clear();};
  document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
  // v258: одна подписка на news на весь сайт — колокольчик (notif.js) берёт её же, а не открывает вторую (меньше чтений)
  const NF=window.VPPKA_NEWSFEED={s:null,cbs:new Set(),on(cb){this.cbs.add(cb);if(this.s)cb(this.s);return()=>this.cbs.delete(cb)}};
- function liveSubs(){let fn=true,fm=true;const ready=()=>{if(!fn&&!fm&&liveRes){toD();const r=liveRes;liveRes=null;r()}};
-  F.onSnapshot(F.collection(db,'news'),s=>{NF.s=s;NF.cbs.forEach(f=>{try{f(s)}catch(e){}});if(fn){fn=false;liveN=s;ready();return}s.docChanges().forEach(c=>{if(c.type==='added')liveNew.add(c.doc.id)});liveN=s;liveApply()},e=>{console.warn('live news',e);fn=false;ready()});
+ const snapOk=s=>!!s&&!(navigator.onLine&&s.metadata&&s.metadata.fromCache&&s.empty);
+ function liveSubs(){let fn=true,fm=true,newsOk=false,memOk=false;const ready=()=>{if(!fn&&!fm&&liveRes){toD();window.VPPKA_FRESH=(newsOk||memOk)&&window.VPPKA_DATA?'live':'file';const r=liveRes;liveRes=null;r()}};
+  F.onSnapshot(F.collection(db,'news'),s=>{NF.s=s;NF.cbs.forEach(f=>{try{f(s)}catch(e){}});if(!snapOk(s))return;newsOk=true;if(fn){fn=false;liveN=s;ready();return}s.docChanges().forEach(c=>{if(c.type==='added')liveNew.add(c.doc.id)});liveN=s;liveApply()},e=>{console.warn('live news',e);if(fn){fn=false;if(!newsOk)liveN=null;ready()}});
   // Discord видят только члены партии. members (с discordId) читают члены партии/руководство; гостям и беспартийным —
   // зеркало membersPub без discord/discordId (его пишет бот). pk — псевдо-ID вместо discordId: группировка карточек одного человека.
   const subM=pub=>{if(mUnsub)mUnsub();mPub=pub;mUid=auth.currentUser?auth.currentUser.uid:'';
-   mUnsub=F.onSnapshot(F.collection(db,pub?'membersPub':'members'),s=>{liveM=s;liveMPub=pub;if(fm){fm=false;ready();return}liveApply()},
-    e=>{if(!pub&&e&&e.code==='permission-denied'){subM(true);return}console.warn('live members',e);if(fm){fm=false;ready()}})};
+   mUnsub=F.onSnapshot(F.collection(db,pub?'membersPub':'members'),s=>{if(!snapOk(s))return;memOk=true;liveM=s;liveMPub=pub;if(fm){fm=false;ready();return}liveApply()},
+    e=>{if(!pub&&e&&e.code==='permission-denied'){subM(true);return}console.warn('live members',e);if(fm){fm=false;if(!memOk)liveM=null;ready()}})};
   RESUBM=u=>{const want=!u;if(want!==mPub||(u&&mPub&&u.uid!==mUid))subM(want)};
   subM(!auth.currentUser);
-  F.onSnapshot(F.collection(db,'pubStatik'),s=>{const o={};s.forEach(d=>{const v=d.data().s;if(typeof v==='string'&&/^\d{3}-\d{3}$/.test(v))o[d.id]=v});const ch=JSON.stringify(o)!==JSON.stringify(liveS);liveS=o;if(ch&&!fm)liveApply()},e=>console.warn('live pubStatik',e.code||e));}
+  F.onSnapshot(F.collection(db,'pubStatik'),s=>{const o={};s.forEach(d=>{const v=d.data().s;if(typeof v==='string'&&/^\d{3}-\d{3}$/.test(v))o[d.id]=v});const ch=JSON.stringify(o)!==JSON.stringify(liveS);liveS=o;const k=(location.hash.slice(1)||'').split('/')[0];if(ch&&!fm&&(k==='member'||k==='user'))liveApply()},e=>console.warn('live pubStatik',e.code||e));}
  window.VPPKA_AUTH={get user(){return user},get priv(){return priv},get profile(){return profile},get power(){return power},
  // можно ли подать заявку на вступление: loading (вход ещё проверяется) | guest (не вошёл) | noprofile (профиль не создан) | unlinked (Discord не привязан) | ok
  get joinState(){return joinState()},finishReg(){if(user&&!profile)npPrompt()},linkDiscord(){const u=cu();if(u&&lkOk===false)lkPrompt(false)},async submitApplication(answers){if(!user)throw new Error('Чтобы вступить в партию, нужно зарегистрироваться на сайте.');if(!profile)throw new Error('сначала завершите регистрацию на сайте.');if(lkOk===false)throw new Error('сначала привяжите Discord к аккаунту на сайте.');if(window.VPPKA_NEEDST()){throw new Error('сначала укажите номер паспорта (статик) — окно открыто.')}const ref=F.doc(db,'applications',user.uid);
@@ -297,7 +298,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  }
 
  async function loadContent(){for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership','settings'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part)}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=266').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=266').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=266').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=266').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=266').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=266').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=266').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=266').then(m=>m.install()).catch(e=>console.error('admin',e));
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=267').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=267').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=267').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=267').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=267').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=267').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=267').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=267').then(m=>m.install()).catch(e=>console.error('admin',e));
 // аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false,oaRan=false;
 // authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена

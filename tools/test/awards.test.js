@@ -85,6 +85,9 @@ test('в вёрстке корочка откидывается трансфор
   assert.match(css, /\.aw-cover\{[^}]*right:0/);
   assert.match(css, /transition:transform \.8s/);
   assert.match(css, /prefers-reduced-motion:reduce/);
+  assert.match(css, /@media\(max-width:860px\)\{\.aw-view\{background:#100c0a\}/);
+  assert.match(code, /hashchange/);
+  assert.match(code, /p\[1\] !== 'm11'/);
   assert.match(css, /--sheet:min\(980px/);
   assert.match(css, /height:calc\(var\(--sheet\) \* 409 \/ 1118\)/);
   assert.doesNotMatch(css, /\.aw-book\.open:after/);
