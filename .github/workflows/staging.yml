@@ -1,0 +1,25 @@
+# Собирает тестовый сайт и кладёт архив в артефакт. GitHub Pages и боевой домен не трогает.
+name: Тестовая сборка
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [staging]
+permissions:
+  contents: read
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tools/test/staging-isolation.test.js
+      - run: node tools/build-staging.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vppka-staging
+          path: dist-staging
+          if-no-files-found: error
+          retention-days: 14
