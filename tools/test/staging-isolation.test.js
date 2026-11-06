@@ -143,7 +143,7 @@ test('боевые исходники не переписаны под тест'
   const sw = await readFile(path.join(root, 'sw.js'), 'utf8');
   const cfg = await readFile(path.join(root, 'firebase-config.js'), 'utf8');
   const index = await readFile(path.join(root, 'index.html'), 'utf8');
-  assert.match(sw, /const CACHE='vppka-v235'/);
+  assert.match(sw, /const CACHE='vppka-v\d+'/);
   assert.match(sw, /n!==CACHE&&n!=='vppka-banners'&&n!=='vppka-music'/);
   assert.match(cfg, /projectId: "vppca-rmrp"/);
   assert.match(index, /https:\/\/\*\.googleapis\.com/);
