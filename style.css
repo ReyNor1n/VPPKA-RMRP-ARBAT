@@ -1167,41 +1167,43 @@ body.le-on .ntoast{bottom:calc(var(--le-bar-h,120px) + 10px)!important}
 .aw-img{width:56px;height:56px;object-fit:contain;display:block}
 .aw-miss{font:22px/1 var(--fh);color:#e6c97f}
 body.aw-lock{overflow:hidden}
-.aw-view{position:fixed;inset:0;z-index:100;background:rgba(8,6,5,.84);display:flex;flex-direction:column}
+.aw-view{position:fixed;inset:0;z-index:100;background:rgba(8,6,5,.84);display:flex;flex-direction:column;--sheet:min(980px,calc(100vw - 28px))}
 .aw-bar{display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;flex:none}
 .aw-bar button{border:1px solid #c4a15a;background:#1a120e;color:#f4ead8;padding:8px 14px;font:14px var(--fd);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 .aw-bar button:focus-visible{outline:2px solid #e6c97f;outline-offset:2px}
-.aw-scene{perspective:1800px;flex:1;display:flex;align-items:center;justify-content:center;padding:8px 16px 28px;min-height:0}
-.aw-book{position:relative;width:min(280px,74vw);height:min(420px,70vh);transition:width .8s cubic-bezier(.45,.05,.2,1);transform-style:preserve-3d}
-.aw-book.open{width:min(680px,94vw)}
-.aw-spread{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;background:#f4ecdc;color:#1a120c;overflow:auto;box-shadow:0 16px 40px rgba(0,0,0,.45)}
-.aw-pg{padding:18px 16px 20px;min-width:0}
-.aw-pg+.aw-pg{border-left:1px solid #c4b496}
-.aw-k{font:13px var(--fd);letter-spacing:.16em;color:#6e1219}
-.aw-h{margin:10px 0 8px;font-size:clamp(20px,3vw,28px);color:#6e1219;line-height:1.15}
-.aw-medal{margin:0 0 8px;font:16px/1.4 var(--fb);overflow-wrap:anywhere}
-.aw-dt{margin:0 0 8px;font:14px/1.4 var(--fd)}
-.aw-note{margin:8px 0 0;font:14px/1.45 var(--fb);color:#3a2c22}
-.aw-blank{margin:2px 0 12px;padding-bottom:4px;border-bottom:1px solid #1a120c;color:#6b5b4a;font:14px/1.4 var(--fb)}
-.aw-pg-img{grid-column:1/-1}
-.aw-pg-img img{width:100%;height:auto;display:block}
-.aw-file{margin-top:14px}
-.aw-file a{color:#6e1219;text-decoration:underline}
-.aw-cover{position:absolute;left:0;top:0;width:min(280px,74vw);height:100%;margin:0;padding:0;border:0;background:transparent;transform-origin:left center;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.45,.05,.2,1);z-index:2;cursor:pointer}
+.aw-scene{flex:1;display:flex;align-items:center;justify-content:center;padding:8px 12px 20px;min-height:0;overflow:auto;touch-action:pan-x pan-y}
+.aw-fit{perspective:1800px;transform-origin:center center}
+.aw-book{position:relative;width:calc(var(--sheet) / 2);height:calc(var(--sheet) / 2.8);font-size:calc(var(--sheet) / 58);transition:width .8s cubic-bezier(.45,.05,.2,1);transform-style:preserve-3d}
+.aw-book.open{width:var(--sheet)}
+.aw-spread{position:absolute;inset:0;background:#f7f1e4;color:#1c140e;overflow:auto;box-shadow:inset 0 0 0 1px #6d2c32,inset 0 0 0 4px #f7f1e4,inset 0 0 0 5px #b9924a}
+.aw-sheet{height:100%;display:grid;grid-template-columns:1fr 1fr;gap:1.1em;padding:1.15em 1.35em 0.85em;box-sizing:border-box;font-family:"Times New Roman",Times,Georgia,serif}
+.aw-sheet-img{display:block;padding:0.6em}
+.aw-sheet-img img{width:100%;height:auto;display:block}
+.aw-col{min-width:0;height:100%;display:flex;flex-direction:column;align-items:center;text-align:center}
+.aw-col-r{align-items:stretch;text-align:left}
+.aw-kicker,.aw-doc{color:#6e1c28;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:1.15em;line-height:1.15}
+.aw-sub{color:#6e1c28;font-size:.95em;line-height:1.2;margin-top:.15em}
+.aw-years{color:#6e1c28;font-size:.78em;margin-top:.15em}
+.aw-plate{height:8.4em;width:auto;max-width:78%;object-fit:contain;margin-top:.45em;flex:none}
+.aw-plate-miss{display:flex;align-items:center;justify-content:center;color:#6e1c28;font-size:2em}
+.aw-num{text-align:center;font-weight:700;font-size:1.05em;margin:.12em 0 .35em}
+.aw-that,.aw-col-r p{margin:0;font-size:.78em;line-height:1.28}
+.aw-fio{text-align:center;font-weight:700;font-size:1.02em;margin-top:.28em;line-height:1.15}
+.aw-cap{text-align:center;font-size:.58em;color:#5c5146;margin:0 0 .35em}
+.aw-sign{margin-top:.45em;display:flex;align-items:flex-end;justify-content:space-between;gap:.6em}
+.aw-mark{font-size:.95em;letter-spacing:.04em;border-bottom:1px solid #1c140e;display:inline-block;min-width:6em;text-align:center;color:#3a3128}
+.aw-seal{width:4.6em;height:4.6em;flex:none}
+.aw-foot{margin-top:.35em;font-size:.55em;color:#6a5e52;text-align:center}
+.aw-file{margin-top:.3em;font-size:.7em}
+.aw-file a{color:#6e1c28}
+.aw-cover{position:absolute;left:0;top:0;width:calc(var(--sheet) / 2);height:100%;margin:0;padding:0;border:0;background:transparent;transform-origin:left center;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.45,.05,.2,1);z-index:2;cursor:pointer}
 .aw-book.open .aw-cover{transform:rotateY(-178deg)}
 .aw-skin{position:absolute;inset:0;transform-style:preserve-3d}
-.aw-face,.aw-face-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:22px 16px;backface-visibility:hidden;background:linear-gradient(180deg,#7c1c24 0%,#5a1016 42%,#3e0c10 100%);color:#e6c97f;border:1px solid #c4a15a;box-shadow:inset 0 0 0 6px #4a0e14,inset 0 0 0 7px #c4a15a}
+.aw-face,.aw-face-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.55em;padding:.8em;backface-visibility:hidden;background:linear-gradient(180deg,#7c1c24 0%,#5a1016 42%,#3e0c10 100%);color:#e6c97f;border:1px solid #c4a15a;box-shadow:inset 0 0 0 .35em #4a0e14,inset 0 0 0 .42em #c4a15a}
 .aw-face-in{transform:rotateY(180deg);background:#4a1016}
-.aw-star{width:42px;height:42px;display:block}
-.aw-word{font:18px/1.2 var(--fh);letter-spacing:.08em;text-align:center;max-width:100%}
-.aw-party{font:12px var(--fd);letter-spacing:.18em}
-@media(max-width:640px){
- .aw-book.open{width:min(440px,94vw);height:min(78vh,680px)}
- .aw-spread{grid-template-columns:1fr}
- .aw-pg+.aw-pg{border-left:0;border-top:1px solid #c4b496}
- .aw-h{font-size:24px}
- .aw-medal,.aw-note,.aw-blank{font-size:16px}
-}
+.aw-star{width:2.2em;height:2.2em;display:block}
+.aw-word{font:1.05em/1.15 var(--fh);letter-spacing:.08em;text-align:center;max-width:100%}
+.aw-party{font:.62em var(--fd);letter-spacing:.18em}
 @media(prefers-reduced-motion:reduce){
  .aw-book,.aw-cover{transition:none}
 }

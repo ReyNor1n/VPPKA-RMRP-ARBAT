@@ -41,12 +41,17 @@ test('книжечка только при удостоверении и с на
   const html = block({ awards: items });
   assert.equal((html.match(/<button/g) || []).length, 1);
   assert.match(html, /data-aw="0"/);
-  const dlg = view(items[0]);
+  const dlg = view(items[0], { name: 'Технический Демон Александрович', pass: '000-001' });
   assert.match(dlg, /УДОСТОВЕРЕНИЕ/);
   assert.match(dlg, /Медаль «109 лет»/);
-  assert.match(dlg, /не заполнено/);
-  assert.match(dlg, /не документ участника/);
+  assert.match(dlg, /Технический Демон Александрович/);
+  assert.match(dlg, /000-001/);
+  assert.match(dlg, /ОБРАЗЕЦ/);
+  assert.match(dlg, /\(подпись\)/);
   assert.equal(dlg.includes('<script'), false);
+  assert.equal(dlg.includes('Ульянов'), false);
+  assert.equal(dlg.includes('707-932'), false);
+  assert.equal(dlg.includes('Хлопов'), false);
 });
 
 test('чужой адрес и битая ссылка не становятся файлом', () => {
@@ -65,5 +70,8 @@ test('в вёрстке корочка откидывается трансфор
   assert.match(css, /\.aw-book\.open \.aw-cover\{transform:rotateY\(-178deg\)\}/);
   assert.match(css, /transition:transform \.8s/);
   assert.match(css, /prefers-reduced-motion:reduce/);
+  assert.match(css, /--sheet:min\(980px/);
+  assert.match(css, /height:calc\(var\(--sheet\) \/ 2\.8\)/);
+  assert.doesNotMatch(css, /\.aw-spread\{grid-template-columns:1fr\}/);
   assert.doesNotMatch(css, /\.aw-cover\{[^}]*animation:\s*[^;]*infinite/);
 });
