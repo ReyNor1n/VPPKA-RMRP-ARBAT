@@ -1,3 +1,5 @@
 .vppka-keymaster
 *.keymaster
 node_modules/
+dist-staging/
+tools/staging/backend.local.json
