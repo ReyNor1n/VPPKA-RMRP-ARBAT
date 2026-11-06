@@ -1177,10 +1177,11 @@ body.aw-lock{overflow:hidden}
 .aw-bar button{border:1px solid #c4a15a;background:#1a120e;color:#f4ead8;padding:8px 14px;font:14px var(--fd);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 .aw-bar button:focus-visible{outline:2px solid #e6c97f;outline-offset:2px}
 .aw-scene{flex:1;display:flex;align-items:center;justify-content:center;padding:8px 12px 20px;min-height:0;overflow:auto;touch-action:pan-x pan-y}
-.aw-fit{perspective:1800px;transform-origin:center center;width:var(--sheet);height:calc(var(--sheet) / 2.8)}
+.aw-fit{perspective:1800px;transform-origin:center center;width:var(--sheet);height:calc(var(--sheet) * 409 / 1118)}
 .aw-book{position:relative;width:100%;height:100%;font-size:calc(var(--sheet) / 58);transform-style:preserve-3d}
 .aw-spread{position:absolute;top:0;right:0;bottom:0;width:50%;background:#f6f1e4;color:#1a140e;overflow:hidden;box-sizing:border-box;padding:1.05em .95em .7em;font-family:"Times New Roman",Times,Georgia,serif}
-.aw-book.open:after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;box-shadow:inset 0 0 0 1px #6e3a32,inset 0 0 0 3px #f6f1e4,inset 0 0 0 4px #c4a36a}
+.aw-cert{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none;z-index:1}
+.aw-book:not(.aw-settled) .aw-cert{clip-path:inset(0 0 0 50%)}
 .aw-sheet{height:100%;display:grid;grid-template-columns:1fr 1fr;gap:1.1em;padding:1.15em 1.35em 0.85em;box-sizing:border-box;font-family:"Times New Roman",Times,Georgia,serif}
 .aw-sheet-img{display:block;padding:0.6em}
 .aw-sheet-img img{width:100%;height:auto;display:block}
@@ -1208,8 +1209,7 @@ body.aw-lock{overflow:hidden}
 .aw-foot{position:absolute;left:0;right:0;bottom:.28em;margin:0;text-align:center;font:.42em/1.2 "Times New Roman",Times,Georgia,serif;color:#6a5e52;z-index:5;pointer-events:none;opacity:0}
 .aw-book.open .aw-foot{opacity:1}
 .aw-half{background-color:#f6f1e4;background-repeat:no-repeat;background-size:200% 100%;padding:0;box-shadow:none;overflow:hidden}
-.aw-cover{width:calc(50% + 1px)}
-.aw-spread.aw-half{width:calc(50% + 1px)}
+.aw-book.aw-settled .aw-half,.aw-book.aw-settled .aw-cover{visibility:hidden}
 .aw-half-l{background-position:left center}
 .aw-half-r{background-position:right center}
 .aw-file{margin-top:.3em;font-size:.7em}
