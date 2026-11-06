@@ -57,10 +57,17 @@ function styleEl(k,e,edit){const st=k.style;
 // масштаб карточки: ширина в потоке прежняя (auto), внутри — W px; ResizeObserver подгоняет при смене ширины
 const fitZoom=r=>{const W=+r.dataset.tpw;if(!W)return;r.style.zoom='';const k=Math.round(visW(r)/W*10000)/10000;if(k&&Math.abs(k-1)>.0005)r.style.zoom=String(k)};
 const RO=new ResizeObserver(es=>{for(const x of es)if(x.target.dataset.tpw&&!(LE&&(LE.td||LE.sz)))fitZoom(x.target)});
+// Строка «Создатель сайта» не входит в сохранённый сдвиг строк таблицы. Соседние строки уезжают вверх (translate),
+// а она остаётся в потоке — между ними дыра, карточка выше, чем нужно. Подтягиваем только её, чужие x/y не трогаем.
+function tightenCreator(root){const cr=root.querySelector('tr.creator-r');if(!cr)return;cr.style.marginTop='';if(cr.dataset.tpf)return;
+ const rows=[...root.querySelectorAll('.tbl tr')].filter(tr=>tr!==cr);if(!rows.length)return;
+ const bottom=Math.max(...rows.map(tr=>tr.getBoundingClientRect().bottom)),top=cr.getBoundingClientRect().top,gap=top-bottom;if(gap<=28)return;
+ const zoom=parseFloat(getComputedStyle(root).zoom)||1;cr.style.marginTop=Math.round(-(gap-10)/zoom)+'px'}
 function applyCard(root,ty,m,edit){
  if(m){if(root.dataset.tpw!==String(m.W)){root.dataset.tpw=m.W;RO.observe(root)}fitZoom(root)}else if(root.dataset.tpw){delete root.dataset.tpw;root.style.zoom='';RO.unobserve(root)}
  for(const {id,el,tail} of itemsOf(root,ty)){const e=m&&m.it[id]||null;for(const k of [el,tail])k&&styleEl(k,e,edit);
-  const tag=ty+'|'+id;if(edit){if(el.dataset.tpi!==tag)el.dataset.tpi=tag}else if(el.dataset.tpi)delete el.dataset.tpi}}
+  const tag=ty+'|'+id;if(edit){if(el.dataset.tpi!==tag)el.dataset.tpi=tag}else if(el.dataset.tpi)delete el.dataset.tpi}
+ if(ty==='prof'){if(edit){const cr=root.querySelector('tr.creator-r');if(cr)cr.style.marginTop=''}else tightenCreator(root)}}
 let MO=null;
 function applyAll(){const app=document.getElementById('app');if(!app)return;if(LE&&(LE.drag||LE.td||LE.sz))return;const sv=savedTpl(),edit=!!LE;
  if(MO)MO.disconnect();
