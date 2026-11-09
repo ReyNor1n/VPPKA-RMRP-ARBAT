@@ -244,7 +244,7 @@ if(prodHost()){
 }else{
   self.addEventListener('install',function(e){
     self.skipWaiting();
-    e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(['./','index.html','staging-net.js','guard.js','style.css','app.js','content.json','img/emblem.png']).catch(function(){})}));
+    e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(['./','index.html','staging-net.js','guard.js','style.css','app.js','search.js','content.json','img/emblem.png']).catch(function(){})}));
   });
   self.addEventListener('activate',function(e){
     e.waitUntil(caches.keys().then(function(keys){
