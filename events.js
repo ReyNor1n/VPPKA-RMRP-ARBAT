@@ -103,6 +103,7 @@ export function install(){const ap=document.getElementById('app');let at_;new Mu
   if(t.dataset.atmark){const evn=(EV||[]).find(x=>x.id===t.dataset.atmark);if(ended(evn))return;markId=t.dataset.atmark;window.route();return}if(t.dataset.atcancel!==undefined){markId=null;window.route();return}
   if(t.dataset.atall!==undefined){const bs=[...w.querySelectorAll('input')],all=bs.every(b=>b.checked);bs.forEach(b=>{b.checked=!all;b.closest('label').classList.toggle('on',!all)});w.querySelector('.at-cnt').textContent=w.querySelectorAll('input:checked').length;return}
   if(t.dataset.atsave!==undefined){t.disabled=true;const att=[...new Set([...w.querySelectorAll('input:checked')].map(b=>b.value))].slice(0,150);try{await F().updateDoc(F().doc(db(),'events',w.dataset.atev),{att});markId=null;await load(true);window.route()}catch(e){t.disabled=false;w.querySelector('.ev-err').textContent=' '+(e.code==='permission-denied'?'Нет прав (ступень 4+)':(e.message||e.code))}}});
+window.VPPKA_EV_PUBLIC=()=>(EV||[]).filter(e=>e&&!e.hidden).map(e=>({id:e.id,title:e.title||'',place:e.place||'',desc:e.desc||'',at:e.at||0}));
 window.VPPKA_EV_PAGE=page;window.VPPKA_EV_PREVIEW=(a,mk)=>{EV=a;if(mk!==undefined)markId=mk;rr()};window.VPPKA_EV_SIDE=side;load().then(rr);
  let last=can();setInterval(()=>{const c=can();if(c!==last){last=c;if(cur()==='events')window.route()}},2000);
  document.addEventListener('click',ev=>{const t=ev.target.closest('[data-evrestore]');if(!t)return;ev.preventDefault();evRestore(t.dataset.evrestore)});
