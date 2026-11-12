@@ -43,6 +43,19 @@ test('«членство» открывает статью устава', () => 
   assert.match(ch.items[0].title + ch.items[0].snip, /ленств/i);
 });
 
+test('доп. должность ищется, казначей из списка не берётся', () => {
+  ctx.VPPKA_SUBPOS = ['Пресс-секретарь', 'Корреспондент', 'Редактор новостей', 'Агитатор'];
+  ctx.VPPKA_PARTY = () => [{ id: 'p1', name: 'Иванов Иван Иванович', role: 'Член партии', group: 'Члены партии', subPositions: ['Пресс-секретарь', 'Казначей'] }];
+  const g = find('пресс-секретарь');
+  const hit = g.find(x => x.name.startsWith('Руководители')).items[0];
+  assert.match(hit.title, /Иванов/);
+  assert.match(hit.snip.replace(/<[^>]+>/g, ''), /Пресс-секретарь/);
+  assert.equal(hit.snip.includes('Казначей'), false);
+  const treas = find('казначей').find(x => x.name.startsWith('Руководители'));
+  assert.equal(treas, undefined);
+  ctx.VPPKA_PARTY = null;
+});
+
 test('пустой запрос и запрос ни о чём', () => {
   assert.equal(find('   '), null);
   assert.equal(find('ыыыыыыыы').length, 0);

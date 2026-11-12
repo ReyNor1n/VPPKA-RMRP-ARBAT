@@ -10,8 +10,9 @@
  function hi(text,ts){const src=String(text||'');if(!ts.length)return esc(src);const re=new RegExp('('+ts.map(tokRe).join('|')+')','gi');let out='',i=0;src.replace(re,(m, _g, off)=>{out+=esc(src.slice(i,off))+'<mark class="sr-mk">'+esc(m)+'</mark>';i=off+m.length;return m});return out+esc(src.slice(i))}
  function snip(text,ts){const src=clean(text);if(!src)return '';const re=new RegExp(ts.map(tokRe).join('|'),'i');const m=re.exec(src);const at=m?m.index:0;const a=Math.max(0,at-42);const b=Math.min(src.length,at+90);return (a?'…':'')+hi(src.slice(a,b),ts)+(b<src.length?'…':'')}
  function C(){return (window.VPPKA_C&&window.VPPKA_C())||null}
- function people(){let list=[];try{if(window.VPPKA_PARTY)list=window.VPPKA_PARTY()||[]}catch(e){list=[]}if(!list.length){const c=C();list=(c&&c.leadership&&c.leadership.members)||[]}const rows=list.filter(m=>m&&m.name&&m.name!=='Вакансия'&&m.id).map(m=>({id:String(m.id),name:String(m.name),role:String(m.title||m.role||''),group:String(m.group||'')}));
- const best=new Map();rows.forEach(m=>{const k=nrm(m.name),prev=best.get(k),score=m.role&&nrm(m.role)!=='член партии'?2:1,ps=prev&&prev.role&&nrm(prev.role)!=='член партии'?2:1;if(!prev||score>ps)best.set(k,m)});return [...best.values()]}
+ function subsOf(m){if(window.VPPKA_SUBPOS_OF)return window.VPPKA_SUBPOS_OF(m);const allow=new Set((window.VPPKA_SUBPOS||[]).map(nrm));const out=[];(Array.isArray(m&&m.subPositions)?m.subPositions:[]).forEach(x=>{const s=String(x||'').replace(/\s+/g,' ').trim();if(!s||(allow.size&&!allow.has(nrm(s)))||out.some(y=>nrm(y)===nrm(s)))return;out.push(s)});return out}
+ function people(){let list=[];try{if(window.VPPKA_PARTY)list=window.VPPKA_PARTY()||[]}catch(e){list=[]}if(!list.length){const c=C();list=(c&&c.leadership&&c.leadership.members)||[]}const rows=list.filter(m=>m&&m.name&&m.name!=='Вакансия'&&m.id).map(m=>({id:String(m.id),name:String(m.name),role:String(m.title||m.role||''),group:String(m.group||''),subs:subsOf(m).join(' ')}));
+ const best=new Map();rows.forEach(m=>{const k=nrm(m.name),prev=best.get(k),score=m.role&&nrm(m.role)!=='член партии'?2:1,ps=prev&&prev.role&&nrm(prev.role)!=='член партии'?2:1;if(!prev||score>ps){if(prev&&prev.subs)m.subs=[m.subs,prev.subs].filter(Boolean).join(' ');best.set(k,m)}else if(m.subs)prev.subs=[prev.subs,m.subs].filter(Boolean).join(' ')});return [...best.values()]}
  function news(){const live=window.VPPKA_DATA;let src;if(live&&Object.prototype.hasOwnProperty.call(live,'news'))src=live.news||[];else if(window.VPPKA_FRESH==='wait')src=[];else src=(C()&&C().news)||[];return src.filter(n=>n&&(n.title||n.text)).map(n=>({id:String(n.id??''),title:String(n.title||'Новость'),text:clean(n.text||'')}))}
  function events(){let list=[];try{list=window.VPPKA_EV_PUBLIC?window.VPPKA_EV_PUBLIC()||[]:[]}catch(e){list=[]}return list.filter(e=>e&&e.title).map(e=>({id:String(e.id||''),title:String(e.title),text:clean((e.place?e.place+' ':'')+(e.desc||''))}))}
  function anns(){let list=[];try{list=window.VPPKA_HN?window.VPPKA_HN()||[]:[]}catch(e){list=[]}return list.filter(x=>x&&!x.hidden&&x.title).map(x=>({id:String(x.id||''),title:String(x.title),text:clean((x.place?x.place+' ':'')+(x.text||''))}))}
@@ -21,7 +22,7 @@
  function query(q,src){const ts=tokens(q);if(!ts.length)return null;src=src||{};const P=src.people||people(),N=src.news||news(),E=src.events||events(),A=src.anns||anns(),D=src.docs||docs();
   const groups=[];
   const g=(name,items)=>{if(items.length)groups.push({name,items})};
-  g('Руководители и члены партии',take(P.map(p=>({id:p.id,title:p.name,text:[p.role,p.group].filter(Boolean).join(' · ')})),ts,r=>'#member/'+encodeURIComponent(r.id),8));
+  g('Руководители и члены партии',take(P.map(p=>({id:p.id,title:p.name,text:[p.role,p.group,p.subs].filter(Boolean).join(' · ')})),ts,r=>'#member/'+encodeURIComponent(r.id),8));
   g('Новости',take(N.filter(n=>n.id),ts,r=>'#news/'+encodeURIComponent(r.id),6));
   g('Мероприятия',take(E.filter(e=>e.id),ts,r=>'#events/'+encodeURIComponent(r.id),6));
   g('Устав',take(D.charter,ts,r=>'#charter/'+r.id,6));

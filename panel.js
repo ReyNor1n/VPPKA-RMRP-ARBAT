@@ -28,7 +28,7 @@ function newsPanel(){const n=editNews||{};const list=(D().news||[]).slice().sort
  ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img ${PHA(u,'t')} alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
 
- <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=270').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
+ <div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=271').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}
  <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
  ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button> <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button></td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
 
@@ -199,6 +199,22 @@ async function rkSet(m,cur,nr,why){if(nr===cur||nr<0||nr>=PR.length)return;const
 (function(){const hit=e=>{const b=e.target.closest&&e.target.closest('[data-rk]');if(!b)return;e.preventDefault();e.stopPropagation();rkOpen(b.dataset.rk)};
  document.addEventListener('click',hit,true);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('rk-ov'))rkClose();else if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-rk]'))hit(e)},true);addEventListener('hashchange',rkClose)})();
 const canP=m=>!!m&&rkAdmin()&&rkTarget(m)&&PR.includes(String(m.role||''))&&String(m.id||'').startsWith('p_')&&!OWNER_IDS.includes(m.id)&&mt(m)<tier()&&m.name&&m.name!=='Вакансия'&&!(m.discordId&&m.discordId===((window.VPPKA_AUTH||{}).profile||{}).discordId);
+// Доп. должности: владелец, Председатель ЦК (m1) и его заместители (m4, m5). Не Discord-роли.
+function subPosAdmin(){const p=(FB()&&FB().power)||{};if(p.owner||(p.rank||0)>=1000)return true;const did=myDidP();if(!did)return false;const seat=id=>String((xMem().find(x=>x.id===id)||{}).discordId||'');return ['m1','m4','m5'].some(id=>seat(id)===did)}
+function subPosBtn(m){if(!m||!m.id||!subPosAdmin()||!m.name||m.name==='Вакансия')return '';return `<button type="button" class="btn sm o" data-sp="${esc(m.id)}">Доп. должности</button>`}
+window.VPPKA_SUBPOS_BTN=subPosBtn;
+function subPosKin(m){const did=String(m.discordId||''),nm=rkNz(m.name);return xMem().filter(x=>x&&x.id&&x.name&&x.name!=='Вакансия'&&((/^\d{15,21}$/.test(did)&&String(x.discordId||'')===did)||(nm&&rkNz(x.name)===nm)))}
+function subPosClose(){const o=document.getElementById('sp-ov');if(o)o.remove()}
+function subPosOpen(id){const m=xMem().find(x=>x.id===id);if(!subPosAdmin()||!m)return;subPosClose();const cur=window.VPPKA_SUBPOS_OF?window.VPPKA_SUBPOS_OF(m):[];const list=window.VPPKA_SUBPOS||[];
+ const o=document.createElement('div');o.id='sp-ov';o.className='rk-ov';
+ o.innerHTML=`<form class="rk-box" role="dialog" aria-modal="true"><div class="rk-hd"><div><span>// ДОП. ДОЛЖНОСТИ</span><h3>${esc(m.name)}</h3><small>К месту и званию не относятся</small></div><button type="button" class="rk-x" aria-label="Закрыть">✕</button></div><div class="sp-pick">${list.map(p=>`<label class="sp-lab"><input type="checkbox" value="${esc(p)}"${cur.includes(p)?' checked':''}> ${esc(p)}</label>`).join('')}</div><div class="rk-bt"><button class="btn sm" type="submit">Сохранить</button><button class="btn sm o" type="button" data-spx>Отмена</button></div><p class="aerr" id="sp-e"></p></form>`;
+ o.addEventListener('click',e=>{if(e.target===o||e.target.closest('.rk-x')||e.target.closest('[data-spx]'))subPosClose()});
+ o.addEventListener('submit',async e=>{e.preventDefault();const bt=o.querySelector('[type=submit]');bt.disabled=true;const next=[...o.querySelectorAll('input:checked')].map(i=>i.value).filter(v=>list.includes(v));
+  try{const f=F(),docs=subPosKin(m);if(!docs.length)throw new Error('Нет карточки');for(const x of docs)await f.updateDoc(f.doc(db(),'members',x.id),{subPositions:next,updatedBy:FB().user.uid,updatedAt:f.serverTimestamp()});docs.forEach(x=>{x.subPositions=next});subPosClose();if(window.VPPKA_RELOAD)await window.VPPKA_RELOAD();window.route()}
+  catch(err){bt.disabled=false;o.querySelector('#sp-e').textContent='Не удалось: '+(err.code==='permission-denied'?'нет прав (правила базы).':(err.code||err.message))}});
+ document.body.appendChild(o);o.querySelector('.rk-x').focus()}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-sp]');if(!b)return;e.preventDefault();subPosOpen(b.dataset.sp)},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('sp-ov'))subPosClose()});
 const pIdx=m=>{const i=PR.indexOf(String(m.role||''));return i<0?0:i};
 // звание меняется только в профиле (#member/<id>, кнопка «★ звание ▾» — rkBtn), ни на карточке, ни в ⋮; в ⋮ остаётся «Уволить»
 const xMenu=m=>{const x=canX(m);if(!x)return '';
@@ -315,9 +331,9 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
    // Отправка в Discord: своя строка из «Каналы Discord» или канал новостей «как обычно» — через бота (discordOut)
    let dtNote='';const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=270');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=271');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    // «как обычно» — тоже через бота (b_news): вебхуки config/discord видит только владелец
-   else{try{const m=await import('./discord-targets.js?v=270');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   else{try{const m=await import('./discord-targets.js?v=271');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    editNews=null;await done('Сохранено.'+dtNote);}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}

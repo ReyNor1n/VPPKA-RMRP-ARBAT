@@ -1,0 +1,70 @@
+// Фрагмент для консоли Firebase. Полный firestore.rules с v231 не лежит в публичном репозитории.
+// Вставить в match /members/{id}. Существующие ветки update не должны менять эти поля.
+
+    function subPosList() {
+      return ['Пресс-секретарь', 'Корреспондент', 'Редактор новостей', 'Агитатор'];
+    }
+    // Владелец, Председатель ЦК (m1) и заместители Председателя ЦК (m4, m5). Не m12 и не Discord-роли.
+    function subPosAdmin() {
+      return isOwner() || (myVDid() != '' && (myVDid() == seatDid('m1') || myVDid() == seatDid('m4') || myVDid() == seatDid('m5')));
+    }
+    function subPosShape(xs) {
+      return xs is list && xs.size() <= 4 && xs.size() == xs.toSet().size()
+        && (xs.size() < 1 || xs[0] in subPosList())
+        && (xs.size() < 2 || xs[1] in subPosList())
+        && (xs.size() < 3 || xs[2] in subPosList())
+        && (xs.size() < 4 || xs[3] in subPosList());
+    }
+    function subPosWriteOk() {
+      return subPosAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subPositions', 'updatedBy', 'updatedAt'])
+        && subPosShape(request.resource.data.subPositions)
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    function medalIds() { return ['oct-109']; }
+    function awardOk(a) {
+      return a.keys().hasOnly(['medal', 'head', 'coverTo', 'title', 'years', 'date', 'no', 'basis', 'grant', 'note', 'image', 'spread', 'full', 'cert'])
+        && a.medal in medalIds()
+        && a.title is string && a.title.size() > 0 && a.title.size() <= 200
+        && a.head is string && a.head.size() <= 80
+        && a.coverTo is string && a.coverTo.size() <= 80
+        && a.years is string && a.years.size() <= 40
+        && a.date is string && a.date.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')
+        && a.no is string && a.no.size() > 0 && a.no.size() <= 12
+        && a.basis is string && a.basis.size() <= 200
+        && a.image == 'img/demo/medal-109.webp'
+        && a.spread == 'img/awards/m11-109.webp'
+        && a.cert == true && a.full == true
+        && (!('grant' in a) || (a.grant is string && a.grant.size() <= 400))
+        && (!('note' in a) || (a.note is string && a.note.size() <= 300));
+    }
+    function awardsOk(xs) {
+      return xs is list && xs.size() <= 4
+        && (xs.size() < 1 || awardOk(xs[0]))
+        && (xs.size() < 2 || (awardOk(xs[1]) && xs[1].medal != xs[0].medal))
+        && (xs.size() < 3 || (awardOk(xs[2]) && xs[2].medal != xs[0].medal && xs[2].medal != xs[1].medal))
+        && (xs.size() < 4 || (awardOk(xs[3]) && xs[3].medal != xs[0].medal && xs[3].medal != xs[1].medal && xs[3].medal != xs[2].medal));
+    }
+    // Только владельцы из config/owners.
+    function awardWriteOk() {
+      return isOwner()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['awards', 'updatedBy', 'updatedAt'])
+        && awardsOk(request.resource.data.awards)
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+    function extrasKept() {
+      return request.resource.data.get('subPositions', []) == resource.data.get('subPositions', [])
+        && request.resource.data.get('awards', []) == resource.data.get('awards', []);
+    }
+
+// В validMember().keys().hasOnly(...) добавить 'subPositions' и 'awards'
+// и проверку: (!('subPositions' in d) || subPosShape(d.subPositions)) && (!('awards' in d) || awardsOk(d.awards))
+//
+// В seatAssignOk().keys().hasOnly(...) добавить 'subPositions' и 'awards',
+// плюс sameSeat('subPositions') && sameSeat('awards').
+//
+// В tierUpdOk() и chairEditOk() добавить && extrasKept().
+// В allow create оставить документы без этих полей: && !('subPositions' in request.resource.data) && !('awards' in request.resource.data)
+//
+// allow update: if subPosWriteOk() || awardWriteOk() || (прежнее условие update);
