@@ -14,12 +14,15 @@ const list = window.VPPKA_AWARD_LIST;
 const block = window.VPPKA_AWARDS;
 const view = window.VPPKA_AWARD_VIEW;
 
-test('награда запуска только у m11, у остальных пустой раздел', () => {
-  const other = block({ id: 'm1', name: 'Другой', awards: [{ title: 'Медаль', cert: true, image: 'img/demo/medal-109.webp' }] });
+test('своя награда видна у любого профиля, образец без записи — только у m11', () => {
+  const other = block({ id: 'm1', name: 'Другой', awards: [{ title: 'Медаль', cert: true, image: 'img/demo/medal-109.webp', medal: 'oct-109' }] });
   assert.match(other, /Награды/);
-  assert.match(other, /Наград пока нет/);
-  assert.equal(other.includes('medal-109'), false);
-  assert.equal(other.includes('<button'), false);
+  assert.match(other, /medal-109/);
+  assert.match(other, /<button/);
+  assert.equal(other.includes('Выдать награду'), false);
+  const empty = block({ id: 'm2', name: 'Пусто' });
+  assert.match(empty, /Наград пока нет/);
+  assert.equal(empty.includes('medal-109'), false);
   const html = block({ id: 'm11' });
   assert.match(html, /medal-109\.webp/);
   assert.match(html, /Награды/);
@@ -92,7 +95,7 @@ test('в вёрстке корочка откидывается трансфор
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /@media\(max-width:860px\)\{\.aw-view\{background:#100c0a\}/);
   assert.match(code, /hashchange/);
-  assert.match(code, /p\[1\] !== 'm11'/);
+  assert.match(code, /p\[1\] !== viewId/);
   assert.match(css, /--sheet:min\(980px/);
   assert.match(css, /height:calc\(var\(--sheet\) \* 409 \/ 1118\)/);
   assert.doesNotMatch(css, /\.aw-book\.open:after/);

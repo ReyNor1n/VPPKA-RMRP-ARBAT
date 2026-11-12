@@ -1,8 +1,6 @@
-/* Награды профиля. Сайт только показывает поле awards и ничего не записывает.
-   Элемент: { title, date?, image?, cert?, note?, spread?, pdf? }
-   cert/spread/pdf — есть книжечка. Без них иконка не открывается.
-   spread — картинка разворота (img/ или https), целиком, без обрезки.
-   pdf — необязательный файл .pdf, ссылка появляется только внутри открытой книжечки. */
+/* Награды профиля. Каталог медалей — MEDALS: новая медаль добавляется сюда.
+   Запись у человека: { medal, title, head, coverTo, years, date, no, basis, grant?, note?, image, spread, full, cert }.
+   Выдаёт и отзывает только владелец (config/owners). Роли Discord не трогаются. */
 (function () {
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function src(u) {
@@ -43,6 +41,7 @@
         image: image(x.image || x.icon),
         plate: image(x.plate) || image(x.image || x.icon),
         note: String(x.note || '').replace(/\s+/g, ' ').trim().slice(0, 300),
+        medal: /^[a-z0-9-]{1,40}$/.test(String(x.medal || '')) ? String(x.medal) : '',
         cert: cert || !!spread || !!file,
         spread,
         pdf: file,
@@ -53,44 +52,60 @@
   }
   let shown = [];
   let holder = { name: 'не указано', pass: '' };
-  function icon(it) {
-    return it.image
-      ? `<img class="aw-img" src="${esc(it.image)}" alt="" width="56" height="56" loading="lazy" decoding="async">`
-      : '<span class="aw-miss" aria-hidden="true">★</span>';
-  }
-  const M11 = [{
+  let viewId = '';
+  // Каталог медалей. Картинки и текст корочки берутся отсюда, чтобы удостоверение заполнялось как у уже выданных.
+  const MEDALS = [{
+    id: 'oct-109',
     head: 'Юбилейная медаль',
     coverTo: 'к юбилейной медали',
     title: '«109 лет Октябрьской революции»',
     years: '1917 — 2026',
-    date: '07.11.2026',
-    no: '001',
-    basis: 'Приказ о награждении № 1 от 07.11.2026',
     image: 'img/demo/medal-109.webp',
     spread: 'img/awards/m11-109.webp',
     full: true,
     cert: true
   }];
+  function isOwner() {
+    const p = (window.VPPKA_FB && window.VPPKA_FB.power) || {};
+    return !!(p.owner || (p.rank || 0) >= 1000);
+  }
+  function todayISO() {
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function isoToRu(s) {
+    const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? m[3] + '.' + m[2] + '.' + m[1] : '';
+  }
+  function icon(it) {
+    return it.image
+      ? `<img class="aw-img" src="${esc(it.image)}" alt="" width="56" height="56" loading="lazy" decoding="async">`
+      : '<span class="aw-miss" aria-hidden="true">★</span>';
+  }
+  const M11 = [Object.assign({ date: '07.11.2026', no: '001', basis: 'Приказ о награждении № 1 от 07.11.2026' }, MEDALS[0])];
   function block(m) {
     if (!m || !m.id) return '';
-    let items = [];
-    if (m.id === 'm11') {
-      const own = list(m.awards);
-      items = own.length ? own : list(M11);
-      shown = items;
-      holder = {
-        name: String((m && m.name) || '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'не указано',
-        pass: String((m && (m.statik || m.passport)) || '').replace(/\s+/g, ' ').trim().slice(0, 32),
-      };
-    }
+    const own = list(m.awards);
+    const items = own.length ? own : (m.id === 'm11' ? list(M11) : []);
+    viewId = m.id;
+    shown = items;
+    holder = {
+      name: String((m && m.name) || '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'не указано',
+      pass: String((m && (m.statik || m.passport)) || '').replace(/\s+/g, ' ').trim().slice(0, 32),
+    };
+    const owner = isOwner();
     const cells = items.map((it, i) => {
       const tip = esc(it.date ? it.title + ', ' + it.date : it.title);
       const face = icon(it);
-      if (!it.cert) return `<span class="aw-hold" title="${tip}" role="img" aria-label="${tip}">${face}</span>`;
-      return `<button type="button" class="aw-btn" data-aw="${i}" title="${tip}" aria-label="${tip}. Открыть удостоверение">${face}</button>`;
+      const drop = owner && own.length ? `<button type="button" class="aw-revoke" data-aw-revoke="${i}">Отозвать</button>` : '';
+      const faceEl = it.cert
+        ? `<button type="button" class="aw-btn" data-aw="${i}" title="${tip}" aria-label="${tip}. Открыть удостоверение">${face}</button>`
+        : `<span class="aw-hold" title="${tip}" role="img" aria-label="${tip}">${face}</span>`;
+      return `<span class="aw-cell">${faceEl}${drop}</span>`;
     }).join('');
+    const give = owner ? '<p class="aw-adm"><button type="button" class="btn sm" data-aw-give="' + esc(m.id) + '">Выдать награду</button></p>' : '';
     const body = items.length ? `<div class="aw-grid">${cells}</div>` : '<p class="amut aw-empty">Наград пока нет</p>';
-    return `<div class="mpg-side"><section class="blk awards"><h2>Награды</h2>${body}</section></div>`;
+    return `<div class="mpg-side"><section class="blk awards"><h2>Награды</h2>${body}${give}</section></div>`;
   }
   const SEAL = '<svg class="aw-seal" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="36" fill="none" stroke="#2a4f86" stroke-width="2"/><circle cx="40" cy="40" r="30" fill="none" stroke="#2a4f86" stroke-width="1"/><text x="40" y="36" text-anchor="middle" font-size="11" fill="#2a4f86" font-family="Times New Roman,Times,serif">ОБРАЗЕЦ</text><text x="40" y="52" text-anchor="middle" font-size="8" fill="#2a4f86" font-family="Times New Roman,Times,serif">НЕ ПЕЧАТЬ</text></svg>';
   const RULE = '<span class="aw-cv-rule" aria-hidden="true"><i></i><b></b><i></i></span>';
@@ -206,7 +221,70 @@
   function focusables(v) {
     return [...v.querySelectorAll('button,a[href]')].filter(el => !el.disabled && !el.hidden && el.tabIndex !== -1);
   }
+  function rawAwards(id) {
+    const ms = (window.VPPKA_DATA && window.VPPKA_DATA.members) || [];
+    const m = ms.find(x => x.id === id);
+    return { m, list: Array.isArray(m && m.awards) ? m.awards.slice() : [] };
+  }
+  function closeGive() { const o = document.getElementById('aw-give'); if (o) o.remove(); }
+  function openGive(id) {
+    if (!isOwner() || document.getElementById('aw-give')) return;
+    const have = new Set(rawAwards(id).list.map(x => x && (x.medal || x.title)));
+    const opts = MEDALS.filter(md => !have.has(md.id) && ![...have].some(t => String(t).replace(/\s+/g, ' ').trim() === md.title));
+    const o = document.createElement('div');
+    o.id = 'aw-give'; o.className = 'rk-ov';
+    o.innerHTML = `<form class="rk-box" role="dialog" aria-modal="true" aria-labelledby="aw-give-h"><div class="rk-hd"><div><span>// НАГРАДА</span><h3 id="aw-give-h">Выдать награду</h3></div><button type="button" class="rk-x" aria-label="Закрыть">✕</button></div>${opts.length ? `<label class="sp-lab">Медаль<select name="medal" required>${opts.map(md => `<option value="${esc(md.id)}">${esc(md.title)}</option>`).join('')}</select></label><label class="sp-lab">Номер приказа<input name="no" required maxlength="12" autocomplete="off" placeholder="2"></label><label class="sp-lab">Дата<input name="date" type="date" required value="${todayISO()}"></label><label class="sp-lab">За что<textarea name="grant" maxlength="400" rows="3" placeholder="Необязательно"></textarea></label><div class="rk-bt"><button class="btn sm" type="submit">Выдать</button><button class="btn sm o" type="button" data-aw-no>Отмена</button></div><p class="aerr" id="aw-give-e"></p>` : '<p class="amut">Все медали из каталога уже выданы.</p>'}</form>`;
+    o.addEventListener('click', ev => { if (ev.target === o || ev.target.closest('.rk-x') || ev.target.closest('[data-aw-no]')) closeGive(); });
+    o.addEventListener('submit', ev => { ev.preventDefault(); give(id, new FormData(ev.target), o); });
+    document.body.appendChild(o);
+    const first = o.querySelector('input,select,button');
+    if (first) first.focus();
+  }
+  async function writeAwards(id, awards) {
+    const fb = window.VPPKA_FB;
+    if (!fb || !fb.user || !isOwner()) { const e = new Error('permission-denied'); e.code = 'permission-denied'; throw e; }
+    const pack = awards.map(a => {
+      const o = { medal: a.medal, head: a.head, coverTo: a.coverTo, title: a.title, years: a.years, date: a.date, no: a.no, basis: a.basis, image: a.image, spread: a.spread, full: true, cert: true };
+      if (a.grant) o.grant = a.grant;
+      if (a.note) o.note = a.note;
+      return o;
+    });
+    await fb.F.updateDoc(fb.F.doc(fb.db, 'members', id), { awards: pack, updatedBy: fb.user.uid, updatedAt: fb.F.serverTimestamp() });
+    const m = rawAwards(id).m;
+    if (m) m.awards = pack;
+    if (window.VPPKA_RELOAD) await window.VPPKA_RELOAD();
+    if (window.route) window.route();
+  }
+  async function give(id, fd, form) {
+    const md = MEDALS.find(x => x.id === String(fd.get('medal') || ''));
+    const no = String(fd.get('no') || '').replace(/[^\dA-Za-zА-Яа-яЁё\-]/g, '').slice(0, 12);
+    const date = isoToRu(fd.get('date'));
+    const grant = String(fd.get('grant') || '').replace(/\s+/g, ' ').trim().slice(0, 400);
+    const err = form.querySelector('#aw-give-e');
+    if (!md || !no || !date) { if (err) err.textContent = 'Выберите медаль, номер приказа и дату.'; return; }
+    const cur = rawAwards(id).list;
+    if (cur.some(x => x && (x.medal === md.id || String(x.title || '').replace(/\s+/g, ' ').trim() === md.title))) { if (err) err.textContent = 'Эта медаль уже выдана.'; return; }
+    const row = Object.assign({}, md, { date, no, basis: 'Приказ о награждении № ' + no + ' от ' + date });
+    if (grant) { row.grant = grant; row.note = grant; }
+    const bt = form.querySelector('[type=submit]');
+    if (bt) bt.disabled = true;
+    try { await writeAwards(id, cur.concat(row)); closeGive(); }
+    catch (e) { if (bt) bt.disabled = false; if (err) err.textContent = e.code === 'permission-denied' ? 'Нет прав: награду выдаёт только владелец.' : (e.message || 'Не удалось сохранить.'); }
+  }
+  async function revoke(i) {
+    if (!isOwner() || !viewId) return;
+    const cur = rawAwards(viewId).list;
+    const row = cur[i];
+    if (!row) return;
+    if (!window.confirm('Отозвать награду «' + String(row.title || 'медаль') + '»?')) return;
+    try { await writeAwards(viewId, cur.filter((_, n) => n !== i)); }
+    catch (e) { window.alert(e.code === 'permission-denied' ? 'Нет прав: отозвать может только владелец.' : (e.message || 'Не удалось отозвать.')); }
+  }
   document.addEventListener('click', e => {
+    const giveBtn = e.target.closest && e.target.closest('[data-aw-give]');
+    if (giveBtn) { e.preventDefault(); openGive(giveBtn.getAttribute('data-aw-give')); return; }
+    const drop = e.target.closest && e.target.closest('[data-aw-revoke]');
+    if (drop) { e.preventDefault(); revoke(+drop.getAttribute('data-aw-revoke')); return; }
     const btn = e.target.closest && e.target.closest('[data-aw]');
     if (btn) { e.preventDefault(); openAt(+btn.dataset.aw, btn); return; }
     const v = dialog();
@@ -233,7 +311,7 @@
     if (e.shiftKey && document.activeElement === a) { e.preventDefault(); b.focus(); }
     else if (!e.shiftKey && document.activeElement === b) { e.preventDefault(); a.focus(); }
   });
-  if (typeof window.addEventListener === 'function') window.addEventListener('hashchange', () => { const p = (location.hash.slice(1) || '').split('/'); if (p[0] !== 'member' || p[1] !== 'm11') closeView(); });
+  if (typeof window.addEventListener === 'function') window.addEventListener('hashchange', () => { const p = (location.hash.slice(1) || '').split('/'); if (p[0] !== 'member' || p[1] !== viewId) { closeView(); closeGive(); } });
   document.addEventListener('error', e => {
     const img = e.target;
     if (!img || !img.classList || !img.classList.contains('aw-img')) return;
@@ -246,4 +324,5 @@
   window.VPPKA_AWARDS = block;
   window.VPPKA_AWARD_LIST = list;
   window.VPPKA_AWARD_VIEW = viewHtml;
+  window.VPPKA_MEDALS = MEDALS;
 })();
