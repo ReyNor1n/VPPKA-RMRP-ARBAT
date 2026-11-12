@@ -67,7 +67,7 @@
   }];
   function isOwner() {
     const p = (window.VPPKA_FB && window.VPPKA_FB.power) || {};
-    return !!(p.owner || (p.rank || 0) >= 1000);
+    return !!(p.owner || p.chief || (p.rank || 0) >= 1000); // v272: и Председатель ЦК, и замы
   }
   function todayISO() {
     const d = new Date(), p = n => String(n).padStart(2, '0');

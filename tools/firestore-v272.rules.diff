@@ -1,0 +1,211 @@
+# v272: изменения правил Firestore относительно v271 (живые правила целиком в репозитории не лежат).
+# Публикуются из консоли/с бокса только по команде владельца.
+--- v271.rules	2026-11-12 21:37:16.671844078 +0300
++++ v272.rules	2026-11-12 23:29:49.103377152 +0300
+@@ -78,6 +78,11 @@
+         ? u.discordId : '';
+     }
+     function rankAdmin() { return isOwner() || (myVDid() != '' && myVDid() in rkAdminDids()); }
++    // v272: «Председатель ЦК и его замы получили все права на сайте, не связанные с админом».
++    // Руководство = тот, кто сейчас сидит на m1, m4 или m5 (по документам мест, как rankAdmin), плюс владелец.
++    // Админские права (ключи доступа, настройки сайта, тексты страниц, шаблоны, Discord-вебхуки, ldrSeats, общее правило isSuper) — по-прежнему только владелец.
++    function chiefDid(vd) { return vd != '' && (vd == seatDid('m1') || vd == seatDid('m4') || vd == seatDid('m5')); }
++    function isChief() { return isOwner() || chiefDid(myVDid()); }
+     // Discord ID всех, кто сейчас занимает места руководства: config/ldrSeats.dids.
+     // Список целиком переписывают те, кто назначает (rankAdmin), после назначения или снятия.
+     function ldrSeatsPath() { return /databases/$(database)/documents/config/ldrSeats; }
+@@ -367,7 +372,7 @@
+         && optStr(request.resource.data, 'name', 160) && optStr(request.resource.data, 'reason', 300)
+         && optStr(request.resource.data, 'byName', 160)
+         && request.resource.data.by == request.auth.uid && request.resource.data.at == request.time;
+-      allow delete: if isOwner();
++      allow delete: if isChief();   // v272: и Председатель ЦК, и замы
+     }
+ 
+     // ---------- внутрипартийные голосования ----------
+@@ -437,7 +442,7 @@
+       }
+       function resumeOk() {
+         return evActor()
+-          && (isOwner() || !evLocked())
++          && (isChief() || !evLocked())
+           && resource.data.get('status', '') == 'ended'
+           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','endedAt','endedBy'])
+           && !('status' in request.resource.data)
+@@ -451,7 +456,7 @@
+       allow update: if (myTier() >= 4 && validEv(request.resource.data)
+           && !(resource.data.get('status', '') == 'ended'
+                && request.resource.data.diff(resource.data).affectedKeys().hasAny(['att']))
+-          && (isOwner() || !evLocked() || request.resource.data.get('status', '') == 'ended'))
++          && (!evLocked() || request.resource.data.get('status', '') == 'ended' || isChief()))
+         || endOk() || resumeOk();
+       // v221: мероприятие с посещаемостью не пропадает бесследно.
+       //  * завершённое с отметками — удаляет только владелец (остальным — «Скрыть», поле hidden);
+@@ -462,7 +467,7 @@
+         return existsAfter(/databases/$(database)/documents/eventsArchive/$(id))
+           && getAfter(/databases/$(database)/documents/eventsArchive/$(id)).data.by == request.auth.uid;
+       }
+-      allow delete: if isOwner()
++      allow delete: if isChief()
+         || (myTier() >= 4
+             && !(resource.data.get('status', '') == 'ended' && evHasAtt())
+             && (evArchived()
+@@ -482,7 +487,7 @@
+         && request.resource.data.title == get(/databases/$(database)/documents/events/$(id)).data.title
+         && !existsAfter(/databases/$(database)/documents/events/$(id));
+       allow update: if false;
+-      allow delete: if isOwner();
++      allow delete: if isChief();   // v272: и Председатель ЦК, и замы
+     }
+ 
+     // ---------- новости ----------
+@@ -553,18 +558,13 @@
+       }
+       // v271: доп. должности (руководство: владелец, m1, m4, m5) и награды (только владелец).
+       function subPosList() {
+-        return ['Пресс-секретарь', 'Корреспондент', 'Редактор новостей', 'Агитатор'];
++        return ['Начальник пресс-службы', 'Пресс-секретарь', 'Корреспондент', 'Редактор новостей', 'Агитатор'];
+       }
+       // Владелец, Председатель ЦК (m1) и заместители Председателя ЦК (m4, m5). Не m12 и не Discord-роли.
+-      function subPosAdmin() {
+-        return isOwner() || (myVDid() != '' && (myVDid() == seatDid('m1') || myVDid() == seatDid('m4') || myVDid() == seatDid('m5')));
+-      }
++      function subPosAdmin() { return isChief(); }
+       function subPosShape(xs) {
+-        return xs is list && xs.size() <= 4 && xs.size() == xs.toSet().size()
+-          && (xs.size() < 1 || xs[0] in subPosList())
+-          && (xs.size() < 2 || xs[1] in subPosList())
+-          && (xs.size() < 3 || xs[2] in subPosList())
+-          && (xs.size() < 4 || xs[3] in subPosList());
++        return xs is list && xs.size() <= 5 && xs.size() == xs.toSet().size()
++          && xs.toSet().difference(subPosList().toSet()).size() == 0;
+       }
+       // Дешёвые проверки идут первыми: обычные правки сразу выходят из ветки, не тратя обращения к документам.
+       // Ветка срабатывает только когда список доп. должностей изменился; остальные поля — без изменений.
+@@ -600,13 +600,13 @@
+           && (xs.size() < 3 || (awardOk(xs[2]) && xs[2].medal != xs[0].medal && xs[2].medal != xs[1].medal))
+           && (xs.size() < 4 || (awardOk(xs[3]) && xs[3].medal != xs[0].medal && xs[3].medal != xs[1].medal && xs[3].medal != xs[2].medal));
+       }
+-      // Только владельцы из config/owners.
++      // v272: награды выдают и отзывают владелец, Председатель ЦК и его замы.
+       function awardWriteOk() {
+         return request.resource.data.get('awards', []) != resource.data.get('awards', [])
+           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['awards', 'updatedBy', 'updatedAt'])
+           && request.resource.data.get('updatedBy', '') == request.auth.uid
+           && awardsOk(request.resource.data.get('awards', null))
+-          && isOwner();
++          && isChief();
+       }
+       // Прежние ветки правки не трогают эти поля. Исключение — смена человека на месте руководства
+       // (назначение / «Снять с должности»): доп. должности и награды принадлежат человеку, место их не наследует,
+@@ -623,6 +623,13 @@
+       allow read: if partyMember() || isOwner() || rankAdmin();
+       // ступень 4+: добавлять/повышать/понижать записи со ступенью ниже своей (tier записи = ступень ключа человека, нет → 0);
+       // ранг 100 (председатель) назначает только владелец
++      // v272: руководство (m1, m4, m5) добавляет карточки любой ступени до 6 включительно, ранг ниже 100.
++      function chiefCreateOk() {
++        let d = request.resource.data;
++        return chiefDid(myVDid()) && validMember(d)
++          && d.get('tier', 0) is int && d.get('tier', 0) >= 0 && d.get('tier', 0) <= 6 && d.rank < 100
++          && d.get('updatedBy', '') == request.auth.uid;
++      }
+       function tierEdit(d) {
+         return myTier() >= 4 && validMember(d) && d.get('tier', 0) < myTier()
+           && d.rank < (isOwner() ? 1000 : 100);
+@@ -680,7 +687,7 @@
+       }
+       allow create: if !lockedId() && !lockedData(request.resource.data)
+         && !('subPositions' in request.resource.data) && !('awards' in request.resource.data)
+-        && partyIdOk() && partyClaimOk() && !techRoleNew() && (tierEdit(request.resource.data) || vacCreateOk());
++        && partyIdOk() && partyClaimOk() && !techRoleNew() && (chiefCreateOk() || tierEdit(request.resource.data) || vacCreateOk());
+       // назначение человека на должность (смена discordId): владелец и ступень 5, как раньше
+       function assignOk() { return request.resource.data.get('discordId', '') == resource.data.get('discordId', '') || myTier() >= 5; }
+       // звание (role) записи «Члены партии» (p_*) — только распорядители званий
+@@ -772,6 +779,23 @@
+           && (request.resource.data.get('discordId', '') != resource.data.get('discordId', '')
+               || request.resource.data.get('name', '') != resource.data.get('name', ''));
+       }
++      // v272: Председатель ЦК и замы правят любую карточку (и p_*, любой ступени), кроме мест техотдела/владельца (lockFree снаружи).
++      // Ранг 100 (пост председателя) и ступени 7+ (админские) не выставляют; у карточки ранга 100 ранг и ступень не меняются;
++      // человека на m1 меняет только владелец, на m4/m5 — председатель (deputyReassignP в updEntry).
++      function chiefEditOk(vd) {
++        let o = resource.data;
++        let n = request.resource.data;
++        let personChg = n.get('discordId', '') != o.get('discordId', '') || n.get('name', '') != o.get('name', '');
++        return chiefDid(vd)
++          && (!personChg || !(id in ['m4', 'm5']) || vd == seatDid('m1'))
++          && n.get('tier', 0) is int && n.get('tier', 0) >= 0 && n.get('tier', 0) <= 6
++          && (o.get('rank', 0) < 100
++              ? (n.get('rank', -1) is int && n.get('rank', -1) < 100)
++              : (n.get('rank', -1) == o.get('rank', 0) && n.get('tier', 0) == o.get('tier', 0)))
++          && (id != 'm1' || (n.get('discordId', '') == o.get('discordId', '') && n.get('name', '') == o.get('name', '')))
++          && (!id.matches('^p_.*') || n.get('role', '') == o.get('role', '') || n.get('role', '') in rkList())
++          && validMember(n);
++      }
+       function updEntry(own, vd) {
+         let ra = own || (vd != '' && vd in rkAdminDids());
+         let chair = own || (deputySeat() && vd != '' && vd == seatDid('m1'));
+@@ -783,7 +807,8 @@
+       // v271: прежние ветки правки не меняют subPositions и awards (extrasKept, проверяется один раз; см. исключение там);
+       // эти поля меняют только subPosWriteOk() (руководство) и awardWriteOk() (владелец). Shape проверяется там же,
+       // поэтому validMember() их только пропускает (без дорогой проверки — лимит 1000 выражений).
+-      allow update: if (extrasKept() && ((lockFree() && updEntry(isOwner(), myVDid()))
++      allow update: if (extrasKept() && lockFree() && chiefEditOk(myVDid()))
++        || (extrasKept() && ((lockFree() && updEntry(isOwner(), myVDid()))
+         || ((lockedId() || lockedData(resource.data)) && selfPhotoOk())
+         || selfBioOk()))
+         || subPosWriteOk() || awardWriteOk();
+@@ -793,7 +818,8 @@
+         && (id.matches('^p_.*') || resource.data.get('group', '') == 'Члены партии'
+             || (resource.data.get('name', '') is string && (resource.data.get('name', '') == 'Вакансия' || resource.data.get('name', '').lower() == 'вакансия')))
+         && ((myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100))
+-            || (rankAdmin() && !id.matches('^p_.*') && resource.data.get('group', '') != 'Члены партии'));
++            || (rankAdmin() && !id.matches('^p_.*') && resource.data.get('group', '') != 'Члены партии')
++            || isChief());
+     }
+     // v236: публичная копия состава без Discord (discord, discordId, updatedBy убраны; pk — псевдо-ID для группировки,
+     // skin-ID владельца). Ведёт только бот (сервисный аккаунт). Гости и не члены партии читают её вместо members.
+@@ -869,7 +895,7 @@
+         && request.resource.data.byName is string && request.resource.data.byName.size() <= 160
+         && request.resource.data.by == request.auth.uid && request.resource.data.at == request.time
+         && request.resource.data.read == false;
+-      allow delete: if isOwner();
++      allow delete: if isChief();   // v272: и Председатель ЦК, и замы
+     }
+     // chats/{a_b}: participants = [a,b] (по возрастанию), id = a_b
+     match /chats/{chatId} {
+@@ -947,14 +973,14 @@
+         && (!('size' in request.resource.data) || (request.resource.data.size is int && request.resource.data.size <= 10485760))
+         && (!('ver' in request.resource.data) || (request.resource.data.ver is string && request.resource.data.ver.size() <= 20))
+         && (!('sl' in request.resource.data) || request.resource.data.sl in ['a','b']);
+-      allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
++      allow delete: if signedIn() && (request.auth.uid == uid || isChief());
+       match /chunks/{cid} {
+         allow read: if true;
+         allow create, update: if (musByMe(uid) || isOwner())
+           && cid.matches('^[ab]_([0-9]|1[0-5])$')
+           && request.resource.data.keys().hasOnly(['d']) && request.resource.data.d is string && request.resource.data.d.size() <= 900000;
+         // удалить можно и старые части вида {ver}_{i} (до v256)
+-        allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
++        allow delete: if signedIn() && (request.auth.uid == uid || isChief());
+       }
+     }
+     // v258: части баннера — в двух слотах a/b (chunks/{a|b}_{0..12}), как у музыки: новый файл пишется в свободный слот,
+@@ -975,7 +1001,7 @@
+         && (!('sl' in request.resource.data) || request.resource.data.sl in ['a','b'])
+         && (!('size' in request.resource.data) || (request.resource.data.size is int && request.resource.data.size <= 8388608))
+         && (!('ver' in request.resource.data) || (request.resource.data.ver is string && request.resource.data.ver.size() <= 20));
+-      allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
++      allow delete: if signedIn() && (request.auth.uid == uid || isChief());
+       match /chunks/{cid} {
+         allow read: if true;
+         allow create, update: if verified() && request.auth.uid == uid
+@@ -983,7 +1009,7 @@
+           && request.resource.data.keys().hasOnly(['d'])
+           && request.resource.data.d is string && request.resource.data.d.size() <= 900000;
+         // удалить можно и старые части вида {ver}_{i} (до v258)
+-        allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
++        allow delete: if signedIn() && (request.auth.uid == uid || isChief());
+       }
+     }
+     // avatars/{uid}: полноразмерная аватарка для больших профилей; видят вошедшие, меняет только сам пользователь
