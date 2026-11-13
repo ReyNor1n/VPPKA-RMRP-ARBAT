@@ -1353,3 +1353,18 @@ body.aw-lock{overflow:hidden}
 .aw-fill-cap{left:1.56%;right:5.3%;top:36.4%;text-align:center;font-size:.36em;color:#5c5146}
 .aw-fill-body{left:1.56%;right:3%;top:42.6%;bottom:0;font-size:.66em;white-space:normal!important;line-height:1.36!important;overflow:hidden}
 .aw-fill-body p{margin:0}
+
+/* v276: «Журнал изменений» в админ-панели */
+.alog-f{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 12px}
+.alog-f select,.alog-f input{min-width:0;flex:1 1 180px;max-width:100%}
+.alog{list-style:none;margin:0;padding:0}
+.alog-r{border-bottom:1px solid var(--ln,#3a3226);padding:9px 2px;min-width:0}
+.alog-h{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;font-size:12px;color:#a89366}
+.alog-h time{font-variant-numeric:tabular-nums;color:#c6a15a}
+.alog-s{text-transform:uppercase;letter-spacing:.08em}
+.alog-a{padding:0 6px;border:1px solid rgba(198,161,90,.35)}
+.alog-delete .alog-a{border-color:rgba(200,60,60,.6);color:#e08a8a}
+.alog-create .alog-a{border-color:rgba(110,170,110,.55);color:#9fcf9f}
+.alog-sum{margin:3px 0 2px;font-size:14px;overflow-wrap:anywhere}
+.alog-m{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:#8a8170;overflow-wrap:anywhere}
+.alog-m code{font-size:11px;color:#7d7566}

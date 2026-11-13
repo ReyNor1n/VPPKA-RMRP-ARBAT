@@ -1,0 +1,43 @@
+--- v275.rules	2026-11-13 14:43:52.244041243 +0300
++++ v276.rules	2026-11-13 15:00:56.773406716 +0300
+@@ -1182,6 +1182,31 @@
+       allow read: if true;
+     }
+     // Тексты страниц (вместо правки content.json с сайта). Нет документа — сайт берёт content.json.
++    // ---------- v276: журнал изменений (auditLog) ----------
++    // Запись — после успешной правки с сайта (audit.js): только от своего имени (by = uid, did = свой подтверждённый Discord ID),
++    // время сервера, ограниченный набор полей и длин. Записи неизменяемы; удаляет только владелец.
++    // Читают: владелец, «Администратор сайта» (m13) и зам. начальника техотдела (m12) — по документам мест, как в v275.
++    match /auditLog/{id} {
++      function auditViewer() {
++        let vd = myVDid();
++        return isOwner() || (vd != '' && (vd == seatDid('m13') || vd == seatDid('m12')));
++      }
++      allow get, list: if auditViewer();
++      allow create: if signedIn()
++        && request.resource.data.keys().hasOnly(['by','did','name','seat','sec','act','ref','sum','at'])
++        && request.resource.data.keys().hasAll(['by','did','sec','act','ref','sum','at'])
++        && request.resource.data.by == request.auth.uid
++        && request.resource.data.at == request.time
++        && request.resource.data.sec in ['news','events','votes','notifications','members','applications','users','accessKeys','content','config','discordOut','expulsions','banners']
++        && request.resource.data.act in ['create','update','delete']
++        && reqStr(request.resource.data, 'ref', 200) && reqStr(request.resource.data, 'sum', 300)
++        && optStr(request.resource.data, 'name', 120) && optStr(request.resource.data, 'seat', 12)
++        && request.resource.data.did is string && request.resource.data.did != ''
++        && request.resource.data.did == myVDid();
++      allow update: if false;
++      allow delete: if isOwner();
++    }
++
+     match /content/{id} {
+       allow read: if true;
+       allow write: if isSuper();
+@@ -1191,7 +1216,7 @@
+     // v221: исключение — корзина мероприятий неизменяема и для владельца (удалить/«Восстановить» — правило выше).
+     match /{document=**} {
+       allow read: if isSuper();
+-      allow write: if isSuper() && document[0] != 'eventsArchive';
++      allow write: if isSuper() && document[0] != 'eventsArchive' && document[0] != 'auditLog'; // v276: журнал не правится и владельцем (удаление — правило выше)
+     }
+   }
+ }
