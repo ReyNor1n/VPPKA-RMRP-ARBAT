@@ -1,13 +1,13 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=274';
-import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=274';
-import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=274';
-import {anLoad,anHTML,anClick} from './admin-an.js?v=274';
-import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=274';
-import {layLoad,layHTML,layClick} from './admin-lay.js?v=274';
-import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=274';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=275';
+import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=275';
+import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=275';
+import {anLoad,anHTML,anClick} from './admin-an.js?v=275';
+import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=275';
+import {layLoad,layHTML,layClick} from './admin-lay.js?v=275';
+import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=275';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
@@ -40,8 +40,11 @@ const pw=()=>(FB()&&FB().power)||{};
 const OWNER_DID='646280678736003073';
 const myDidV=()=>String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');
 const seatDidV=s=>String((((((window.VPPKA_DATA||{}).members)||[]).find(m=>m.id===s))||{}).discordId||'');
-function viewer(){const did=myDidV(),on=s=>!!did&&seatDidV(s)===did,ra=['m1','m4','m5','m12'].some(on);
- return {tier:pw().tier|0,ra,chair:on('m1'),td:on('m12')&&!['m1','m4','m5'].some(on)}}
+function viewer(){const did=myDidV(),on=s=>!!did&&seatDidV(s)===did,ra=['m1','m4','m5','m12','m13'].some(on);
+ return {tier:pw().tier|0,ra,chair:on('m1'),td:on('m12')&&!['m1','m4','m5'].some(on),adm:on('m13')||!!pw().siteAdm,did}}
+// v275: «Администратор сайта» (m13) правит тексты этих страниц (правила content: home…contacts); «Сайт и подвал» и «Руководство» — владелец.
+const ADM_TXT=['home','about','program','charter','legal','contacts'];
+const admTxt=id=>!superOn()&&viewer().adm&&ADM_TXT.includes(id);
 function liteCaps(tab){const c=LITE[tab];if(!c||tab!=='members')return c;const v=viewer();if(!v.ra&&v.tier<=5)return c;
  return {...c,hint:`Можно менять карточки со ступенью ниже ${v.tier} и уровнем ниже 100.`+(v.ra?' Вы назначаете и снимаете людей на руководящих местах и меняете звания членов партии (только из списка званий).':'')+' Технический отдел (m11–m14), m17 и места владельца меняет только владелец.'+` Места m1${v.chair?'':', m4, m5'} меняет только владелец${v.chair?'':' или Председатель ЦК'}.`}}
 // Можно ли сохранить/удалить конкретную карточку состава (как в правилах members: tierUpdOk, seatAssignOk, delete).
@@ -49,17 +52,18 @@ function liteCaps(tab){const c=LITE[tab];if(!c||tab!=='members')return c;const v
 const techLockedA=(id,d)=>['m11','m12','m13','m14','m17'].includes(id)||(d||{}).group==='Технический отдел'||String((d||{}).discordId||'')===OWNER_DID||(d||{}).role==='Начальник технического отдела';
 function memberCaps(id,d){d=d||{};if(superOn())return OWNER_CAPS;const v=viewer(),party=String(id).startsWith('p_')||d.group==='Члены партии';
  if(techLockedA(id,d)||d.role==='Начальник технического отдела'||(d.rank|0)>=100)return {};
+ if(v.adm&&v.did&&String(d.discordId||'')===v.did)return {}; // v275: админ сайта свои карточки не меняет (правила: siteAdmDid)
  if(['m1','m4','m5'].includes(id)&&!v.chair)return {}; // места председателя и замов — только председатель/владелец (как в панели)
  const tierOk=(d.tier|0)<v.tier&&v.tier>=4;
  const raOk=v.ra&&!party&&(!['m4','m5'].includes(id)||v.chair)&&!(v.td&&(id==='m12'||String(d.discordId||'')===OWNER_DID));
  const vac=/^вакансия$/i.test(String(d.name||'').trim());
  const delOk=!['m1','m4','m5','m12'].includes(id)&&(party||vac)&&(tierOk||(v.ra&&!party));
  return {edit:tierOk||raOk?1:0,del:delOk?1:0}}
-const liteOn=()=>!superOn()&&!!(FB()&&FB().user)&&(pw().tier|0)>=5&&(pw().rank|0)>0;
+const liteOn=()=>!superOn()&&!!(FB()&&FB().user)&&(((pw().tier|0)>=5&&(pw().rank|0)>0)||!!pw().siteAdm);
 const canAdmin=()=>superOn()||liteOn();
-const TABS_NOW=()=>superOn()?ALL_TABS:ALL_TABS.filter(([id])=>LITE[id]||(id==='keys'&&keysAllowed()));
-const caps=tab=>superOn()?OWNER_CAPS:(liteCaps(tab)||{});
-const rowCaps=(col,id,d)=>{const c=caps(col);if(superOn()||col!=='members')return c;const m=memberCaps(id,d);return {...c,edit:c.edit&&m.edit,del:c.del&&m.del}};
+const TABS_NOW=()=>superOn()?ALL_TABS:ALL_TABS.filter(([id])=>LITE[id]||admTxt(id)||(id==='keys'&&keysAllowed()));
+const caps=tab=>superOn()?OWNER_CAPS:admTxt(tab)?{edit:1}:(liteCaps(tab)||{});
+const rowCaps=(col,id,d)=>{if(col==='content'&&!superOn())return admTxt(id)?{edit:1}:{};const c=caps(col);if(superOn()||col!=='members')return c;const m=memberCaps(id,d);return {...c,edit:c.edit&&m.edit,del:c.del&&m.del}};
 function fixTab(){const t=TABS_NOW();if(!t.some(([id])=>id===state.tab)){state.tab=t[0][0];state.rows=null;state.edit=null}}
 const AUTO_ID=new Set(['news','events','votes','notifications']);
 const state={tab:'site',edit:null,rows:null,hist:[],tpls:{},q:'',msg:'',msgOk:false,dirty:false,expert:false,loading:false,busy:false,fieldErr:{},seq:0,previewOpen:null,booted:false};
@@ -116,7 +120,7 @@ function rawHTML(){const r=state.raw||{col:'',id:'',text:'{}'};return `<div clas
 <p><button class="btn sm" id="ad-col-load" type="button">Прочитать</button> <button class="btn sm" id="ad-col-save" type="button">Сохранить</button> <button class="btn sm danger" id="ad-col-del" type="button">🗑 Удалить</button></p></div>`;}
 function textsHTML(){
  return `<p class="amut">Тексты читаются из базы (content/…). Если документа нет — в форму подставляется content.json. Состав и новости живут в своих вкладках.</p>
- <p><button class="btn sm o" id="ad-seed" type="button">Записать текущий content.json в базу</button></p>
+ ${superOn()?'<p><button class="btn sm o" id="ad-seed" type="button">Записать текущий content.json в базу</button></p>':''}
  ${state.loading&&!state.edit?'<p class="amut">Загрузка…</p>':''}${state.edit?editor():''}`;
 }
 function render(){
@@ -125,7 +129,7 @@ function render(){
  if(!canAdmin())return page('Нет доступа','<p>Раздел только для владельца сайта и администраторов (ключ ступени 5 и выше).</p>');
  fixTab();
  const lite=!superOn();
- const head=lite?`<p class="amut">Сокращённая панель: ${esc(pw().roleName||'администратор')}, ступень ${esc(pw().tier)}. Тексты страниц, настройки сайта и Discord меняет только владелец${keysAllowed()?"":", ключи доступа — ступень 7"}.</p><style>.adm-lite [data-afact=savetpl],.adm-lite [data-afact=deltpl]{display:none}</style>`:'';
+ const head=lite?`<p class="amut">Сокращённая панель: ${esc(pw().roleName||'администратор')}, ступень ${esc(pw().tier)}. ${viewer().adm?'Вы правите тексты страниц (кроме «Сайт и подвал» и «Руководство»); настройки сайта, раскладку, Discord и места техотдела меняет только владелец':'Тексты страниц, настройки сайта и Discord меняет только владелец'}${keysAllowed()?"":", ключи доступа — ступень 7"}.</p><style>.adm-lite [data-afact=savetpl],.adm-lite [data-afact=deltpl]{display:none}</style>`:'';
  const M=MOD[state.tab],body=M?(M.own&&!superOn()?'':M.html()):state.tab==='keys'?keysHTML():state.tab==='dch'?(superOn()?dchHTML():''):state.tab==='raw'?rawHTML():isContent(state.tab)?textsHTML():listHTML();
  return page('Администрирование',`${head}${tabs()}${msgLine()}<div class="blk af-wrap${lite?' adm-lite':''}">${body}</div>`);
 }
@@ -179,7 +183,7 @@ function guardDelete(col,id,data){
 }
 async function save(){
  const e=state.edit;if(!e||state.busy)return;
- const lite=!superOn();if(lite){const cp=e.isNew?caps(e.col):rowCaps(e.col,e.id,e.base);if(e.col==='content'||!(e.isNew?cp.add:cp.edit)){say('Нет прав на это действие.');refresh();return}}
+ const lite=!superOn();if(lite){const cp=e.isNew?caps(e.col):rowCaps(e.col,e.id,e.base);if((e.col==='content'&&!admTxt(e.id))||(e.col!=='content'&&!(e.isNew?cp.add:cp.edit))){say('Нет прав на это действие.');refresh();return}}
  if(state.expert&&!lite){let obj;try{obj=JSON.parse(document.getElementById('ad-json').value)}catch(err){say('JSON: '+err.message);refresh();return}if(!obj||typeof obj!=='object'||Array.isArray(obj)){say('Нужен объект JSON.');refresh();return}e.data=obj}
  let id=e.col==='content'?e.id:(document.getElementById('ad-docid')?document.getElementById('ad-docid').value.trim():e.id);
  if(e.col!=='content'&&id&&!/^[A-Za-z0-9_-]{1,200}$/.test(id)){say('Идентификатор: латиница, цифры, _ и -, без «/».');refresh();return}

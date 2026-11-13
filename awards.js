@@ -113,7 +113,15 @@
   }];
   function isOwner() {
     const p = (window.VPPKA_FB && window.VPPKA_FB.power) || {};
-    return !!(p.owner || p.chief || (p.rank || 0) >= 1000); // v272: и Председатель ЦК, и замы
+    return !!(p.owner || p.chief || (p.rank || 0) >= 1000); // v272: и Председатель ЦК, и замы; v275: и «Администратор сайта» (m13, power.chief)
+  }
+  // v275: «Администратор сайта» (m13, не руководство) не выдаёт награды себе и местам техотдела/владельца (правила: extraTargetOk)
+  function admBlockedAw(m) {
+    const p = (window.VPPKA_FB && window.VPPKA_FB.power) || {};
+    if (!p.siteAdmOnly || p.owner) return false;
+    const did = String(((window.VPPKA_AUTH || {}).profile || {}).discordId || '');
+    return ['m11', 'm12', 'm13', 'm14', 'm17'].includes(m.id) || m.group === 'Технический отдел' || m.role === 'Начальник технического отдела'
+      || String(m.discordId || '') === '646280678736003073' || (!!did && String(m.discordId || '') === did);
   }
   function todayISO() {
     const d = new Date(), p = n => String(n).padStart(2, '0');
@@ -136,7 +144,7 @@
     viewId = m.id;
     shown = items;
     holder = holderOf(m);
-    const owner = isOwner();
+    const owner = isOwner() && !admBlockedAw(m);
     const cells = items.map((it, i) => {
       const tip = esc(it.date ? it.title + ', ' + it.date : it.title);
       const face = icon(it);

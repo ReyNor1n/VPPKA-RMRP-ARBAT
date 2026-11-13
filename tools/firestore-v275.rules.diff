@@ -1,0 +1,122 @@
+# v275: изменения правил Firestore относительно живого ruleset 18ac859f (= v272). Публикуются только по команде владельца.
+# «Администратор сайта» (m13): права руководства по месту, без ключа; цели — не своё, не техотдел/владелец.
+--- /tmp/cur.rules	2026-11-13 13:39:23.254485293 +0300
++++ /workspace/v275.rules	2026-11-13 14:07:55.589190390 +0300
+@@ -36,7 +36,8 @@
+     // Доп. право: ключ с canViewMembers==true видит список участников партии (users)
+     function canMembers() { return signedIn() && myKey().get('canViewMembers', false) == true; }
+     // Ступень владельца = 9 (выше любого ключа)
+-    function myTier() { return !signedIn() ? 0 : (isOwner() ? 9 : keyTier()); }
++    // v275: держатель места «Администратор сайта» (m13) без ключа получает ступень 6 (выше — только ключ 7+ и владелец).
++    function myTier() { return !signedIn() ? 0 : (isOwner() ? 9 : (keyTier() < 6 && siteAdmDid(myVDid()) ? 6 : keyTier())); }
+     // Ступень другого пользователя по его ключу (нет ключа → 0)
+     function userTier(uid) {
+       let up = /databases/$(database)/documents/users/$(uid);
+@@ -68,7 +69,8 @@
+     // Нет документа места — пустой Discord, а не ошибка всего правила.
+     function seatDid(s) { return get(seatDoc(s)).data.get('discordId', ''); }
+     // Распорядители: владелец, Председатель ЦК (m1), его заместители (m4, m5) и заместитель начальника техотдела (m12).
+-    function rkAdminDids() { return ['646280678736003073', seatDid('m1'), seatDid('m4'), seatDid('m5'), seatDid('m12')]; }
++    // v275: + «Администратор сайта» (m13). Распорядители не бывают целью смены звания (rkTargetOk) — и себя он не повышает.
++    function rkAdminDids() { return ['646280678736003073', seatDid('m1'), seatDid('m4'), seatDid('m5'), seatDid('m12'), seatDid('m13')]; }
+     // Председатель ЦК — тот, кто сейчас сидит на m1. Замы свои и чужие места m4/m5 не переназначают.
+     function chairNow() { return isSuper() || (myVDid() != '' && myVDid() == seatDid('m1')); }
+     function myVDid() {
+@@ -82,7 +84,11 @@
+     // Руководство = тот, кто сейчас сидит на m1, m4 или m5 (по документам мест, как rankAdmin), плюс владелец.
+     // Админские права (ключи доступа, настройки сайта, тексты страниц, шаблоны, Discord-вебхуки, ldrSeats, общее правило isSuper) — по-прежнему только владелец.
+     function chiefDid(vd) { return vd != '' && (vd == seatDid('m1') || vd == seatDid('m4') || vd == seatDid('m5')); }
+-    function isChief() { return isOwner() || chiefDid(myVDid()); }
++    // v275: «Администратор сайта» — тот, кто сейчас сидит на m13 (по документу места, ключ не нужен).
++    // Получает права руководства (isChief): награды, доп. должности, новости, мероприятия, карточки и т. д.,
++    // но не меняет своё место, места техотдела/владельца (lockFree, lockedData), свои карточки и людей на m1/m4/m5.
++    function siteAdmDid(vd) { return vd != '' && vd == seatDid('m13'); }
++    function isChief() { return isOwner() || chiefDid(myVDid()) || siteAdmDid(myVDid()); }
+     // v272: «Начальник пресс-службы» — доп. должность на карточке members/{c} того, кто вошёл (discordId = логин).
+     // Карточку указывает сам автор (поле card в новости и в заявке discordOut); правила проверяют её по базе.
+     function pressCardOk(c) {
+@@ -227,7 +233,8 @@
+         && request.resource.data.target is string && request.resource.data.target.matches('^(c_[a-z0-9]{4,24}|b_news|b_notices)$')
+         && request.resource.data.by == request.auth.uid
+         && request.resource.data.at == request.time
+-        && (myTier() >= 4 || isChief() || pressOutOk());
++        // v275: пресс-служба проверяется первой (иначе myTier/isChief + место m13 съедают лимит 10 обращений к документам)
++        && (pressOutOk() || myTier() >= 4 || isChief());
+       allow get: if signedIn() && resource.data.by == request.auth.uid;
+       allow list, update, delete: if false;
+       // v272: пресс-служба отправляет только свою новость и только в канал новостей «как обычно» (b_news, бот).
+@@ -602,7 +609,13 @@
+           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subPositions', 'updatedBy', 'updatedAt'])
+           && request.resource.data.get('updatedBy', '') == request.auth.uid
+           && subPosShape(request.resource.data.get('subPositions', null))
+-          && subPosAdmin();
++          && subPosAdmin() && extraTargetOk();
++      }
++      // v275: админ сайта (m13) не выдаёт награды/доп. должности себе и местам техотдела/владельца; руководство и владелец — как раньше.
++      function extraTargetOk() {
++        let vd = myVDid();
++        return isOwner() || chiefDid(vd)
++          || (!lockedId() && !lockedData(resource.data) && resource.data.get('discordId', '') != vd);
+       }
+       function medalIds() { return ['oct-109']; }
+       function awardOk(a) {
+@@ -635,7 +648,7 @@
+           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['awards', 'updatedBy', 'updatedAt'])
+           && request.resource.data.get('updatedBy', '') == request.auth.uid
+           && awardsOk(request.resource.data.get('awards', null))
+-          && isChief();
++          && isChief() && extraTargetOk();
+       }
+       // Прежние ветки правки не трогают эти поля. Исключение — смена человека на месте руководства
+       // (назначение / «Снять с должности»): доп. должности и награды принадлежат человеку, место их не наследует,
+@@ -655,7 +668,7 @@
+       // v272: руководство (m1, m4, m5) добавляет карточки любой ступени до 6 включительно, ранг ниже 100.
+       function chiefCreateOk() {
+         let d = request.resource.data;
+-        return chiefDid(myVDid()) && validMember(d)
++        return (chiefDid(myVDid()) || (siteAdmDid(myVDid()) && d.get('discordId', '') != myVDid())) && validMember(d)
+           && d.get('tier', 0) is int && d.get('tier', 0) >= 0 && d.get('tier', 0) <= 6 && d.rank < 100
+           && d.get('updatedBy', '') == request.auth.uid;
+       }
+@@ -815,7 +828,7 @@
+         let o = resource.data;
+         let n = request.resource.data;
+         let personChg = n.get('discordId', '') != o.get('discordId', '') || n.get('name', '') != o.get('name', '');
+-        return chiefDid(vd)
++        return (chiefDid(vd) || (siteAdmDid(vd) && o.get('discordId', '') != vd && n.get('discordId', '') != vd))
+           && (!personChg || !(id in ['m4', 'm5']) || vd == seatDid('m1'))
+           && n.get('tier', 0) is int && n.get('tier', 0) >= 0 && n.get('tier', 0) <= 6
+           && (o.get('rank', 0) < 100
+@@ -829,9 +842,11 @@
+         let ra = own || (vd != '' && vd in rkAdminDids());
+         let chair = own || (deputySeat() && vd != '' && vd == seatDid('m1'));
+         // v222: td (m12) больше не нужен — места тех. отдела и владельца закрыты lockFree()
++        // v275: админ сайта (m13) своё место и свои карточки не меняет (кроме своего фото) и себя никуда не назначает
++        let selfT = !own && siteAdmDid(vd) && (resource.data.get('discordId', '') == vd || request.resource.data.get('discordId', '') == vd);
+         return !deputyReassignP(chair)
+-          && (seatAssignOk(ra, chair, false) || rankChangeOk(ra) || selfPhotoOk()
+-              || tierUpdOk(own ? 9 : keyTier(), own, ra) || chairEditOk());
++          && ((!selfT && (seatAssignOk(ra, chair, false) || rankChangeOk(ra)
++              || tierUpdOk(own ? 9 : keyTier(), own, ra) || chairEditOk())) || selfPhotoOk());
+       }
+       // v271: прежние ветки правки не меняют subPositions и awards (extrasKept, проверяется один раз; см. исключение там);
+       // эти поля меняют только subPosWriteOk() (руководство) и awardWriteOk() (владелец). Shape проверяется там же,
+@@ -846,6 +861,7 @@
+       allow delete: if !techSeat() && !lockedId() && !lockedData(resource.data) && !(id in ['m1', 'm4', 'm5', 'm12']) && resource.data.get('rank', 0) < 100
+         && (id.matches('^p_.*') || resource.data.get('group', '') == 'Члены партии'
+             || (resource.data.get('name', '') is string && (resource.data.get('name', '') == 'Вакансия' || resource.data.get('name', '').lower() == 'вакансия')))
++        && !(resource.data.get('discordId', '') != '' && siteAdmDid(myVDid()) && resource.data.get('discordId', '') == myVDid())
+         && ((myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100))
+             || (rankAdmin() && !id.matches('^p_.*') && resource.data.get('group', '') != 'Члены партии')
+             || isChief());
+@@ -1168,7 +1184,9 @@
+     // Тексты страниц (вместо правки content.json с сайта). Нет документа — сайт берёт content.json.
+     match /content/{id} {
+       allow read: if true;
+-      allow write: if isSuper();
++      allow write: if isSuper()
++        // v275: тексты страниц — и «Администратор сайта» (m13); настройки сайта, раскладка и шапка (site, settings, leadership) — только владелец
++        || (id in ['home', 'about', 'program', 'charter', 'legal', 'contacts'] && siteAdmDid(myVDid()));
+     }
+     // Суперпользователь (владелец / начальник техотдела) может читать и менять любой документ.
+     // Остальным эта строка ничего не даёт: их по-прежнему пускают только правила выше.
