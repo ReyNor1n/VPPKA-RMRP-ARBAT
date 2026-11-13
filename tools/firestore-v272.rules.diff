@@ -1,8 +1,9 @@
 # v272: изменения правил Firestore относительно v271 (живые правила целиком в репозитории не лежат).
 # Публикуются из консоли/с бокса только по команде владельца.
+# Пресс-служба: news/discordOut принимают поле card (карточка с доп. должностью «Начальник пресс-службы» и discordId автора).
 --- v271.rules	2026-11-12 21:37:16.671844078 +0300
-+++ v272.rules	2026-11-12 23:29:49.103377152 +0300
-@@ -78,6 +78,11 @@
++++ v272.rules	2026-11-13 10:51:46.463324235 +0300
+@@ -78,6 +78,20 @@
          ? u.discordId : '';
      }
      function rankAdmin() { return isOwner() || (myVDid() != '' && myVDid() in rkAdminDids()); }
@@ -11,10 +12,56 @@
 +    // Админские права (ключи доступа, настройки сайта, тексты страниц, шаблоны, Discord-вебхуки, ldrSeats, общее правило isSuper) — по-прежнему только владелец.
 +    function chiefDid(vd) { return vd != '' && (vd == seatDid('m1') || vd == seatDid('m4') || vd == seatDid('m5')); }
 +    function isChief() { return isOwner() || chiefDid(myVDid()); }
++    // v272: «Начальник пресс-службы» — доп. должность на карточке members/{c} того, кто вошёл (discordId = логин).
++    // Карточку указывает сам автор (поле card в новости и в заявке discordOut); правила проверяют её по базе.
++    function pressCardOk(c) {
++      let vd = myVDid();
++      return c is string && c.matches('^[A-Za-z0-9_-]{1,128}$') && vd != ''
++        && exists(/databases/$(database)/documents/members/$(c))
++        && get(/databases/$(database)/documents/members/$(c)).data.get('discordId', '') == vd
++        && 'Начальник пресс-службы' in get(/databases/$(database)/documents/members/$(c)).data.get('subPositions', []);
++    }
      // Discord ID всех, кто сейчас занимает места руководства: config/ldrSeats.dids.
      // Список целиком переписывают те, кто назначает (rankAdmin), после назначения или снятия.
      function ldrSeatsPath() { return /databases/$(database)/documents/config/ldrSeats; }
-@@ -367,7 +372,7 @@
+@@ -204,7 +218,7 @@
+     // проверяет строку и пишет итог (status, err, doneAt) сервисным ключом. Свою заявку автор может прочитать.
+     match /discordOut/{id} {
+       // v262: roles — какие роли упомянуть (до 5 id; бот берёт только роли из content/settings.discord.roles, @everyone — никогда)
+-      allow create: if request.resource.data.keys().hasOnly(['kind','ref','target','by','at','roles'])
++      allow create: if request.resource.data.keys().hasOnly(['kind','ref','target','by','at','roles','card'])
+         && request.resource.data.keys().hasAll(['kind','ref','target','by','at'])
+         && (!('roles' in request.resource.data) || (request.resource.data.roles is list && request.resource.data.roles.size() <= 5))
+         && request.resource.data.kind in ['news','notice','cancel']
+@@ -213,9 +227,17 @@
+         && request.resource.data.target is string && request.resource.data.target.matches('^(c_[a-z0-9]{4,24}|b_news|b_notices)$')
+         && request.resource.data.by == request.auth.uid
+         && request.resource.data.at == request.time
+-        && myTier() >= 4;
++        && (myTier() >= 4 || isChief() || pressOutOk());
+       allow get: if signedIn() && resource.data.by == request.auth.uid;
+       allow list, update, delete: if false;
++      // v272: пресс-служба отправляет только свою новость и только в канал новостей «как обычно» (b_news, бот).
++      function pressOutOk() {
++        let o = request.resource.data;
++        return o.kind == 'news' && o.target == 'b_news' && !('roles' in o)
++          && exists(/databases/$(database)/documents/news/$(o.ref))
++          && get(/databases/$(database)/documents/news/$(o.ref)).data.get('author', '') == request.auth.uid
++          && pressCardOk(o.get('card', ''));
++      }
+     }
+ 
+     // ---------- уведомления (созывы, объявления) ----------
+@@ -230,7 +252,7 @@
+         && request.resource.data.keys().hasOnly(['type','title','text','when','author','authorName','createdAt','place','at','pinned','hidden'])
+         && optStr(request.resource.data, 'authorName', 120)
+         && noticeExtraOk(request.resource.data)
+-        && myTier() >= 4
++        && (myTier() >= 4 || isChief())
+         && reqStr(request.resource.data, 'title', 200)
+         && optStr(request.resource.data, 'text', 2000) && optStr(request.resource.data, 'when', 100)
+         && request.resource.data.author == request.auth.uid
+@@ -367,7 +389,7 @@
          && optStr(request.resource.data, 'name', 160) && optStr(request.resource.data, 'reason', 300)
          && optStr(request.resource.data, 'byName', 160)
          && request.resource.data.by == request.auth.uid && request.resource.data.at == request.time;
@@ -23,7 +70,7 @@
      }
  
      // ---------- внутрипартийные голосования ----------
-@@ -437,7 +442,7 @@
+@@ -437,7 +459,7 @@
        }
        function resumeOk() {
          return evActor()
@@ -32,7 +79,7 @@
            && resource.data.get('status', '') == 'ended'
            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','endedAt','endedBy'])
            && !('status' in request.resource.data)
-@@ -451,7 +456,7 @@
+@@ -451,7 +473,7 @@
        allow update: if (myTier() >= 4 && validEv(request.resource.data)
            && !(resource.data.get('status', '') == 'ended'
                 && request.resource.data.diff(resource.data).affectedKeys().hasAny(['att']))
@@ -41,7 +88,7 @@
          || endOk() || resumeOk();
        // v221: мероприятие с посещаемостью не пропадает бесследно.
        //  * завершённое с отметками — удаляет только владелец (остальным — «Скрыть», поле hidden);
-@@ -462,7 +467,7 @@
+@@ -462,7 +484,7 @@
          return existsAfter(/databases/$(database)/documents/eventsArchive/$(id))
            && getAfter(/databases/$(database)/documents/eventsArchive/$(id)).data.by == request.auth.uid;
        }
@@ -50,7 +97,7 @@
          || (myTier() >= 4
              && !(resource.data.get('status', '') == 'ended' && evHasAtt())
              && (evArchived()
-@@ -482,7 +487,7 @@
+@@ -482,7 +504,7 @@
          && request.resource.data.title == get(/databases/$(database)/documents/events/$(id)).data.title
          && !existsAfter(/databases/$(database)/documents/events/$(id));
        allow update: if false;
@@ -59,7 +106,41 @@
      }
  
      // ---------- новости ----------
-@@ -553,18 +558,13 @@
+@@ -493,7 +515,8 @@
+         || u.matches('data:image/(png|jpeg|jpg|gif|webp|bmp|avif);base64,[A-Za-z0-9+/=]*') || u.matches('img/[^: "<>]+')); }
+       function validNews(d) {
+         // pushSent и discordMessageId ставит бот/рассылка; при правке с сайта их можно только сохранить как есть
+-        return d.keys().hasOnly(['title','text','image','photos','videos','date','author','createdAt','updatedAt','pinned','likeCount','align','pushSent','discordMessageId'])
++        return d.keys().hasOnly(['title','text','image','photos','videos','date','author','createdAt','updatedAt','pinned','likeCount','align','pushSent','discordMessageId','card'])
++          && (!('card' in d) || (d.card is string && d.card.size() <= 128))
+           && (!('pushSent' in d) || (resource != null && d.pushSent == resource.data.get('pushSent', null)))
+           && (!('discordMessageId' in d) || (resource != null && d.discordMessageId == resource.data.get('discordMessageId', null)))
+           && (!('align' in d) || d.align in ['center'])
+@@ -513,9 +536,20 @@
+           && (!('author' in d) || d.author == request.auth.uid || (resource != null && d.author == resource.data.get('author', null)));
+       }
+       allow read: if true;
+-      // новости (с фото и видео): ступень 4+
+-      allow create, update: if myTier() >= 4 && validNews(request.resource.data);
+-      allow delete: if myTier() >= 4;
++      // новости (с фото и видео): ступень 4+; v272: и Председатель ЦК с замами (isChief)
++      // v272: «Начальник пресс-службы» создаёт свои новости и правит только свои (author = он, card — его карточка с доп. должностью);
++      // закреплять (pinned) не может, чужие не правит и не удаляет.
++      function pressNewsOk() {
++        let d = request.resource.data;
++        return d.get('author', '') == request.auth.uid
++          && (resource == null || resource.data.get('author', '') == request.auth.uid)
++          && d.get('pinned', false) == (resource == null ? false : resource.data.get('pinned', false))
++          && validNews(d)
++          && pressCardOk(d.get('card', ''));
++      }
++      allow create, update: if (myTier() >= 4 && validNews(request.resource.data)) || pressNewsOk()
++        || (isChief() && validNews(request.resource.data));
++      allow delete: if myTier() >= 4 || isChief();
+       // лайк: вошедший меняет только likeCount на ±1 вместе со своим документом likes/{uid}
+       function likePath() { return /databases/$(database)/documents/news/$(id)/likes/$(request.auth.uid); }
+       // v258: лайкать может только аккаунт с подтверждённым Discord (не «голый» email-аккаунт)
+@@ -553,18 +587,13 @@
        }
        // v271: доп. должности (руководство: владелец, m1, m4, m5) и награды (только владелец).
        function subPosList() {
@@ -82,7 +163,7 @@
        }
        // Дешёвые проверки идут первыми: обычные правки сразу выходят из ветки, не тратя обращения к документам.
        // Ветка срабатывает только когда список доп. должностей изменился; остальные поля — без изменений.
-@@ -600,13 +600,13 @@
+@@ -600,13 +629,13 @@
            && (xs.size() < 3 || (awardOk(xs[2]) && xs[2].medal != xs[0].medal && xs[2].medal != xs[1].medal))
            && (xs.size() < 4 || (awardOk(xs[3]) && xs[3].medal != xs[0].medal && xs[3].medal != xs[1].medal && xs[3].medal != xs[2].medal));
        }
@@ -98,7 +179,7 @@
        }
        // Прежние ветки правки не трогают эти поля. Исключение — смена человека на месте руководства
        // (назначение / «Снять с должности»): доп. должности и награды принадлежат человеку, место их не наследует,
-@@ -623,6 +623,13 @@
+@@ -623,6 +652,13 @@
        allow read: if partyMember() || isOwner() || rankAdmin();
        // ступень 4+: добавлять/повышать/понижать записи со ступенью ниже своей (tier записи = ступень ключа человека, нет → 0);
        // ранг 100 (председатель) назначает только владелец
@@ -112,7 +193,7 @@
        function tierEdit(d) {
          return myTier() >= 4 && validMember(d) && d.get('tier', 0) < myTier()
            && d.rank < (isOwner() ? 1000 : 100);
-@@ -680,7 +687,7 @@
+@@ -680,7 +716,7 @@
        }
        allow create: if !lockedId() && !lockedData(request.resource.data)
          && !('subPositions' in request.resource.data) && !('awards' in request.resource.data)
@@ -121,7 +202,7 @@
        // назначение человека на должность (смена discordId): владелец и ступень 5, как раньше
        function assignOk() { return request.resource.data.get('discordId', '') == resource.data.get('discordId', '') || myTier() >= 5; }
        // звание (role) записи «Члены партии» (p_*) — только распорядители званий
-@@ -772,6 +779,23 @@
+@@ -772,6 +808,23 @@
            && (request.resource.data.get('discordId', '') != resource.data.get('discordId', '')
                || request.resource.data.get('name', '') != resource.data.get('name', ''));
        }
@@ -145,7 +226,7 @@
        function updEntry(own, vd) {
          let ra = own || (vd != '' && vd in rkAdminDids());
          let chair = own || (deputySeat() && vd != '' && vd == seatDid('m1'));
-@@ -783,7 +807,8 @@
+@@ -783,7 +836,8 @@
        // v271: прежние ветки правки не меняют subPositions и awards (extrasKept, проверяется один раз; см. исключение там);
        // эти поля меняют только subPosWriteOk() (руководство) и awardWriteOk() (владелец). Shape проверяется там же,
        // поэтому validMember() их только пропускает (без дорогой проверки — лимит 1000 выражений).
@@ -155,7 +236,7 @@
          || ((lockedId() || lockedData(resource.data)) && selfPhotoOk())
          || selfBioOk()))
          || subPosWriteOk() || awardWriteOk();
-@@ -793,7 +818,8 @@
+@@ -793,7 +847,8 @@
          && (id.matches('^p_.*') || resource.data.get('group', '') == 'Члены партии'
              || (resource.data.get('name', '') is string && (resource.data.get('name', '') == 'Вакансия' || resource.data.get('name', '').lower() == 'вакансия')))
          && ((myTier() >= 4 && resource.data.get('tier', 0) < myTier() && resource.data.rank < (isOwner() ? 1000 : 100))
@@ -165,7 +246,7 @@
      }
      // v236: публичная копия состава без Discord (discord, discordId, updatedBy убраны; pk — псевдо-ID для группировки,
      // skin-ID владельца). Ведёт только бот (сервисный аккаунт). Гости и не члены партии читают её вместо members.
-@@ -869,7 +895,7 @@
+@@ -869,7 +924,7 @@
          && request.resource.data.byName is string && request.resource.data.byName.size() <= 160
          && request.resource.data.by == request.auth.uid && request.resource.data.at == request.time
          && request.resource.data.read == false;
@@ -174,7 +255,7 @@
      }
      // chats/{a_b}: participants = [a,b] (по возрастанию), id = a_b
      match /chats/{chatId} {
-@@ -947,14 +973,14 @@
+@@ -947,14 +1002,14 @@
          && (!('size' in request.resource.data) || (request.resource.data.size is int && request.resource.data.size <= 10485760))
          && (!('ver' in request.resource.data) || (request.resource.data.ver is string && request.resource.data.ver.size() <= 20))
          && (!('sl' in request.resource.data) || request.resource.data.sl in ['a','b']);
@@ -191,7 +272,7 @@
        }
      }
      // v258: части баннера — в двух слотах a/b (chunks/{a|b}_{0..12}), как у музыки: новый файл пишется в свободный слот,
-@@ -975,7 +1001,7 @@
+@@ -975,7 +1030,7 @@
          && (!('sl' in request.resource.data) || request.resource.data.sl in ['a','b'])
          && (!('size' in request.resource.data) || (request.resource.data.size is int && request.resource.data.size <= 8388608))
          && (!('ver' in request.resource.data) || (request.resource.data.ver is string && request.resource.data.ver.size() <= 20));
@@ -200,7 +281,7 @@
        match /chunks/{cid} {
          allow read: if true;
          allow create, update: if verified() && request.auth.uid == uid
-@@ -983,7 +1009,7 @@
+@@ -983,7 +1038,7 @@
            && request.resource.data.keys().hasOnly(['d'])
            && request.resource.data.d is string && request.resource.data.d.size() <= 900000;
          // удалить можно и старые части вида {ver}_{i} (до v258)
