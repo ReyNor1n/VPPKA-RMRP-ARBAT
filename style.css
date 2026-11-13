@@ -1313,19 +1313,16 @@ body.aw-lock{overflow:hidden}
  .aw-cover,.aw-btn .aw-img{transition:none}
  .aw-btn:hover .aw-img,.aw-btn:focus-visible .aw-img,.aw-btn.aw-on .aw-img{transform:none}
 }
-/* v272: кнопки профиля — внутри рамки карточки фиксированной высоты. Сведения (.prof-body) сжимаются и прокручиваются,
-   строка кнопок (.prof-acts) всегда видна целиком и переносится на новые строки. */
-.mpg>.prof>div.prof-col{display:flex!important;flex-direction:column;flex-wrap:nowrap!important;align-items:stretch;align-self:stretch;min-height:0;max-height:100%;overflow:hidden!important}
-.mpg>.prof>div.prof-col>.prof-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin}
-.mpg>.prof>div.prof-col>.prof-body>*{flex:0 0 auto;order:0;width:auto;max-width:100%}
-.mpg>.prof>div.prof-col>.prof-body>.prof-txt{flex:1 1 auto;min-height:40px;overflow:auto}
-.mpg>.prof>div.prof-col>.prof-body>.prof-txt.open{flex:0 0 auto}
-.mpg>.prof>div.prof-col>.prof-body>.ptx-more{align-self:flex-start}
-.mpg>.prof>div.prof-col>.prof-body>.amut{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.mpg>.prof>div.prof-col>.prof-acts{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--ln);max-width:100%}
-.mpg>.prof>div.prof-col>.prof-acts>*{margin:0!important;flex:0 1 auto;max-width:100%;min-width:0;white-space:normal;text-align:center}
-.mpg>.prof>div.prof-col>.prof-acts .btn{padding:7px 12px;font-size:12px;min-height:34px;line-height:1.2}
-.mpg>.prof>div.prof-col>.prof-acts .duty-btn{width:auto}
+/* v272: колонка сведений профиля — столбец внутри карточки фиксированной высоты. Кнопки (.prof-btns) на месте v271,
+   не сжимаются; при нехватке места уменьшается «О себе» (прокрутка внутри), поэтому кнопки не обрезаются. */
+.mpg>.prof.blk>div.prof-col{display:flex!important;flex-direction:column;flex-wrap:nowrap!important;align-items:stretch;align-self:stretch;min-height:0;max-height:100%;overflow:hidden!important}
+.mpg>.prof.blk>div.prof-col>*{flex:0 0 auto;max-width:100%}
+.mpg>.prof.blk>div.prof-col>.prof-btns{order:7;display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px}
+.mpg>.prof.blk>div.prof-col>.prof-btns>*{margin:0!important;flex:0 0 auto}
+.mpg>.prof.blk>div.prof-col>.prof-txt{flex:1 1 auto;min-height:0;overflow:auto}
+.mpg>.prof.blk>div.prof-col>.prof-txt.open{flex:0 1 auto}
+.mpg>.prof.blk>div.prof-col>.ptx-more{align-self:flex-start}
 @media(min-width:861px){.mpg>.prof.blk{grid-template-rows:minmax(0,1fr)}}
-@media(max-width:860px){.mpg>.prof>div.prof-col>.prof-acts{gap:6px;margin-top:8px;padding-top:8px}.mpg>.prof>div.prof-col>.prof-acts .btn{padding:6px 10px;font-size:11px;min-height:32px}}
-@media(max-width:860px){.mpg>.prof:has(.prof-acts) .prof-ph{max-height:180px;width:min(150px,40vw)!important}}
+.mpg>.prof.blk>div.prof-col>.tbl{display:block;flex:0 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+@media(max-width:860px){.mpg>.prof.blk>div.prof-col>.tbl{margin-top:8px!important}.mpg>.prof.blk>div.prof-col>.amut{flex:0 1 auto;min-height:1.4em;overflow:hidden}}
+@media(max-width:860px){.mpg>.prof.blk:has(.prof-btns) .prof-ph{max-height:170px;width:min(128px,36vw)!important}}

@@ -278,18 +278,13 @@ let prevRoute='',backView=null;
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#member/"]');if(!a||(e.target.closest&&e.target.closest('button'))||e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;const q=document.getElementById('pm-q');backView={k:(location.hash.slice(1)||'home').split('/')[0]||'home',q:q?q.value:'',y:scrollY}},true);
 // Профиль на ПК умещается в экран: «О себе» прокручивается внутри карточки, блок встаёт под шапку.
 function navH(){let h=0;document.querySelectorAll('.hd,.nav').forEach(e=>{const cs=getComputedStyle(e);if(cs.position==='sticky'||cs.position==='fixed')h=Math.max(h,e.getBoundingClientRect().height+(parseFloat(cs.top)||0))});return h}
-// v272: все кнопки профиля — в одной строке внизу карточки (.prof-acts), с переносом. Сведения над ней — в .prof-body:
-// при нехватке места сжимается «О себе», затем блок прокручивается; кнопки не обрезаются и не выходят за рамку.
-// Кнопки, которые дописывают panel.js/chat.js («Назначить», «Снять с должности», «Доп. должности», «Изменить звание», «Написать»),
-// переносятся сюда же; обработчики у них делегированные (data-*), перенос их не ломает.
-function profActs(){const pg=document.querySelector('#app .mpg'),pr=pg&&pg.querySelector(':scope>.prof');if(!pr||pg.classList.contains('mpg-skel'))return;
- const col=pr.querySelector(':scope>div:not(.prof-ph):not(.ldr-badge)');if(!col||col.querySelector(':scope>.prof-acts'))return;
- const btns=[];col.querySelectorAll(':scope>.duty-btn,:scope>.ch-write').forEach(b=>btns.push(b));
- col.querySelectorAll(':scope>.rk-row').forEach(r=>{btns.push(...r.children);r.remove()});
- pg.querySelectorAll(':scope>.mpg-tools').forEach(r=>{btns.push(...r.querySelectorAll('button,a.btn'));r.remove()});
- pg.querySelectorAll(':scope>.asg-bar').forEach(r=>{const note=r.querySelector('small'),bs=[...r.querySelectorAll('button,a.btn')];if(note&&bs[0]&&!bs[0].title)bs[0].title=note.textContent.trim();btns.push(...bs);r.remove()});
- const body=document.createElement('div');body.className='prof-body';while(col.firstChild)body.appendChild(col.firstChild);col.appendChild(body);col.classList.add('prof-col');
- if(!btns.length)return;const acts=document.createElement('div');acts.className='prof-acts';btns.forEach(b=>acts.appendChild(b));col.appendChild(acts)}
+// v272: кнопки в карточке профиля стоят там же, где в v271 (после таблицы, перед «О себе»), но собраны в один ряд .prof-btns,
+// а колонка сведений стала столбцом: при нехватке высоты сжимается «О себе», и кнопки фиксированной карточкой не обрезаются.
+// Кнопки под карточкой («Назначить», «Снять с должности», «Доп. должности») остаются на своих местах.
+function profBtns(){const pg=document.querySelector('#app .mpg'),pr=pg&&pg.querySelector(':scope>.prof');if(!pr||pg.classList.contains('mpg-skel'))return;
+ const col=pr.querySelector(':scope>div:not(.prof-ph):not(.ldr-badge)');if(!col||col.querySelector(':scope>.prof-btns'))return;col.classList.add('prof-col');
+ const bs=[...col.querySelectorAll(':scope>.ch-write,:scope>.rk-row,:scope>.duty-btn')];if(!bs.length)return;
+ const row=document.createElement('div');row.className='prof-btns';const at=col.querySelector(':scope>.prof-txt')||null;col.insertBefore(row,at);bs.forEach(b=>row.appendChild(b))}
 function fitProf(scroll){const pg=document.querySelector('#app .mpg'),pr=pg&&pg.querySelector('.prof');if(!pr||pr.closest('.mpg-skel'))return;const tx=pr.querySelector('.prof-txt'),mo=pr.querySelector('.ptx-more');const desk=matchMedia('(min-width:861px)').matches;
  const op=tx&&tx.classList.contains('open');
  if(!desk){if(tx)tx.style.maxHeight='';if(mo)mo.hidden=true;return}
@@ -301,7 +296,7 @@ function fitProf(scroll){const pg=document.querySelector('#app .mpg'),pr=pg&&pg.
 let fitY=-1;addEventListener('resize',()=>{if((location.hash||'').startsWith('#member/'))fitProf(false)});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.ptx-more');if(!b)return;const t=b.previousElementSibling;if(!t)return;const o=t.classList.toggle('open');b.textContent=o?'Свернуть':'Показать полностью';if(o){t.dataset.mh=t.style.maxHeight;t.style.maxHeight='none'}else{t.style.maxHeight=t.dataset.mh||''}});
 function route(){try{window.__VPPKA_STAGING_PATCH&&window.__VPPKA_STAGING_PATCH()}catch(e){}const [k,id,from]=(location.hash.slice(1)||'home').split('/');const key=P[k]?k:'home';const navKey=key==='votes'?'events':key==='member'?memberNav(id,from):key;const back=backView&&prevRoute==='member'&&key===backView.k?backView:null;const _q=document.getElementById('pm-q'),_qv=_q&&_q.value;app.innerHTML=P[key](id,from);if(_qv&&key==='party'){const q2=document.getElementById('pm-q');q2.value=_qv;VPPKA_PQ(_qv)}else if(back&&back.q&&key==='party'){const q2=document.getElementById('pm-q');if(q2){q2.value=back.q;VPPKA_PQ(back.q)}}menu.classList.remove('open');
-document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+navKey));scrollTo(0,back?back.y:0);if(key==='member'){profActs();fitProf(!back)}if(key==='home')requestAnimationFrame(fitNames);if(back||key!=='member')backView=null;prevRoute=key;try{window.VPPKA_PAINTAUTH&&window.VPPKA_PAINTAUTH()}catch(e){}}
+document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+navKey));scrollTo(0,back?back.y:0);if(key==='member'){profBtns();fitProf(!back)}if(key==='home')requestAnimationFrame(fitNames);if(back||key!=='member')backView=null;prevRoute=key;try{window.VPPKA_PAINTAUTH&&window.VPPKA_PAINTAUTH()}catch(e){}}
 ;(function(){if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{scope:'./',updateViaCache:'none'}).then(r=>{window.VPPKA_SWREG=r;r.update().catch(()=>{})}).catch(()=>{}));
 if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;if(/VPPKA-App/.test(navigator.userAgent))return;
 const dockEls=[];
