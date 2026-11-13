@@ -1326,3 +1326,6 @@ body.aw-lock{overflow:hidden}
 .mpg>.prof.blk>div.prof-col>.tbl{display:block;flex:0 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
 @media(max-width:860px){.mpg>.prof.blk>div.prof-col>.tbl{margin-top:8px!important}.mpg>.prof.blk>div.prof-col>.amut{flex:0 1 auto;min-height:1.4em;overflow:hidden}}
 @media(max-width:860px){.mpg>.prof.blk:has(.prof-btns) .prof-ph{max-height:170px;width:min(128px,36vw)!important}}
+
+/* v273: «История званий» и «Личные данные» в профиле не показываются (на случай старого rh.js из кэша) */
+#app .blk.rh,#app .blk.pvx{display:none!important}

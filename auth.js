@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=272';
+import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=273';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -205,7 +205,7 @@ const acOn=!!appCheckSiteKey&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostna
  const [{initializeApp},A_,F_,AC]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js'),acOn?import(B+'firebase-app-check.js').catch(e=>{console.warn('App Check',e);return null}):null]);
  A=A_;F=F_;const app=initializeApp(firebaseConfig);
 if(AC){try{window.VPPKA_APPCHECK=AC.initializeAppCheck(app,{provider:new AC.ReCaptchaEnterpriseProvider(appCheckSiteKey),isTokenAutoRefreshEnabled:true})}catch(e){console.warn('App Check',e)}}
-auth=A.getAuth(app);db=F.getFirestore(app);
+auth=A.getAuth(app);try{db=F.initializeFirestore(app,{ignoreUndefinedProperties:true})}catch(e){db=F.getFirestore(app)} // v273: undefined в записи не роняет updateDoc/setDoc
  if(location.hostname==='localhost'&&/[?&]emu\b/.test(location.search)){A.connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true});F.connectFirestoreEmulator(db,'127.0.0.1',8080);}
  document.addEventListener('keydown',e=>{if(e.key!=='Enter'||!e.target.closest||!e.target.closest('.auth')||e.target.id==='dl-code')return;const b=e.target.closest('#dl-alt')?document.querySelector('.auth #dl-go,.auth #dr-go'):document.querySelector('.auth #oa-go,.auth #oa-reg')||document.querySelector('.auth .btn');if(b&&!b.disabled)b.click();});
  const fixU=u=>typeof u==='string'?u.replace(/^(?:https?:\/\/[^\/]+)?\/(?:vppka|VPPKA-RMRP-ARBAT)\/(?=img\/)/i,''):u;const fixD=o=>{if(o.image)o.image=fixU(o.image);if(o.photo)o.photo=fixU(o.photo);if(Array.isArray(o.photos))o.photos=o.photos.map(fixU);return o};
@@ -300,7 +300,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  }
 
  async function loadContent(){try{for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership','settings'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));window.VPPKA_TPL_READY=true;if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part);else if((location.hash.slice(1)||'').split('/')[0]==='member')window.route&&window.route()}finally{if(!window.VPPKA_TPL_READY){window.VPPKA_TPL_READY=true;if((location.hash.slice(1)||'').split('/')[0]==='member')window.route&&window.route()}}}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=272').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=272').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=272').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=272').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=272').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=272').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=272').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=272').then(m=>m.install()).catch(e=>console.error('admin',e));
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=273').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=273').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=273').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=273').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=273').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=273').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=273').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=273').then(m=>m.install()).catch(e=>console.error('admin',e));
 // аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false,oaRan=false;
 // authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена

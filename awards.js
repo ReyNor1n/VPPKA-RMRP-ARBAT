@@ -240,15 +240,24 @@
     const first = o.querySelector('input,select,button');
     if (first) first.focus();
   }
+  // v273: поля медали берутся из каталога (раньше в строку попадал md.id вместо medal → medal: undefined → updateDoc падал).
+  // В запись попадают только строки; пустые/неизвестные поля не пишутся вовсе.
+  const nt = s => String(s || '').replace(/\s+/g, ' ').trim();
+  function packAwards(awards) {
+    return awards.map(a => {
+      const md = MEDALS.find(x => x.id === a.medal) || MEDALS.find(x => x.id === a.id) || MEDALS.find(x => nt(x.title) === nt(a.title));
+      if (!md) { const e = new Error('Неизвестная медаль в карточке: ' + (nt(a.title) || '—') + '. Сообщите владельцу.'); e.code = 'bad-award'; throw e; }
+      const o = { medal: md.id, head: md.head, coverTo: md.coverTo, title: md.title, years: md.years, image: md.image, spread: md.spread, full: true, cert: true };
+      for (const k of ['date', 'no', 'basis']) { const v = typeof a[k] === 'string' ? a[k] : (a[k] == null ? '' : String(a[k])); o[k] = v; }
+      if (typeof a.grant === 'string' && a.grant) o.grant = a.grant.slice(0, 400);
+      if (typeof a.note === 'string' && a.note) o.note = a.note.slice(0, 300);
+      return o;
+    });
+  }
   async function writeAwards(id, awards) {
     const fb = window.VPPKA_FB;
     if (!fb || !fb.user || !isOwner()) { const e = new Error('permission-denied'); e.code = 'permission-denied'; throw e; }
-    const pack = awards.map(a => {
-      const o = { medal: a.medal, head: a.head, coverTo: a.coverTo, title: a.title, years: a.years, date: a.date, no: a.no, basis: a.basis, image: a.image, spread: a.spread, full: true, cert: true };
-      if (a.grant) o.grant = a.grant;
-      if (a.note) o.note = a.note;
-      return o;
-    });
+    const pack = packAwards(awards);
     await fb.F.updateDoc(fb.F.doc(fb.db, 'members', id), { awards: pack, updatedBy: fb.user.uid, updatedAt: fb.F.serverTimestamp() });
     const m = rawAwards(id).m;
     if (m) m.awards = pack;
@@ -264,8 +273,8 @@
     if (!md || !no || !date) { if (err) err.textContent = 'Выберите медаль, номер приказа и дату.'; return; }
     const cur = rawAwards(id).list;
     if (cur.some(x => x && (x.medal === md.id || String(x.title || '').replace(/\s+/g, ' ').trim() === md.title))) { if (err) err.textContent = 'Эта медаль уже выдана.'; return; }
-    const row = Object.assign({}, md, { date, no, basis: 'Приказ о награждении № ' + no + ' от ' + date });
-    if (grant) { row.grant = grant; row.note = grant; }
+    const row = { medal: md.id, title: md.title, date, no, basis: 'Приказ о награждении № ' + no + ' от ' + date };
+    if (grant) { row.grant = grant; row.note = grant.slice(0, 300); }
     const bt = form.querySelector('[type=submit]');
     if (bt) bt.disabled = true;
     try { await writeAwards(id, cur.concat(row)); closeGive(); }
@@ -325,4 +334,5 @@
   window.VPPKA_AWARD_LIST = list;
   window.VPPKA_AWARD_VIEW = viewHtml;
   window.VPPKA_MEDALS = MEDALS;
+  window.VPPKA_AWARD_PACK = packAwards;
 })();
