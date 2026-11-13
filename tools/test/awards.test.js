@@ -106,3 +106,19 @@ test('в вёрстке корочка откидывается трансфор
   assert.doesNotMatch(css, /\.aw-img\{[^}]*animation:[^;]*infinite/);
   assert.doesNotMatch(css, /\.aw-cover\{[^}]*animation:\s*[^;]*infinite/);
 });
+
+test('v273: запись наград без undefined; medal из каталога (старая строка с id вместо medal)', () => {
+  const pack = window.VPPKA_AWARD_PACK;
+  const md = window.VPPKA_MEDALS[0];
+  const legacy = Object.assign({}, md, { date: '12.11.2026', no: '2', basis: 'Приказ о награждении № 2 от 12.11.2026', grant: '-', note: '-' });
+  const fresh = { medal: 'oct-109', title: md.title, date: '12.11.2026', no: '2', basis: 'x' };
+  for (const row of [legacy, fresh]) {
+    const [o] = pack([row]);
+    assert.equal(o.medal, 'oct-109');
+    for (const [k, v] of Object.entries(o)) assert.notEqual(v, undefined, k);
+    assert.ok(!('id' in o));
+    assert.equal(o.image, 'img/demo/medal-109.webp');
+  }
+  assert.throws(() => pack([{ title: 'Чужая', date: '1', no: '1' }]));
+  assert.equal(pack([Object.assign({}, fresh, { note: 'x'.repeat(400) })])[0].note.length, 300);
+});

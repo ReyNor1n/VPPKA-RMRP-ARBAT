@@ -1326,3 +1326,19 @@ body.aw-lock{overflow:hidden}
 .mpg>.prof.blk>div.prof-col>.tbl{display:block;flex:0 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
 @media(max-width:860px){.mpg>.prof.blk>div.prof-col>.tbl{margin-top:8px!important}.mpg>.prof.blk>div.prof-col>.amut{flex:0 1 auto;min-height:1.4em;overflow:hidden}}
 @media(max-width:860px){.mpg>.prof.blk:has(.prof-btns) .prof-ph{max-height:170px;width:min(128px,36vw)!important}}
+
+/* v273: «История званий» и «Личные данные» в профиле не показываются (на случай старого rh.js из кэша) */
+#app .blk.rh,#app .blk.pvx{display:none!important}
+
+/* v273: строка действий под карточкой профиля — вплотную к рамке, по ширине карточки, неприметно (как «Обязанности») */
+.mpg>.under-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:6px 0 0;padding:0;max-width:100%;min-width:0}
+.mpg>.under-bar:empty{display:none}
+.mpg>.prof.blk:has(+.under-bar:not(:empty)){margin-bottom:0}
+.mpg>.under-bar .btn{min-height:30px;padding:5px 10px;font:600 10.5px var(--fd);letter-spacing:.12em;text-transform:uppercase;color:#a89366!important;background:transparent;outline:0;border:1px solid rgba(198,161,90,.38);box-shadow:none;filter:none;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.mpg>.under-bar .btn:hover,.mpg>.under-bar .btn:focus-visible{color:#c6a15a!important;background:rgba(198,161,90,.10);border-color:rgba(198,161,90,.6);outline:none}
+.mpg>.under-bar .amut{font-size:11px;color:#8a8170;margin:0}
+@media(min-width:861px){
+ .mpg:has(>.under-bar:not(:empty)){grid-template-rows:auto auto auto auto 1fr}
+ .mpg:has(>.under-bar:not(:empty))>.mpg-side{grid-row:3/6}
+ .mpg>.under-bar{grid-column:1;grid-row:4;align-self:start}
+}
