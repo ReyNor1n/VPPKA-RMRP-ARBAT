@@ -122,3 +122,27 @@ test('v273: запись наград без undefined; medal из катало�
   assert.throws(() => pack([{ title: 'Чужая', date: '1', no: '1' }]));
   assert.equal(pack([Object.assign({}, fresh, { note: 'x'.repeat(400) })])[0].note.length, 300);
 });
+
+test('v274: в удостоверении (бланк-картинка) — данные награждённого, а не m11', () => {
+  const md = window.VPPKA_MEDALS[0];
+  window.VPPKA_DATA = { members: [
+    { id: 'm4', name: 'Быков Виталий Андреевич', role: 'Заместитель Председателя ЦК', discordId: '111111111111111111' },
+    { id: 'p_x', name: 'Быков Виталий Андреевич', role: 'Активист', discordId: '111111111111111111', statik: '504-426' },
+    { id: 'p_y', name: 'Иванова Анна Петровна', role: 'Член партии' },
+  ] };
+  const aw = { medal: md.id, head: md.head, coverTo: md.coverTo, title: md.title, years: md.years, image: md.image, spread: md.spread, full: true, cert: true, date: '12.11.2026', no: '2', basis: 'Приказ о награждении № 2 от 12.11.2026', grant: '-' };
+  const who = window.VPPKA_AWARD_HOLDER(window.VPPKA_DATA.members[0]);
+  assert.equal(JSON.stringify(who), JSON.stringify({ name: 'Быков Виталий Андреевич', pass: '504-426', rank: 'Активист', post: 'Заместитель Председателя ЦК' }));
+  const [it] = list([aw]);
+  const html = view(it, who);
+  assert.match(html, /Быков Виталий Андреевич/);
+  assert.doesNotMatch(html, /Ульянов/);
+  assert.match(html, /№ 002/);
+  assert.match(html, /Звание: Активист/);
+  assert.match(html, /Должность: Заместитель Председателя ЦК/);
+  assert.match(html, /награждён юбилейной медалью «109 лет Октябрьской революции»/);
+  assert.match(html, /Дата выдачи: 12\.11\.2026/);
+  assert.doesNotMatch(html, /за -/);
+  const her = window.VPPKA_AWARD_HOLDER(window.VPPKA_DATA.members[2]);
+  assert.match(view(list([{ ...aw, grant: 'активную работу' }])[0], her), /награждена[\s\S]*за активную работу/);
+});

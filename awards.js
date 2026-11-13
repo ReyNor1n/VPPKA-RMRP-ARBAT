@@ -51,7 +51,53 @@
     return out;
   }
   let shown = [];
-  let holder = { name: 'не указано', pass: '' };
+  let holder = { name: 'не указано', pass: '', rank: '', post: '' };
+  // v274: данные награждённого для удостоверения — из его карточки (и парной карточки того же человека: p_ ↔ место руководства)
+  const nt1 = s => String(s ?? '').replace(/\s+/g, ' ').trim();
+  function holderOf(m) {
+    const ms = (window.VPPKA_DATA && window.VPPKA_DATA.members) || [];
+    const did = /^\d{15,21}$/.test(String(m.discordId || '')) ? String(m.discordId) : '';
+    const kin = did ? ms.filter(x => x && x.id !== m.id && String(x.discordId || '') === did && nt1(x.name) && nt1(x.name) !== 'Вакансия') : [];
+    const isP = x => String(x.id || '').startsWith('p_');
+    const pc = isP(m) ? m : kin.find(isP);
+    const sc = !isP(m) ? m : kin.filter(x => !isP(x)).sort((a, b) => (Number(b.rank) || 0) - (Number(a.rank) || 0))[0];
+    const stat = id => { try { return nt1(window.VPPKA_STATIK && window.VPPKA_STATIK(id)); } catch (e) { return ''; } };
+    const pick = k => nt1(m[k]) || nt1((kin.find(x => nt1(x[k])) || {})[k]);
+    return {
+      name: nt1(m.name).slice(0, 120) || 'не указано',
+      pass: (stat(m.id) || kin.map(x => stat(x.id)).find(Boolean) || pick('statik') || pick('passport') || '').slice(0, 32),
+      rank: nt1(pc && (pc.title || pc.role)).slice(0, 80),
+      post: nt1(sc && sc.role).slice(0, 120),
+    };
+  }
+  // «награждён» / «награждена» по отчеству (…вна, …чна, …кызы); иначе — как в бланке
+  function awarded(name) { const p = nt1(name).split(' ')[2] || ''; return /(вна|чна|кызы)$/i.test(p) ? 'награждена' : 'награждён'; }
+  // творительный падеж для «Юбилейная медаль» → «юбилейной медалью» (прилагательное -ая → -ой, медаль → медалью)
+  function instr(h) { return nt1(h).toLowerCase().split(' ').map(w => w === 'медаль' ? 'медалью' : w.replace(/ая$/, 'ой').replace(/ий$/, 'им').replace(/ый$/, 'ым').replace(/орден$/, 'орденом').replace(/знак$/, 'знаком')).join(' '); }
+  const certNo = no => /^\d{1,2}$/.test(String(no)) ? String(no).padStart(3, '0') : String(no || '000');
+  const meaningful = s => /[\p{L}\p{N}]/u.test(String(s || ''));
+  // Текст поверх бланка (картинка разворота): правая страница заполняется данными награждённого;
+  // заголовок «УДОСТОВЕРЕНИЕ», подпись председателя, автограф и печать остаются из бланка.
+  function fillHtml(it, who) {
+    const medal = (it.head ? instr(it.head) + ' ' : '') + it.title + (it.years ? ' (' + it.years.replace(/\s*—\s*/, '—') + ')' : '') + '.';
+    const lines = [];
+    lines.push('статик / № паспорта: ' + (who.pass || 'не указан'));
+    if (who.rank) lines.push('Звание: ' + who.rank);
+    if (who.post && who.post !== who.rank) lines.push('Должность: ' + who.post);
+    lines.push(awarded(who.name) + ' ' + medal);
+    if (meaningful(it.grant)) lines.push(/^за\s/i.test(it.grant) ? it.grant : 'за ' + it.grant);
+    if (it.basis) lines.push(it.basis);
+    if (it.date) lines.push('Дата выдачи: ' + it.date);
+    return `<div class="aw-fill"><div class="aw-fill-no">№ ${esc(certNo(it.no))}</div><div class="aw-fill-that">Настоящим удостоверяется, что</div><div class="aw-fill-fio">${esc(who.name)}</div><div class="aw-fill-line"></div><div class="aw-fill-cap">(фамилия, имя, отчество)</div><div class="aw-fill-body">${lines.map(l => `<p>${esc(l)}</p>`).join('')}</div></div>`;
+  }
+  // уменьшить шрифт текста, если строк больше, чем помещается до подписи
+  function fitFill(root) {
+    const b = root && root.querySelector('.aw-fill-body');
+    if (!b) return;
+    let f = 1;
+    b.style.fontSize = '';
+    while (b.scrollHeight > b.clientHeight + 1 && f > 0.62) { f -= 0.04; b.style.fontSize = (0.66 * f).toFixed(3) + 'em'; }
+  }
   let viewId = '';
   // Каталог медалей. Картинки и текст корочки берутся отсюда, чтобы удостоверение заполнялось как у уже выданных.
   const MEDALS = [{
@@ -89,10 +135,7 @@
     const items = own.length ? own : (m.id === 'm11' ? list(M11) : []);
     viewId = m.id;
     shown = items;
-    holder = {
-      name: String((m && m.name) || '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'не указано',
-      pass: String((m && (m.statik || m.passport)) || '').replace(/\s+/g, ' ').trim().slice(0, 32),
-    };
+    holder = holderOf(m);
     const owner = isOwner();
     const cells = items.map((it, i) => {
       const tip = esc(it.date ? it.title + ', ' + it.date : it.title);
@@ -137,7 +180,7 @@
     if (it.full && it.spread) {
       const src = esc(it.spread);
       const bar = `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div>`;
-      return `${bar}<div class="aw-scene"><div class="aw-fit"><div class="aw-book"><img class="aw-cert" src="${src}" alt="Удостоверение № ${esc(it.no)}"><div class="aw-spread aw-half aw-half-r" style="background-image:url('${src}')"></div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in aw-half aw-half-l" style="background-image:url('${src}')"></span></span></button></div></div></div>`;
+      return `${bar}<div class="aw-scene"><div class="aw-fit"><div class="aw-book"><img class="aw-cert" src="${src}" alt="Удостоверение № ${esc(certNo(it.no))}, ${esc((person || holder).name)}"><div class="aw-spread aw-half aw-half-r" style="background-image:url('${src}')"></div>${fillHtml(it, person || holder)}<button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in aw-half aw-half-l" style="background-image:url('${src}')"></span></span></button></div></div></div>`;
     }
     const left = leftPage(it);
     return `<div class="aw-bar"><button type="button" data-awz="out" aria-label="Мельче">−</button><button type="button" data-awz="fit">Уместить</button><button type="button" data-awz="in" aria-label="Крупнее">+</button><button type="button" class="aw-back" hidden>Назад</button><button type="button" class="aw-x">Закрыть</button></div><div class="aw-scene"><div class="aw-fit"><div class="aw-book"><div class="aw-spread" aria-hidden="true">${rightPage(it, person)}</div><button type="button" class="aw-cover" aria-expanded="false" aria-label="УДОСТОВЕРЕНИЕ. Открыть книжечку"><span class="aw-skin">${coverFace(it)}<span class="aw-face-in">${left}</span></span></button><p class="aw-foot">Внутриигровой документ. Образец бланка, не печать.</p></div></div></div>`;
@@ -217,6 +260,8 @@
     const cover = v.querySelector('.aw-cover');
     if (cover) cover.focus();
     place();
+    fitFill(v);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitFill(v));
   }
   function focusables(v) {
     return [...v.querySelectorAll('button,a[href]')].filter(el => !el.disabled && !el.hidden && el.tabIndex !== -1);
@@ -334,5 +379,6 @@
   window.VPPKA_AWARD_LIST = list;
   window.VPPKA_AWARD_VIEW = viewHtml;
   window.VPPKA_MEDALS = MEDALS;
+  window.VPPKA_AWARD_HOLDER = holderOf;
   window.VPPKA_AWARD_PACK = packAwards;
 })();
