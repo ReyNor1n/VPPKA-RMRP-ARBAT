@@ -1342,3 +1342,14 @@ body.aw-lock{overflow:hidden}
  .mpg:has(>.under-bar:not(:empty))>.mpg-side{grid-row:3/6}
  .mpg>.under-bar{grid-column:1;grid-row:4;align-self:start}
 }
+
+/* v274: правая страница бланка-картинки заполняется данными награждённого (координаты — по бланку 1118×409) */
+.aw-fill{position:absolute;left:51.88%;top:13.69%;width:45.97%;height:51.1%;background:#f7f1e3;z-index:1;color:#1f1a16;font-family:"Times New Roman","Liberation Serif",Tinos,Times,Georgia,serif;font-synthesis:none;pointer-events:none;overflow:hidden}
+.aw-fill>div{position:absolute;line-height:1.15;white-space:nowrap}
+.aw-fill-no{left:0;right:0;top:1%;text-align:center;font-weight:700;font-size:.74em;padding-left:2%}
+.aw-fill-that{left:1.56%;top:13.6%;font-size:.66em}
+.aw-fill-fio{left:1.56%;right:5.3%;top:23.4%;text-align:center;font-weight:700;font-size:.78em;overflow:hidden;text-overflow:ellipsis}
+.aw-fill-line{left:1.56%;width:93.2%;top:32.4%;border-top:1px solid #3a332c}
+.aw-fill-cap{left:1.56%;right:5.3%;top:36.4%;text-align:center;font-size:.36em;color:#5c5146}
+.aw-fill-body{left:1.56%;right:3%;top:42.6%;bottom:0;font-size:.66em;white-space:normal!important;line-height:1.36!important;overflow:hidden}
+.aw-fill-body p{margin:0}
