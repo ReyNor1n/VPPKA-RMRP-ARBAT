@@ -1,14 +1,14 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=276';
-import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=276';
-import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=276';
-import {anLoad,anHTML,anClick} from './admin-an.js?v=276';
-import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=276';
-import {layLoad,layHTML,layClick} from './admin-lay.js?v=276';
-import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=276';
-import {logLoad,logHTML,logClick,logChange,logInput,logAllowed} from './admin-log.js?v=276';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=277';
+import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=277';
+import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=277';
+import {anLoad,anHTML,anClick} from './admin-an.js?v=277';
+import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=277';
+import {layLoad,layHTML,layClick} from './admin-lay.js?v=277';
+import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=277';
+import {logLoad,logHTML,logClick,logChange,logInput,logAllowed} from './admin-log.js?v=277';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
@@ -93,7 +93,7 @@ function editor(){
  const asTpl=e.col!=='content'&&!lite?`<button type="button" class="btn sm o" id="ad-as-tpl">Сохранить как шаблон</button>`:'';
  const ro=lite&&!canSave?`<p class="amut">Только просмотр: ${e.col==='members'&&caps('members').edit?'эту карточку вы не меняете (ступень, защищённое место или место владельца).':'изменить этот документ можно только владельцу.'}</p>`:'';
  return `<div class="af-top">${lite?'':`<label class="af-sw"><input type="checkbox" id="ad-expert"${state.expert?' checked':''}><span>Экспертный режим (JSON)</span></label>`}<span class="af-dirty" id="ad-dirty"${state.dirty&&canSave?'':' hidden'}>● есть несохранённые изменения</span></div>
- ${ro}${note}${idBox}${hn?`<p class="amut">${esc(hn)}</p>`:''}${body}
+ ${ro}${note}${idBox}${e.col==='news'&&e.isNew&&canSave?`<label class="af-sw"><input type="checkbox" id="ad-news-dc"${e.dc===false?'':' checked'}><span>Отправить в Discord (канал новостей)</span></label>`:''}${hn?`<p class="amut">${esc(hn)}</p>`:''}${body}
  <details class="adm-live" id="ad-live"${open?' open':''}><summary>Как это выглядит на сайте</summary><div id="ad-prev">${preview(e.kind,e.data,siteNow())}</div></details>
  ${lite?'':histHTML()}${tpls.length&&e.col!=='content'&&!lite?`<p class="amut">Свои шаблоны хранятся в config/adminTemplates и видны только владельцу.</p>`:''}
  <div class="af-bar">${canSave?`<button type="button" class="btn sm" id="ad-save">Сохранить</button> <button type="button" class="btn sm o" id="ad-cancel">Отменить</button>`:`<button type="button" class="btn sm o" id="ad-close">Закрыть</button>`} ${asTpl}</div>`;
@@ -194,6 +194,8 @@ async function save(){
  if(needsTechConfirm(body,id)&&!confirm('Место m11 закреплено за начальником технического отдела. Сменить должность?'))return;
  if(e.col==='members'&&e.isNew&&isProtected(id)&&!confirm('Идентификатор '+id+' — защищённое место. Перезаписать документ?'))return;
  state.busy=true;say('Сохранение…');refresh();
+ // v277: новость, созданная здесь, уходит в Discord (как из панели «Новости»); правка существующей — не отправляется повторно
+ const wantDc=e.col==='news'&&e.isNew&&e.dc!==false;let newsSent='',okNote='';
  try{const f=F();
   let note='';
   if(e.base&&!lite){const ok=await pushHist(e.col,id||e.id,e.base);if(!ok)note+=' Снимок истории не записан: документ слишком большой.'}
@@ -209,18 +211,30 @@ async function save(){
   }else{
    const rev=revive(strip(body),f);
    if(e.col==='events'){if(rev.status==='ended'){if(!e.base||e.base.status!=='ended'){rev.endedAt=f.serverTimestamp();rev.endedBy=FB().user.uid}else{if(e.base.endedAt)rev.endedAt=revive(e.base.endedAt,f);if(e.base.endedBy)rev.endedBy=e.base.endedBy}}rev.updatedAt=Date.now();if(e.isNew)rev.createdBy=FB().user.uid}
-   if(e.col==='news'&&e.isNew&&!rev.author)rev.author=FB().user.uid;
+   // v277: новая новость из админ-панели — как в панели «Новости» (panel.js pn-save): автор и время создания сервера
+   if(e.col==='news'&&e.isNew){if(!rev.author)rev.author=FB().user.uid;rev.createdAt=f.serverTimestamp()}
    if(e.col==='votes'&&e.isNew){rev.createdBy=FB().user.uid;if(rev.createdAt==null)rev.createdAt=Date.now()}
    if(e.col==='notifications'&&e.isNew&&lite){rev.author=FB().user.uid;rev.createdAt=f.serverTimestamp();for(const k of ['to','seat','when','authorName'])if(rev[k]===''||rev[k]==null)delete rev[k];if(pw().roleName&&!rev.authorName)rev.authorName=String(pw().roleName).slice(0,120)}
    if(e.isNew&&!id){if(!AUTO_ID.has(e.col))throw new Error('Укажите идентификатор документа.');const ref=await f.addDoc(f.collection(db(),e.col),rev);id=ref.id}
    else{if(!id)throw new Error('Укажите идентификатор документа.');await f.setDoc(f.doc(db(),e.col,id),rev)}
+   if(e.col==='news'&&e.isNew){newsSent=id;
+    // чтобы повторное сохранение из того же редактора не стёрло автора и время создания
+    body.author=rev.author;try{const s=await f.getDoc(f.doc(db(),'news',id));const c=s.exists()&&s.data().createdAt;if(c)body.createdAt=plain(c)}catch(err){}}
    if(e.col==='news'&&window.VPPKA_RELOAD)window.VPPKA_RELOAD();
   }
   e.id=id;e.isNew=false;e.data=clone(body);e.base=clone(body);state.dirty=false;state.fieldErr={};state.hist=await loadHist(e.col,id);
   if(e.col!=='content'){const i=(state.rows||[]).findIndex(r=>r.id===id);const row={id,data:clone(body)};if(i>=0)state.rows[i]=row;else if(state.rows)state.rows.unshift(row)}
-  say('Сохранено.'+note,true);
- }catch(err){say(errText(err))}finally{state.busy=false;refresh()}
+  okNote=note;say('Сохранено.'+note+(wantDc&&newsSent?' Отправка в Discord…':''),true);
+ }catch(err){newsSent='';say(errText(err))}finally{state.busy=false;refresh()}
+ if(wantDc&&newsSent)await sendNewsDc(newsSent,okNote);
 }
+// v277: отправка новости в Discord через бота (discordOut → b_news), как panel.js; «Начальник пресс-службы» без полных прав — со своей карточкой
+const PRESS_POS='Начальник пресс-службы';
+function pressCardA(){const did=myDidV();if(!/^\d{15,21}$/.test(did))return '';const m=((((window.VPPKA_DATA||{}).members)||[])).find(x=>x&&String(x.discordId||'')===did&&Array.isArray(x.subPositions)&&x.subPositions.includes(PRESS_POS));return m?m.id:''}
+const newsFullA=()=>superOn()||(pw().tier|0)>=4||!!pw().chief;
+async function sendNewsDc(nid,note){let r;
+ try{const m=await import('./discord-targets.js?v=277');const pc=newsFullA()?'':pressCardA();r=pc?await m.sendVia('news',nid,'b_news',undefined,{card:pc}):await m.sendVia('news',nid,'b_news')}catch(err){r=err&&err.message||String(err)}
+ say('Сохранено.'+(note||'')+(r===true?' Отправлено в Discord.':' Discord: '+r),r===true);refresh()}
 async function delDoc(col,id){
  const row=(state.rows||[]).find(r=>r.id===id);const data=row?row.data:(state.edit&&state.edit.id===id?state.edit.data:null);
  if(!superOn()&&!rowCaps(col,id,data).del){say('Нет прав на удаление.');refresh();return}
@@ -295,6 +309,7 @@ async function onChange(e){if(!onAdmin()||!canAdmin())return;
  if(MOD[state.tab]){const M=MOD[state.tab];if(M.change&&(!M.own||superOn()))M.change(e,refresh);return}
  if(state.tab==='keys'){keysInput(e.target);return}
  if(state.tab==='dch'&&superOn()&&e.target.dataset&&(e.target.dataset.dch||e.target.dataset.dchid)){dchChange(e.target,refresh);return}
+ if(e.target.id==='ad-news-dc'){if(state.edit)state.edit.dc=!!e.target.checked;return}
  if(e.target.id==='ad-expert'){if(!superOn())return;if(!state.edit)return;if(e.target.checked){state.expert=true;refresh();return}try{const obj=JSON.parse(document.getElementById('ad-json').value);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw new Error('Нужен объект JSON.');state.edit.data=obj;state.expert=false;state.fieldErr={};touch();refresh()}catch(err){say('JSON: '+err.message);refresh()}return}
  const file=e.target.closest&&e.target.closest('[data-affile]');if(!file||!file.files||!file.files[0]||!state.edit)return;
  try{let url=await fileToData(file.files[0]);const pk=JSON.parse(file.dataset.affile).filter(x=>typeof x==='string').pop();if(['members','news','users'].includes(state.tab)&&/^(photo|photos|image|avatar)$/.test(pk||''))url=await window.VPPKA_PH.up(url);setPath(state.edit.data,JSON.parse(file.dataset.affile),url);touch();refresh();schedulePreview()}catch(err){say(err.message||String(err));refresh()}}
