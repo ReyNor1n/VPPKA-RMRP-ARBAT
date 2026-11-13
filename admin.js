@@ -1,24 +1,26 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=275';
-import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=275';
-import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=275';
-import {anLoad,anHTML,anClick} from './admin-an.js?v=275';
-import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=275';
-import {layLoad,layHTML,layClick} from './admin-lay.js?v=275';
-import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=275';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=276';
+import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=276';
+import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=276';
+import {anLoad,anHTML,anClick} from './admin-an.js?v=276';
+import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=276';
+import {layLoad,layHTML,layClick} from './admin-lay.js?v=276';
+import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=276';
+import {logLoad,logHTML,logClick,logChange,logInput,logAllowed} from './admin-log.js?v=276';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
 const onAdmin=()=>(location.hash.slice(1)||'').split('/')[0]==='admin';
 // «Каналы Discord» (dch) — только владелец: в LITE его нет, поэтому сокращённой панели вкладка не показывается.
-const ALL_TABS=[['an','Объявления'],...CONTENT,...COLS.map(([id,t])=>[id,t]),['cfg','Настройки сайта'],['lay','Раскладка страниц'],['dch','Каналы Discord'],['keys','Ключи доступа'],['raw','Коллекция']];
+const ALL_TABS=[['an','Объявления'],...CONTENT,...COLS.map(([id,t])=>[id,t]),['log','Журнал изменений'],['cfg','Настройки сайта'],['lay','Раскладка страниц'],['dch','Каналы Discord'],['keys','Ключи доступа'],['raw','Коллекция']];
 // v262: отдельные разделы-модули (своё состояние, загрузка и кнопки). cfg и lay — только владелец (в LITE их нет).
-const MOD={an:{load:anLoad,html:anHTML,click:anClick},cfg:{load:cfgLoad,html:cfgHTML,click:cfgClick,own:1},lay:{load:layLoad,html:layHTML,click:layClick,own:1}};
+// v276: «Журнал изменений» — владелец, m13 и m12 (logAllowed; правила auditLog)
+const MOD={an:{load:anLoad,html:anHTML,click:anClick},log:{load:logLoad,html:logHTML,click:logClick,change:logChange},cfg:{load:cfgLoad,html:cfgHTML,click:cfgClick,own:1},lay:{load:layLoad,html:layHTML,click:layClick,own:1}};
 const modLoaded=new Set();
 // Вкладки сгруппированы, чтобы панель была компактной (пустые для зрителя группы не показываются)
-const TAB_GROUPS=[['Публикации',['an','news','events','votes','banners','notifications']],['Тексты страниц',['site','home','about','program','charter','legal','contacts','leadership']],['Люди и доступ',['members','users','applications','keys','chats']],['Настройки',['cfg','lay','dch','raw']]];
+const TAB_GROUPS=[['Публикации',['an','news','events','votes','banners','notifications']],['Тексты страниц',['site','home','about','program','charter','legal','contacts','leadership']],['Люди и доступ',['members','users','applications','keys','chats','log']],['Настройки',['cfg','lay','dch','raw']]];
 // «Ключи доступа» — только ступень 7+ (владелец видит всегда; сокращённой панели — если ключ ступени 7).
 // Сокращённая панель (ступень 5+, не владелец). Права — по firestore.rules: правила остаются единственной защитой, здесь только интерфейс.
 // add — создать, edit — сохранить правку, del — удалить; без edit документ открывается только для просмотра.
@@ -59,7 +61,7 @@ function memberCaps(id,d){d=d||{};if(superOn())return OWNER_CAPS;const v=viewer(
  return {edit:tierOk||raOk?1:0,del:delOk?1:0}}
 const liteOn=()=>!superOn()&&!!(FB()&&FB().user)&&(((pw().tier|0)>=5&&(pw().rank|0)>0)||!!pw().siteAdm);
 const canAdmin=()=>superOn()||liteOn();
-const TABS_NOW=()=>superOn()?ALL_TABS:ALL_TABS.filter(([id])=>LITE[id]||(id==='keys'&&keysAllowed()));
+const TABS_NOW=()=>superOn()?ALL_TABS:ALL_TABS.filter(([id])=>LITE[id]||(id==='keys'&&keysAllowed())||(id==='log'&&logAllowed()));
 const caps=tab=>superOn()?OWNER_CAPS:(liteCaps(tab)||{});
 const rowCaps=(col,id,d)=>{if(col==='content'&&!superOn())return {};const c=caps(col);if(superOn()||col!=='members')return c;const m=memberCaps(id,d);return {...c,edit:c.edit&&m.edit,del:c.del&&m.del}};
 function fixTab(){const t=TABS_NOW();if(!t.some(([id])=>id===state.tab)){state.tab=t[0][0];state.rows=null;state.edit=null}}
@@ -277,6 +279,7 @@ async function onClick(e){
 }
 function onInput(e){if(!onAdmin()||!canAdmin())return;
  if(state.tab==='keys'){keysInput(e.target);return}
+ if(state.tab==='log'){logInput(e);return}
  if(state.tab==='dch'&&superOn()&&e.target.dataset&&(e.target.dataset.dchid||e.target.dataset.dchlab)){dchChange(e.target,refresh);return}
  if(e.target.id==='ad-q'){state.q=e.target.value;const host=document.getElementById('ad-list');if(host)host.innerHTML=rowsHTML();return}
  if(e.target.id==='ad-docid'&&state.edit){state.edit.id=e.target.value;return}
