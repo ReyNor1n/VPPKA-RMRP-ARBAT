@@ -16,8 +16,9 @@ export async function fillTarget(hostId,selId,kind,val){const T=await loadTarget
 export async function sentTarget(ref){const T=await loadTargets(true);return (T&&T.sent&&T.sent[ref])||''}
 // -> true | текст ошибки
 // roles (v262, необязательно) — id ролей для упоминания; бот пропускает только роли из «Настроек сайта», @everyone — никогда
-export async function sendVia(kind,ref,target,roles){const f=F();try{
- const o={kind,ref,target,by:FB().user.uid,at:f.serverTimestamp()};if(Array.isArray(roles))o.roles=roles.slice(0,5).map(String);
+// extra (v272, необязательно): {card} — карточка «Начальника пресс-службы»; правила проверяют её доп. должность
+export async function sendVia(kind,ref,target,roles,extra){const f=F();try{
+ const o={kind,ref,target,by:FB().user.uid,at:f.serverTimestamp()};if(Array.isArray(roles))o.roles=roles.slice(0,5).map(String);if(extra&&typeof extra.card==='string'&&extra.card)o.card=extra.card;
  const r=await f.addDoc(f.collection(db(),'discordOut'),o);
  return await new Promise(res=>{let un=()=>{};const to=setTimeout(()=>{un();res('бот ещё не ответил — сообщение уйдёт, когда он обработает очередь.')},45000);
   un=f.onSnapshot(r,s=>{const d=s.data()||{};if(d.status==='sent'){clearTimeout(to);un();res(true)}else if(d.status==='error'){clearTimeout(to);un();res(String(d.err||'ошибка'))}},()=>{})})}

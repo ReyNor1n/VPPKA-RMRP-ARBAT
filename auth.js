@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=271';
+import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=272';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -256,8 +256,10 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  // Живая проверка полномочий: владелец (config/owners) или действующий ключ, привязанный к этому Discord
  async function refreshPower(){await refreshPower0();if(user&&profile)syncPhoto(false).catch(e=>console.warn('автофото',e.code||e));}
  async function refreshPower0(){power={rank:0,roleName:''};if(!user)return;
-  try{const o=await F.getDoc(F.doc(db,'config','owners'));if(o.exists()&&(o.data().uids||[]).includes(user.uid)){power={rank:1000,tier:9,roleName:(profile&&profile.roleName)||'Владелец',members:true,owner:true};return;}}catch(e){}
+  try{const o=await F.getDoc(F.doc(db,'config','owners'));if(o.exists()&&(o.data().uids||[]).includes(user.uid)){power={rank:1000,tier:9,roleName:(profile&&profile.roleName)||'Владелец',members:true,owner:true,chief:true};return;}}catch(e){}
   const h=profile&&profile.keyHash;if(!h)return;try{const s=await F.getDoc(F.doc(db,'accessKeys',h));const x=s.exists()&&s.data();if(x&&!x.revoked&&x.discordId===profile.discordId&&user.email===profile.discordId+'@vppka.local')power={rank:x.rank,tier:x.tier||0,roleName:x.roleName,chair:x.canEditChairman===true,members:x.canViewMembers===true};}catch(e){}
+  // v272: Председатель ЦК (m1) и замы (m4, m5) — все права сайта, кроме админских. Кто они — по местам (members/m1, m4, m5), как в правилах.
+  try{const did=profile&&profile.discordId;if(did&&user.email===did+'@vppka.local'){const ds=await Promise.all(['m1','m4','m5'].map(i=>F.getDoc(F.doc(db,'members',i))));if(ds.some(s=>s.exists()&&String(s.data().discordId||'')===String(did))){power.chief=true;power.members=true}}}catch(e){}
  }
  // Автофото: «Фото для карточки» из профиля (нет его — аватар) копируется во все записи состава с тем же discordId:
  // карточку «Члены партии» (p_*) и места руководства (m*). force — пользователь только что сменил фото: заменяем;
@@ -298,7 +300,7 @@ auth=A.getAuth(app);db=F.getFirestore(app);
  }
 
  async function loadContent(){try{for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership','settings'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));window.VPPKA_TPL_READY=true;if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part);else if((location.hash.slice(1)||'').split('/')[0]==='member')window.route&&window.route()}finally{if(!window.VPPKA_TPL_READY){window.VPPKA_TPL_READY=true;if((location.hash.slice(1)||'').split('/')[0]==='member')window.route&&window.route()}}}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=271').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=271').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=271').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=271').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=271').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=271').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=271').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=271').then(m=>m.install()).catch(e=>console.error('admin',e));
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=272').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=272').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=272').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=272').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=272').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=272').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=272').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=272').then(m=>m.install()).catch(e=>console.error('admin',e));
 // аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false,oaRan=false;
 // authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена

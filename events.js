@@ -4,7 +4,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const can=()=>{const p=(FB()&&FB().power)||{};return (p.rank||0)>=1000||!!p.owner||(p.tier||0)>=4};
 const ended=e=>!!(e&&e.status==='ended');
 // удаление — только через корзину eventsArchive; завершённое с отметками удаляет только владелец (остальным — «Скрыть»).
-const isOwn=()=>{const p=(FB()&&FB().power)||{};return !!p.owner||(p.rank||0)>=1000};
+const isOwn=()=>{const p=(FB()&&FB().power)||{};return !!p.owner||!!p.chief||(p.rank||0)>=1000}; // v272: + руководство (m1, m4, m5)
 const hasAtt=e=>!!(e&&Array.isArray(e.att)&&e.att.length);
 const locked=e=>ended(e)&&hasAtt(e);
 const canDel=e=>can()&&(isOwn()||!locked(e));
