@@ -24,19 +24,34 @@ const PRESS_POS='Начальник пресс-службы';
 function pressCard(){const did=String(((window.VPPKA_AUTH||{}).profile||{}).discordId||'');if(!/^\d{15,21}$/.test(did))return '';const m=(D().members||[]).find(x=>x&&String(x.discordId||'')===did&&Array.isArray(x.subPositions)&&x.subPositions.includes(PRESS_POS));return m?m.id:''}
 const newsFull=()=>tier()>=4||chief()||isSuper();
 const newsPress=()=>!newsFull()&&!!pressCard();
-function newsPanel(){const n=editNews||{};const me=(FB().user||{}).uid,press=newsPress();const list=(D().news||[]).filter(x=>!press||x.author===me).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
- return head(editNews?'Редактировать новость':'Добавить новость')+`<div class="kp-f"><label class="fl">Заголовок *<input id="pn-t" maxlength="200" value="${esc(n.title)}"></label>
+// v279: «Написать новость» — свёрнутая плашка вверху вкладки «Новости» (только тем, кто может публиковать); по нажатию раскрывается форма.
+// В форме: «Опубликовать в Discord» (по умолчанию да; при правке — «ещё раз», по умолчанию нет) и «Кого упомянуть»:
+// Никого / @everyone / @here / роли из «Настроек сайта» (content/settings.discord.roles). Бот (outbox) сам проверяет каждое упоминание.
+let nwOpen=false,nwStatus=null;const draft={};
+const MAXPING=5;
+function pingRoles(){const c=(window.VPPKA_CFG?window.VPPKA_CFG().discord:null)||{};const roles=(Array.isArray(c.roles)?c.roles:[]).filter(r=>r&&/^\d{15,21}$/.test(String(r.id||''))).slice(0,12);return {roles,def:(c.defRoles||[]).map(String).filter(id=>roles.some(r=>String(r.id)===id))}}
+function pingBox(press){const {roles,def}=pingRoles();const sel=new Set(Array.isArray(draft.ping)?draft.ping:def);
+ const chip=(val,label,title)=>`<label class="nw-chip"${title?` title="${esc(title)}"`:''}><input type="checkbox" data-nwping="${esc(val)}"${val==='none'?(sel.size?'':' checked'):(sel.has(val)?' checked':'')}><span>${esc(label)}</span></label>`;
+ return `<div class="nw-ping"><span class="nw-lbl">Кого упомянуть</span><div class="nw-chips">${chip('none','Никого')}${press?'':chip('everyone','@everyone','Все участники сервера')+chip('here','@here','Только те, кто сейчас в сети')}${roles.map(r=>chip(String(r.id),'@'+String(r.label||r.id).slice(0,40))).join('')}</div><small class="amut nw-hint">Можно выбрать несколько (до ${MAXPING}). Список ролей задаёт владелец в «Настройках сайта».</small></div>`}
+function pingSel(){const c=[...document.querySelectorAll('[data-nwping]')];if(!c.length)return null;const on=c.filter(x=>x.checked).map(x=>x.dataset.nwping);if(!on.length||on.includes('none'))return [];
+ return ['everyone','here'].filter(x=>on.includes(x)).concat(on.filter(x=>/^\d{15,21}$/.test(x))).slice(0,MAXPING)}
+function newsComposer(){const ed=editNews,n=ed||draft,press=newsPress(),dc=ed?!!draft.dcEdit:draft.dc!==false;
+ const st=nwStatus?`<p class="${nwStatus.ok?'af-ok':'aerr'} nw-st" role="status">${esc(nwStatus.t)}</p>`:'';
+ return `<div class="nw${nwOpen?' open':''}" id="nw"><button type="button" class="nw-bar" id="nw-toggle" aria-expanded="${nwOpen}" aria-controls="nw-body"><span class="nw-ic" aria-hidden="true">✍️</span><span class="nw-t">${ed?'Редактирование новости':'Написать новость'}</span><span class="nw-ch" aria-hidden="true">▾</span></button>${st}
+<div class="nw-body kp-f" id="nw-body"${nwOpen?'':' hidden'}>
+ <label class="fl">Заголовок *<input id="pn-t" maxlength="200" value="${esc(n.title)}"></label>
  <label class="fl">Дата *<input id="pn-d" type="date" value="${esc(n.date||today())}"></label>
  <label class="fl">Текст *<textarea id="pn-x" rows="6" maxlength="20000">${esc(n.text)}</textarea></label>
  <label class="fl">Фото (до 4 шт., уменьшаются автоматически)<input id="pn-f" type="file" accept="image/*" multiple></label>
-<div id="pn-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;"></div>
-<small class="amut">Фото сразу появятся ниже. В тексте можно вставить [фото:1], [фото:2] и т.д. на отдельной строке.</small>
- ${(n.photos||[]).length||n.image?`<div class="nphotos">${(n.photos||[]).concat(n.image?[n.image]:[]).map(u=>`<img ${PHA(u,'t')} alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
- <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="3" placeholder="https://youtu.be/…">${esc((n.videos||[]).join('\n'))}</textarea></label>
-
- ${press?'<p class="amut">Вы публикуете как начальник пресс-службы: новость появится на сайте и уйдёт в Discord в канал новостей.</p>':`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=277').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}`}
- <p class="aerr" id="pmsg"></p><button class="btn" id="pn-save">${editNews?'Сохранить':'Опубликовать'}</button>${editNews?' <button class="btn o" id="pn-cancel">Отмена</button>':''}</div>
- ${D().news?`<h3>Опубликованные</h3><table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')}</table>`:'<p class="amut">Новости пока берутся из content.json; после переноса в базу их можно будет править здесь.</p>'}</div>`;}
+ <div id="pn-preview" class="nw-prev"></div>
+ <small class="amut">В тексте можно вставить [фото:1], [фото:2] и т.д. на отдельной строке.</small>
+ ${ed&&((ed.photos||[]).length||ed.image)?`<div class="nphotos">${(ed.photos||[]).concat(ed.image?[ed.image]:[]).map(u=>`<img ${PHA(u,'t')} alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
+ <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="2" placeholder="https://youtu.be/…">${esc(Array.isArray(n.videos)?n.videos.join('\n'):(n.videos||''))}</textarea></label>
+ <fieldset class="nw-dc"><legend>Discord</legend><label class="nw-sw"><input type="checkbox" id="nw-dc"${dc?' checked':''}><span>${ed?'Отправить в Discord ещё раз':'Опубликовать в Discord'}</span></label>
+ <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?'<p class="amut nw-ch1">Канал: 📢 новости (как обычно).</p>':`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=279').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}`}${pingBox(press)}</div></fieldset>
+ <p class="aerr" id="pmsg"></p><div class="nw-act"><button type="button" class="btn" id="pn-save">${ed?'Сохранить':'Опубликовать'}</button><button type="button" class="btn o" id="nw-cancel">Отмена</button></div></div></div>`}
+function newsPanel(){const me=(FB().user||{}).uid,press=newsPress();const list=(D().news||[]).filter(x=>!press||x.author===me).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ return D().news?head(press?'Мои новости':'Опубликованные новости')+`<table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')}</table></div>`:'';}
 
 function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m=>((T>=4&&mt(m)<T&&(m.rank??0)<R)||isCh(m)||chief())&&(isSuper()||!techLocked(m))&&!admBlocked(m)),m=editMem||{rank:10};
  return `<div class="kpanel kpm"><div class="kp-h"><span>// ПАНЕЛЬ</span> <a class="kpm-apps" href="#apps">Заявки в партию →</a></div><details class="kpm-d"${editMem?' open':''}><summary>${editMem&&editMem.id?'✎ Редактировать участника':'+ Добавить участника'}</summary>`+
@@ -318,15 +333,25 @@ document.addEventListener('click',async e=>{const ok=e.target.closest('[data-aqo
  if(op){location.hash='#apps';let i=0;const t=setInterval(()=>{const el=document.getElementById('app-'+op.dataset.aqopen);if(el||++i>40){clearInterval(t);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('aq-hl');setTimeout(()=>el.classList.remove('aq-hl'),2500)}}},150)}});
 let installed=false; // v273: повторный вызов install() не оборачивает P.* второй раз
 export function install(){if(installed)return;installed=true;const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace('<div id="hnote"></div>','<div id="hnote">'+hnHtml()+'</div>')};hnStart();const slot=document.getElementById('hnote');if(slot&&!slot.innerHTML.trim())slot.innerHTML=hnHtml();P.party=()=>{const h0=op();const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"/]+)(?:\/[^"]*)?"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const pw=FB().power||{},ab=[(pw.rank>0)&&'<a class="btn sm o" href="#apps">Заявки в партию</a>',(pw.members||pw.chief||rank()>=1000)&&'<a class="btn sm o" href="#members">Участники партии</a>'].filter(Boolean).join(' ');const hx=ab?h.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="adm-bar">'+ab+'</div>'):h;const g=appBlock()+guestBlock();return g?hx.replace(/<\/div>(\s*)$/,g+'</div>$1'):hx};const on=P.news,ol=P.leadership;installAssign();
- P.news=id=>{const h=on(id);return id===undefined&&(newsFull()||!!pressCard())?h.replace(/<\/div>$/,newsPanel()+'</div>'):h};
+ P.news=id=>{const h=on(id);if(id!==undefined||!(newsFull()||!!pressCard()))return h;const L=newsPanel();return h.replace('<h1>Новости</h1>','<h1>Новости</h1>'+newsComposer()).replace(/<\/div>$/,L+'</div>')};
  P.leadership=()=>{let h=ol();const extra=(tier()>=4||chair()||chief()||isSuper()?memPanel():'')+postPanel();return extra?h.replace(/<\/div>$/,extra+'</div>'):h};
  P.apps=appsPage;P.members=membersPage;const omb=P.member;P.member=(id,from)=>{const h=omb(id,from),b=rkBtn(xMem().find(x=>x.id===id));return b?h.replace('</table>','</table><div class="rk-row">'+b+'</div>'):h};
- document.addEventListener('change',async ev=>{if(ev.target.id==='pn-f'){const prev=document.getElementById('pn-preview');if(!prev)return;prev.innerHTML='';const files=[...ev.target.files].slice(0,4);for(const f of files){try{const u=await smallJpeg(f);const img=document.createElement('img');img.src=u;img.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #333';prev.appendChild(img);}catch(e){}}if(files.length){const ta=document.getElementById('pn-x');if(ta&&!/\[фото:\d+\]/i.test(ta.value)){for(let i=1;i<=files.length;i++)ta.value+='\n\n[фото:'+i+']';}}}});
+ document.addEventListener('input',ev=>{const t=ev.target;if(editNews||!t||!t.id)return;const k={'pn-t':'title','pn-d':'date','pn-x':'text','pn-v':'videos'}[t.id];if(k)draft[k]=t.value});
+ document.addEventListener('change',ev=>{const t=ev.target;if(!t)return;
+  if(t.id==='nw-dc'){const bx=document.getElementById('nw-dcb');if(bx)bx.hidden=!t.checked;if(editNews)draft.dcEdit=t.checked;else draft.dc=t.checked}
+  if(t.dataset&&t.dataset.nwping){const all=[...document.querySelectorAll('[data-nwping]')],v=t.dataset.nwping;
+   if(v==='none'&&t.checked)all.forEach(x=>{if(x!==t)x.checked=false});
+   else if(t.checked){all.forEach(x=>{const w=x.dataset.nwping;if(w==='none'||(v==='everyone'&&w==='here')||(v==='here'&&w==='everyone'))x.checked=false});
+    if(all.filter(x=>x.checked).length>MAXPING){t.checked=false;msg('Не больше '+MAXPING+' упоминаний.')}}
+   if(!all.some(x=>x.checked)){const n0=all.find(x=>x.dataset.nwping==='none');if(n0)n0.checked=true}
+   draft.ping=pingSel()}});
+document.addEventListener('change',async ev=>{if(ev.target.id==='pn-f'){const prev=document.getElementById('pn-preview');if(!prev)return;prev.innerHTML='';const files=[...ev.target.files].slice(0,4);for(const f of files){try{const u=await smallJpeg(f);const img=document.createElement('img');img.src=u;img.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #333';prev.appendChild(img);}catch(e){}}if(files.length){const ta=document.getElementById('pn-x');if(ta&&!/\[фото:\d+\]/i.test(ta.value)){for(let i=1;i<=files.length;i++)ta.value+='\n\n[фото:'+i+']';}}}});
 document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;const d=b.dataset,id=b.id,f=F();
   const done=async t=>{await window.VPPKA_RELOAD();msg(t)};
   try{
-  if(id==='pn-cancel'){editNews=null;window.route();}
-  if(d.ne){editNews=(D().news||[]).find(x=>x.id===d.ne);window.route();}
+  if(id==='nw-toggle'){nwOpen=!nwOpen;nwStatus=null;const w=document.getElementById('nw'),bd=document.getElementById('nw-body'),st=w&&w.querySelector('.nw-st');if(w)w.classList.toggle('open',nwOpen);b.setAttribute('aria-expanded',String(nwOpen));if(bd)bd.hidden=!nwOpen;if(st)st.remove();if(nwOpen){const t=document.getElementById('pn-t');if(t)t.focus({preventScroll:true})}return}
+  if(id==='nw-cancel'||id==='pn-cancel'){const wasEdit=!!editNews;editNews=null;nwOpen=false;nwStatus=null;delete draft.dcEdit;if(!wasEdit)for(const k of Object.keys(draft))delete draft[k];window.route();return}
+  if(d.ne){editNews=(D().news||[]).find(x=>x.id===d.ne);nwOpen=!!editNews;nwStatus=null;delete draft.dcEdit;window.route();const w=document.getElementById('nw');if(w)w.scrollIntoView({behavior:'smooth',block:'start'});return}
   if(d.nd&&confirm('Удалить новость?')){await f.deleteDoc(f.doc(db(),'news',d.nd));await done('Новость удалена.');}
   if(id==='pn-save'){const o=editNews||{};let nid='';const n={title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
 if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');if(fl&&fl.files.length){for(let i=1;i<=fl.files.length;i++)n.text+='\n\n[фото:'+i+']';}}
@@ -337,13 +362,18 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    if(JSON.stringify(n).length>950000){b.disabled=false;return msg('Новость слишком большая — уберите одно фото.');}
    const pc=newsPress()?pressCard():'';if(pc)n.card=pc;else if(o.card)n.card=o.card;if(o.pinned!=null&&pc)n.pinned=o.pinned;
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
-   // Отправка в Discord: своя строка из «Каналы Discord» или канал новостей «как обычно» — через бота (discordOut)
-   let dtNote='';const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-   if(pc){try{const m=await import('./discord-targets.js?v=277');const r=await m.sendVia('news',nid,'b_news',undefined,{card:pc});dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
-   else if(dt&&/^c_[a-z0-9]{4,24}$/.test(dt)){try{const m=await import('./discord-targets.js?v=277');msg('Сохранено на сайте. Отправка в Discord…');const r=await m.sendVia('news',nid,dt);dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
-   // «как обычно» — тоже через бота (b_news): вебхуки config/discord видит только владелец
-   else{try{const m=await import('./discord-targets.js?v=277');const r=await m.sendVia('news',nid,'b_news');dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
-   editNews=null;await done('Сохранено.'+dtNote);}
+   // v279: Discord — только если стоит галочка «Опубликовать в Discord». Своя строка из «Каналы Discord» или канал новостей «как обычно» (бот, b_news).
+   // Упоминания уходят в discordOut.roles: 'everyone' / 'here' / id ролей; бот пропускает только их (роли — из «Настроек сайта»).
+   let dtNote='';const dcOn=!!(document.getElementById('nw-dc')||{}).checked;
+   if(dcOn){const ping=pingSel();const roles=Array.isArray(ping)?ping:undefined;const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
+    try{const m=await import('./discord-targets.js?v=279');msg('Сохранено на сайте. Отправка в Discord…');let r;
+     if(pc){r=await m.sendVia('news',nid,'b_news',roles,{card:pc});
+      // правила v272 не дают пресс-службе поле roles — отправляем как раньше (упоминание по умолчанию)
+      if(r==='нет прав на отправку.'&&roles){r=await m.sendVia('news',nid,'b_news',undefined,{card:pc});if(r===true)r='отправлено, но без выбранного упоминания (нет прав).'}}
+     else r=await m.sendVia('news',nid,dt&&/^c_[a-z0-9]{4,24}$/.test(dt)?dt:'b_news',roles);
+     dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   else dtNote=' В Discord не отправлялось.';
+   const wasEdit=!!o.id;editNews=null;nwOpen=false;for(const k of Object.keys(draft))delete draft[k];nwStatus={ok:!/Discord: /.test(dtNote),t:(wasEdit?'Новость сохранена.':'Новость опубликована на сайте.')+dtNote};b.disabled=false;await window.VPPKA_RELOAD();window.route();return}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}
   if(d.mx){const m=(D().members||[]).find(x=>x.id===d.mx);if(!m)return;if(!isSuper()&&techLocked(m))return msg('Технический отдел и места владельца меняет только владелец сайта.');
