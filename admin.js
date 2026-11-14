@@ -1,14 +1,14 @@
 // Раздел #admin. Владелец сайта (config/owners → power.owner) видит всё.
 // Администратор (действующий ключ, ступень 5+) видит сокращённую панель: только разделы, которые ему разрешают firestore.rules.
 // Формы строятся по схемам admin-form.js; «Экспертный режим (JSON)» остаётся запасным путём.
-import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=281';
-import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=281';
-import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=281';
-import {anLoad,anHTML,anClick} from './admin-an.js?v=281';
-import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=281';
-import {layLoad,layHTML,layClick} from './admin-lay.js?v=281';
-import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=281';
-import {logLoad,logHTML,logClick,logChange,logInput,logAllowed} from './admin-log.js?v=281';
+import {CONTENT,COLS,HIST_N,blank,clone,errMap,fieldAt,fromLocal,hiddenNote,isContent,isProtected,kindOf,listTemplates,needsTechConfirm,newItem,newPartyId,nextSeatId,normalize,preview,renderForm,rowLabel,templateData,templateMeta,validate} from './admin-form.js?v=282';
+import {dchHTML,dchLoad,dchClick,dchChange} from './discord-channels.js?v=282';
+import {keysHTML,keysLoad,keysClick,keysInput,keysAllowed} from './keys-admin.js?v=282';
+import {anLoad,anHTML,anClick} from './admin-an.js?v=282';
+import {cfgLoad,cfgHTML,cfgClick} from './admin-cfg.js?v=282';
+import {layLoad,layHTML,layClick} from './admin-lay.js?v=282';
+import {ordDraft,ordBar,ordClick,ordOn,ordRefresh} from './admin-order.js?v=282';
+import {logLoad,logHTML,logClick,logChange,logInput,logAllowed} from './admin-log.js?v=282';
 const FB=()=>window.VPPKA_FB,F=()=>FB()&&FB().F,db=()=>FB()&&FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const superOn=()=>!!(window.VPPKA_SUPER&&window.VPPKA_SUPER())||!!((FB()&&FB().power)||{}).owner;
@@ -233,7 +233,7 @@ const PRESS_POS='Начальник пресс-службы';
 function pressCardA(){const did=myDidV();if(!/^\d{15,21}$/.test(did))return '';const m=((((window.VPPKA_DATA||{}).members)||[])).find(x=>x&&String(x.discordId||'')===did&&Array.isArray(x.subPositions)&&x.subPositions.includes(PRESS_POS));return m?m.id:''}
 const newsFullA=()=>superOn()||(pw().tier|0)>=4||!!pw().chief;
 async function sendNewsDc(nid,note){let r;
- try{const m=await import('./discord-targets.js?v=281');const pc=newsFullA()?'':pressCardA();r=pc?await m.sendVia('news',nid,'b_news',undefined,{card:pc}):await m.sendVia('news',nid,'b_news')}catch(err){r=err&&err.message||String(err)}
+ try{const m=await import('./discord-targets.js?v=282');const pc=newsFullA()?'':pressCardA();r=pc?await m.sendVia('news',nid,'b_news',undefined,{card:pc}):await m.sendVia('news',nid,'b_news')}catch(err){r=err&&err.message||String(err)}
  say('Сохранено.'+(note||'')+(r===true?' Отправлено в Discord.':' Discord: '+r),r===true);refresh()}
 async function delDoc(col,id){
  const row=(state.rows||[]).find(r=>r.id===id);const data=row?row.data:(state.edit&&state.edit.id===id?state.edit.data:null);

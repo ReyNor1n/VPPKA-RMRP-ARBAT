@@ -28,20 +28,27 @@ const newsPress=()=>!newsFull()&&!!pressCard();
 // В форме: «Опубликовать в Discord» (по умолчанию да; при правке — «ещё раз», по умолчанию нет) и «Кого упомянуть».
 // v281: в списке только четыре роли (по id, порядок фиксирован): Гражданин, Член партии, Новости партии, Новости фракции ЗК.
 // Подписи — из content/discordRoles, иначе запасные имена. @everyone и @here не упоминаются никогда; бот (outbox) сам проверяет каждое упоминание.
-let nwOpen=false,nwStatus=null;const draft={};
+let nwOpen=false,nwStatus=null;const draft={};let anOpen=false,anStatus=null,editAn=null;const adraft={};
 const MAXPING=5;let RL=null,RLp=null;
 const RID=x=>/^\d{15,21}$/.test(String(x||'')),RCOL=c=>/^#[0-9a-f]{6}$/i.test(String(c||''))?String(c):'';
 function cfgRoles(){const c=(window.VPPKA_CFG?window.VPPKA_CFG().discord:null)||{};return {roles:(Array.isArray(c.roles)?c.roles:[]).filter(r=>r&&RID(r.id)).map(r=>({id:String(r.id),name:String(r.label||r.id).slice(0,100),color:''})),def:(c.defRoles||[]).map(String)}}
 // v280: новость по умолчанию упоминает «Новости партии» (подписка в канале новостей), по id роли — переименование не ломает.
 // Созывы/объявления (admin-an.js) не меняются.
 const NEWS_PING='1570718297790353459';
+const AN_PING='1559635259635531947';  // v282: объявление по умолчанию — «Член партии»
+
 const NEWS_ROLES=['1560748959641632858','1559635259635531947','1570718297790353459','1570718457681412217'];
 const NEWS_ROLE_FALLBACK={'1560748959641632858':'Гражданин','1559635259635531947':'Член партии','1570718297790353459':'Новости партии','1570718457681412217':'Новости фракции ЗК'};
 function newsRoleList(raw){const by={};for(const r of raw||[]){if(!r||!RID(r.id))continue;const id=String(r.id);const fb=NEWS_ROLE_FALLBACK[id];const name=String(r.name||r.label||fb||id).slice(0,100);if(!name)continue;by[id]={id,name,color:RCOL(r.color)}}
  return NEWS_ROLES.map(id=>{const r=by[id];return {id,name:(r&&r.name)||NEWS_ROLE_FALLBACK[id],color:(r&&r.color)||''}})}
 function loadRoles(){if(RLp)return RLp;RLp=(async()=>{let L=[];try{const s=await F().getDoc(F().doc(db(),'content','discordRoles'));const d=s.exists()?s.data():{};L=(Array.isArray(d.roles)?d.roles:[]).filter(r=>r&&RID(r.id)&&r.name).map(r=>({id:String(r.id),name:String(r.name).slice(0,100),color:RCOL(r.color)}))}catch(e){}
  if(!L.length)L=cfgRoles().roles;RL=newsRoleList(L);const box=document.getElementById('nw-ping');if(box)box.outerHTML=pingBox();return RL})();return RLp}
-function pingSelIds(){const ids=new Set(NEWS_ROLES);const def=[NEWS_PING];return (Array.isArray(draft.ping)?draft.ping:def).filter(id=>ids.has(id)).slice(0,MAXPING)}
+function isAn(){try{return String(location.hash||'').split('/')[0]==='#announce'}catch(e){return false}}
+function Dft(){return isAn()?adraft:draft}
+const AN_OK=()=>newsFull()||!!pressCard();
+function newsTabs(cur){return `<nav class="subtabs" aria-label="Новости и объявления"><a href="#news"${cur==='news'?' class="on" aria-current="page"':''}>Новости</a><a href="#announce"${cur==='announce'?' class="on" aria-current="page"':''}>Объявления</a></nav>`}
+function pingDef(){return isAn()?AN_PING:NEWS_PING}
+function pingSelIds(){const ids=new Set(NEWS_ROLES),d=Dft();const def=[pingDef()];return (Array.isArray(d.ping)?d.ping:def).filter(id=>ids.has(id)).slice(0,MAXPING)}
 const roleOf=id=>(RL||[]).find(r=>r.id===id)||{id,name:id,color:''};
 const dot=c=>`<i class="nw-dot"${RCOL(c)?` style="background:${RCOL(c)}"`:''}></i>`;
 function selHTML(){const sel=pingSelIds();return sel.length?sel.map(id=>{const r=roleOf(id);return `<span class="nw-tag">${dot(r.color)}<span class="nw-tn">@${esc(r.name)}</span><button type="button" class="nw-rm" data-nwrm="${esc(id)}" aria-label="Убрать ${esc(r.name)}">×</button></span>`}).join('')+'<button type="button" class="nw-clr" data-nwnone="1">Никого</button>':'<span class="amut nw-none">Никого не упоминать</span>'}
@@ -55,10 +62,10 @@ ${RL.length?`<input type="search" class="nw-q" id="nw-rq" placeholder="Найт�
 function pingSync(){const sel=new Set(pingSelIds()),full=sel.size>=MAXPING;const sh=document.getElementById('nw-sel');if(sh)sh.innerHTML=selHTML();const c=document.getElementById('nw-cnt');if(c)c.textContent=sel.size+'/'+MAXPING;
  document.querySelectorAll('[data-nwrole]').forEach(x=>{const on=sel.has(x.dataset.nwrole);x.checked=on;x.disabled=!on&&full;x.parentElement.classList.toggle('on',on)})}
 function pingSel(){if(!document.getElementById('nw-ping')||RL===null)return null;return pingSelIds()}
-function newsComposer(){const ed=editNews,n=ed||draft,press=newsPress(),dc=ed?!!draft.dcEdit:draft.dc!==false;
- const st=nwStatus?`<p class="${nwStatus.ok?'af-ok':'aerr'} nw-st" role="status">${esc(nwStatus.t)}</p>`:'';
- return `<div class="nw${nwOpen?' open':''}" id="nw"><button type="button" class="nw-bar" id="nw-toggle" aria-expanded="${nwOpen}" aria-controls="nw-body"><span class="nw-ic" aria-hidden="true">✍️</span><span class="nw-t">${ed?'Редактирование новости':'Написать новость'}</span><span class="nw-ch" aria-hidden="true">▾</span></button>${st}
-<div class="nw-body kp-f" id="nw-body"${nwOpen?'':' hidden'}>
+function newsComposer(kind){const an=kind==='announce'||(kind?false:isAn());const ed=an?editAn:editNews,n=ed||(an?adraft:draft),press=newsPress(),dc=ed?!!(an?adraft:draft).dcEdit:(an?adraft:draft).dc!==false;
+ const st=(an?anStatus:nwStatus)?`<p class="${(an?anStatus:nwStatus).ok?'af-ok':'aerr'} nw-st" role="status">${esc((an?anStatus:nwStatus).t)}</p>`:'';
+ return `<div class="nw${(an?anOpen:nwOpen)?' open':''}" id="nw"><button type="button" class="nw-bar" id="nw-toggle" aria-expanded="${an?anOpen:nwOpen}" aria-controls="nw-body"><span class="nw-ic" aria-hidden="true">✍️</span><span class="nw-t">${ed?(an?'Редактирование объявления':'Редактирование новости'):(an?'Написать объявление':'Написать новость')}</span><span class="nw-ch" aria-hidden="true">▾</span></button>${st}
+<div class="nw-body kp-f" id="nw-body"${(an?anOpen:nwOpen)?'':' hidden'}>
  <label class="fl">Заголовок *<input id="pn-t" maxlength="200" value="${esc(n.title)}"></label>
  <label class="fl">Дата *<input id="pn-d" type="date" value="${esc(n.date||today())}"></label>
  <label class="fl">Текст *<textarea id="pn-x" rows="6" maxlength="20000">${esc(n.text)}</textarea></label>
@@ -68,10 +75,13 @@ function newsComposer(){const ed=editNews,n=ed||draft,press=newsPress(),dc=ed?!!
  ${ed&&((ed.photos||[]).length||ed.image)?`<div class="nphotos">${(ed.photos||[]).concat(ed.image?[ed.image]:[]).map(u=>`<img ${PHA(u,'t')} alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="2" placeholder="https://youtu.be/…">${esc(Array.isArray(n.videos)?n.videos.join('\n'):(n.videos||''))}</textarea></label>
  <fieldset class="nw-dc"><legend>Discord</legend><label class="nw-sw"><input type="checkbox" id="nw-dc"${dc?' checked':''}><span>${ed?'Отправить в Discord ещё раз':'Опубликовать в Discord'}</span></label>
- <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?'<p class="amut nw-ch1">Канал: 📢 новости (как обычно).</p>':`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=281').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}`}${pingBox()}</div></fieldset>
+ <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?`<p class="amut nw-ch1">Канал: ${an?'📃 обьявления':'📢 новости'} (как обычно).</p>`:`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=282').then(m=>m.fillTarget('pn-dt','pn-dtsel',an?'notices':'news')).catch(()=>{}),0),'')}`}${pingBox()}</div></fieldset>
  <p class="aerr" id="pmsg"></p><div class="nw-act"><button type="button" class="btn" id="pn-save">${ed?'Сохранить':'Опубликовать'}</button><button type="button" class="btn o" id="nw-cancel">Отмена</button></div></div></div>`}
 function newsPanel(){const me=(FB().user||{}).uid,press=newsPress();const list=(D().news||[]).filter(x=>!press||x.author===me).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
  return D().news?head(press?'Мои новости':'Опубликованные новости')+`<table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')}</table></div>`:'';}
+function announcePanel(){const me=(FB().user||{}).uid,press=newsPress();if(window.VPPKA_HN_START)window.VPPKA_HN_START();const list=((window.VPPKA_NOTICES&&window.VPPKA_NOTICES())||[]).filter(x=>x&&x.type==='other'&&!x.hidden&&(!press||x.author===me)).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ return list.length||press||newsFull()?head(press?'Мои объявления':'Опубликованные объявления')+`<table class="tbl">${list.map(x=>`<tr><td>${esc((window.VPPKA_FD||(d=>d))(x.date||''))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ae="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-ad="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')||'<tr><td colspan="3" class="amut">Пока нет объявлений.</td></tr>'}</table></div>`:''}
+
 
 function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m=>((T>=4&&mt(m)<T&&(m.rank??0)<R)||isCh(m)||chief())&&(isSuper()||!techLocked(m))&&!admBlocked(m)),m=editMem||{rank:10};
  return `<div class="kpanel kpm"><div class="kp-h"><span>// ПАНЕЛЬ</span> <a class="kpm-apps" href="#apps">Заявки в партию →</a></div><details class="kpm-d"${editMem?' open':''}><summary>${editMem&&editMem.id?'✎ Редактировать участника':'+ Добавить участника'}</summary>`+
@@ -332,8 +342,8 @@ document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-an
   if(v('an-at')&&!at){er.textContent='Неверная дата.';return}t.disabled=true;
   try{await f.updateDoc(f.doc(db(),'notifications',t.dataset.ansave),{title:ti,text:v('an-tx'),place:v('an-pl'),at:at||f.deleteField(),when:at?AN.when(at):f.deleteField(),editedBy:FB().user.uid,editedAt:f.serverTimestamp()});hnEd='';hnPaint()}
   catch(x){t.disabled=false;er.textContent='Ошибка: '+(x.code==='permission-denied'?'нет прав.':(x.code||x.message))}}});
-window.VPPKA_HN=()=>{hnStart();return hnActive()};
-function hnStart(){if(hnSub||!FB()||!F())return;const f=F();hnSub=f.onSnapshot(f.query(f.collection(db(),'notifications'),f.where('type','in',['convocation','other'])),s=>{hn=s.docs.map(x=>({...x.data(),id:x.id}));hnReady=true;hnPaint()},e=>{console.warn('home notices',e.code);hnReady=true;hnSub=null;hnPaint()})}
+window.VPPKA_HN=()=>{hnStart();return hnActive()};window.VPPKA_NOTICES=()=>{hnStart();return hn};window.VPPKA_HN_READY=()=>!!hnReady;window.VPPKA_HN_START=hnStart;
+function hnStart(){if(hnSub||!FB()||!F())return;const f=F();hnSub=f.onSnapshot(f.query(f.collection(db(),'notifications'),f.where('type','in',['convocation','other'])),s=>{hn=s.docs.map(x=>({...x.data(),id:x.id}));hnReady=true;hnPaint();if(/^#announce/.test(location.hash)&&!anOpen&&!editAn)try{window.route()}catch(e){}},e=>{console.warn('home notices',e.code);hnReady=true;hnSub=null;hnPaint()})}
 setInterval(()=>{if(!hnSub)hnStart();hnPaint()},60000);
 
 // «Заявки на вступление» на вкладке «Члены партии» (ступень 3+, как в панели заявок)
@@ -352,25 +362,48 @@ document.addEventListener('click',async e=>{const ok=e.target.closest('[data-aqo
   catch(x){(ok||no).disabled=false;if(m)m.textContent='Ошибка: '+(x.code==='permission-denied'?'нет прав.':(x.code||x.message))}return}
  if(op){location.hash='#apps';let i=0;const t=setInterval(()=>{const el=document.getElementById('app-'+op.dataset.aqopen);if(el||++i>40){clearInterval(t);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('aq-hl');setTimeout(()=>el.classList.remove('aq-hl'),2500)}}},150)}});
 let installed=false; // v273: повторный вызов install() не оборачивает P.* второй раз
-export function install(){if(installed)return;installed=true;const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace('<div id="hnote"></div>','<div id="hnote">'+hnHtml()+'</div>')};hnStart();const slot=document.getElementById('hnote');if(slot&&!slot.innerHTML.trim())slot.innerHTML=hnHtml();P.party=()=>{const h0=op();const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"/]+)(?:\/[^"]*)?"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const pw=FB().power||{},ab=[(pw.rank>0)&&'<a class="btn sm o" href="#apps">Заявки в партию</a>',(pw.members||pw.chief||rank()>=1000)&&'<a class="btn sm o" href="#members">Участники партии</a>'].filter(Boolean).join(' ');const hx=ab?h.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="adm-bar">'+ab+'</div>'):h;const g=appBlock()+guestBlock();return g?hx.replace(/<\/div>(\s*)$/,g+'</div>$1'):hx};const on=P.news,ol=P.leadership;installAssign();
- P.news=id=>{const h=on(id);if(id!==undefined||!(newsFull()||!!pressCard()))return h;const L=newsPanel();return h.replace('<h1>Новости</h1>','<h1>Новости</h1>'+newsComposer()).replace(/<\/div>$/,L+'</div>')};
+export function install(){if(installed)return;installed=true;const P=window.P,op=P.party;const oh=P.home;P.home=(...a)=>{hnStart();return oh(...a).replace('<div id="hnote"></div>','<div id="hnote">'+hnHtml()+'</div>')};hnStart();const slot=document.getElementById('hnote');if(slot&&!slot.innerHTML.trim())slot.innerHTML=hnHtml();P.party=()=>{const h0=op();const h=tier()>=4?h0.replace(/<a class="pm-card" href="#member\/([^"/]+)(?:\/[^"]*)?"([^>]*)>/g,(s,id)=>{const m=xMem().find(x=>x.id===id);return s+xMenu(m)}):h0;const pw=FB().power||{},ab=[(pw.rank>0)&&'<a class="btn sm o" href="#apps">Заявки в партию</a>',(pw.members||pw.chief||rank()>=1000)&&'<a class="btn sm o" href="#members">Участники партии</a>'].filter(Boolean).join(' ');const hx=ab?h.replace(/(<h1>[^<]*<\/h1>)/,'$1<div class="adm-bar">'+ab+'</div>'):h;const g=appBlock()+guestBlock();return g?hx.replace(/<\/div>(\s*)$/,g+'</div>$1'):hx};const on=P.news,ol=P.leadership,oa=P.announce;installAssign();
+ P.news=id=>{let h=on(id);const can=AN_OK();h=h.replace('<h1>Новости</h1>','<h1>Новости</h1>'+newsTabs('news')+(id===undefined&&can?newsComposer('news'):''));if(id===undefined&&can)h=h.replace(/<\/div>$/,newsPanel()+'</div>');return h};
+ P.announce=id=>{if(window.VPPKA_HN_START)window.VPPKA_HN_START();let h=oa(id);const can=AN_OK();h=h.replace('<h1>Объявления</h1>','<h1>Объявления</h1>'+newsTabs('announce')+(id===undefined&&can?newsComposer('announce'):''));if(id===undefined&&can)h=h.replace(/<\/div>$/,announcePanel()+'</div>');return h};
  P.leadership=()=>{let h=ol();const extra=(tier()>=4||chair()||chief()||isSuper()?memPanel():'')+postPanel();return extra?h.replace(/<\/div>$/,extra+'</div>'):h};
  P.apps=appsPage;P.members=membersPage;const omb=P.member;P.member=(id,from)=>{const h=omb(id,from),b=rkBtn(xMem().find(x=>x.id===id));return b?h.replace('</table>','</table><div class="rk-row">'+b+'</div>'):h};
  document.addEventListener('input',ev=>{const t=ev.target;if(editNews||!t||!t.id)return;const k={'pn-t':'title','pn-d':'date','pn-x':'text','pn-v':'videos'}[t.id];if(k)draft[k]=t.value});
  document.addEventListener('change',ev=>{const t=ev.target;if(!t)return;
-  if(t.id==='nw-dc'){const bx=document.getElementById('nw-dcb');if(bx)bx.hidden=!t.checked;if(editNews)draft.dcEdit=t.checked;else draft.dc=t.checked}
-  if(t.dataset&&t.dataset.nwrole){const cur=pingSelIds().filter(x=>x!==t.dataset.nwrole);if(t.checked){if(cur.length>=MAXPING){t.checked=false;return msg('Не больше '+MAXPING+' ролей.')}cur.push(t.dataset.nwrole)}draft.ping=cur;pingSync()}});
+  if(t.id==='nw-dc'){const bx=document.getElementById('nw-dcb');if(bx)bx.hidden=!t.checked;if(isAn()){if(editAn)adraft.dcEdit=t.checked;else adraft.dc=t.checked}else if(editNews)draft.dcEdit=t.checked;else draft.dc=t.checked}
+  if(t.dataset&&t.dataset.nwrole){const cur=pingSelIds().filter(x=>x!==t.dataset.nwrole);if(t.checked){if(cur.length>=MAXPING){t.checked=false;return msg('Не больше '+MAXPING+' ролей.')}cur.push(t.dataset.nwrole)}Dft().ping=cur;pingSync()}});
  document.addEventListener('input',ev=>{const t=ev.target;if(!t||t.id!=='nw-rq')return;const q=t.value.trim().toLowerCase();let n=0;document.querySelectorAll('#nw-rl li[data-nwname]').forEach(li=>{const ok=!q||li.dataset.nwname.includes(q.replace(/^@/,''));li.hidden=!ok;n+=ok});const nf=document.querySelector('#nw-rl .nw-nf');if(nf)nf.hidden=!!n});
 document.addEventListener('change',async ev=>{if(ev.target.id==='pn-f'){const prev=document.getElementById('pn-preview');if(!prev)return;prev.innerHTML='';const files=[...ev.target.files].slice(0,4);for(const f of files){try{const u=await smallJpeg(f);const img=document.createElement('img');img.src=u;img.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #333';prev.appendChild(img);}catch(e){}}if(files.length){const ta=document.getElementById('pn-x');if(ta&&!/\[фото:\d+\]/i.test(ta.value)){for(let i=1;i<=files.length;i++)ta.value+='\n\n[фото:'+i+']';}}}});
 document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;const d=b.dataset,id=b.id,f=F();
   const done=async t=>{await window.VPPKA_RELOAD();msg(t)};
   try{
-  if(d.nwrm){draft.ping=pingSelIds().filter(x=>x!==d.nwrm);pingSync();return}
-  if(d.nwnone){draft.ping=[];pingSync();return}
-  if(id==='nw-toggle'){nwOpen=!nwOpen;nwStatus=null;const w=document.getElementById('nw'),bd=document.getElementById('nw-body'),st=w&&w.querySelector('.nw-st');if(w)w.classList.toggle('open',nwOpen);b.setAttribute('aria-expanded',String(nwOpen));if(bd)bd.hidden=!nwOpen;if(st)st.remove();if(nwOpen){const t=document.getElementById('pn-t');if(t)t.focus({preventScroll:true})}return}
-  if(id==='nw-cancel'||id==='pn-cancel'){const wasEdit=!!editNews;editNews=null;nwOpen=false;nwStatus=null;delete draft.dcEdit;if(!wasEdit)for(const k of Object.keys(draft))delete draft[k];window.route();return}
+  if(d.nwrm){Dft().ping=pingSelIds().filter(x=>x!==d.nwrm);pingSync();return}
+  if(d.nwnone){Dft().ping=[];pingSync();return}
+  if(id==='nw-toggle'){if(isAn()){anOpen=!anOpen;anStatus=null}else{nwOpen=!nwOpen;nwStatus=null}const open=isAn()?anOpen:nwOpen;const w=document.getElementById('nw'),bd=document.getElementById('nw-body'),st=w&&w.querySelector('.nw-st');if(w)w.classList.toggle('open',open);b.setAttribute('aria-expanded',String(open));if(bd)bd.hidden=!open;if(st)st.remove();if(open){const t=document.getElementById('pn-t');if(t)t.focus({preventScroll:true})}return}
+  if(id==='nw-cancel'||id==='pn-cancel'){if(isAn()){const was=!!editAn;editAn=null;anOpen=false;anStatus=null;delete adraft.dcEdit;if(!was)for(const k of Object.keys(adraft))delete adraft[k]}else{const wasEdit=!!editNews;editNews=null;nwOpen=false;nwStatus=null;delete draft.dcEdit;if(!wasEdit)for(const k of Object.keys(draft))delete draft[k]}window.route();return}
   if(d.ne){editNews=(D().news||[]).find(x=>x.id===d.ne);nwOpen=!!editNews;nwStatus=null;delete draft.dcEdit;window.route();const w=document.getElementById('nw');if(w)w.scrollIntoView({behavior:'smooth',block:'start'});return}
+  if(d.ae){editAn=((window.VPPKA_NOTICES&&window.VPPKA_NOTICES())||[]).find(x=>x.id===d.ae);anOpen=!!editAn;anStatus=null;delete adraft.dcEdit;window.route();const w=document.getElementById('nw');if(w)w.scrollIntoView({behavior:'smooth',block:'start'});return}
+  if(d.ad&&confirm('Удалить объявление?')){await f.deleteDoc(f.doc(db(),'notifications',d.ad));await done('Объявление удалено.');return}
   if(d.nd&&confirm('Удалить новость?')){await f.deleteDoc(f.doc(db(),'news',d.nd));await done('Новость удалена.');}
+  if(id==='pn-save'&&isAn()){const o=editAn||{};let nid='';const n={type:'other',title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
+   if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');if(fl&&fl.files.length){for(let i=1;i<=fl.files.length;i++)n.text+='\n\n[фото:'+i+']';}}
+   if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');b.disabled=true;const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
+   if(ph.length+fl.length>4){b.disabled=false;return msg('Не больше 4 фото в объявлении.');}for(const f of fl)ph.push(await window.VPPKA_PH.up(await smallJpeg(f)));
+   const badp=ph.find(u=>window.VPPKA_SAFE&&!window.VPPKA_SAFE.media(u));if(badp){b.disabled=false;return msg('У одного из текущих фото недопустимая ссылка (разрешены только https://). Снимите галочку «оставить текущие фото» и загрузите фото заново.');}const own=u=>/^(data:|ph:)/.test(String(u));const legacy=ph.filter(u=>!own(u));ph=ph.filter(own);if(legacy[0])n.image=legacy[0];if(ph.length)n.photos=ph;
+   const vids=v('pn-v').split(/\s+/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=window.VPPKA_YT&&window.VPPKA_YT.parse(x);return p?window.VPPKA_YT.canon(p):x});const nhs=vids.find(x=>!/^https:\/\//i.test(x));if(nhs){b.disabled=false;return msg('Ссылка на видео должна начинаться с https:// — другие (http:, javascript:, data: и т. п.) не допускаются: '+nhs.slice(0,80));}const bad=vids.filter(x=>!VOK(x)||x.length>300);if(bad.length){b.disabled=false;return msg('Неподдерживаемая ссылка на видео: '+bad[0].slice(0,80)+'. Подходят YouTube, VK Видео, Rutube или прямая https-ссылка на .mp4/.webm.');}if(vids.length>5){b.disabled=false;return msg('Не больше 5 видео.');}if(vids.length)n.videos=vids;
+   if(JSON.stringify(n).length>950000){b.disabled=false;return msg('Объявление слишком большое — уберите одно фото.');}
+   const pc=newsPress()?pressCard():'';if(pc)n.card=pc;else if(o.card)n.card=o.card;
+   const nm=window.VPPKA_AUTHOR_NAME&&window.VPPKA_AUTHOR_NAME();if(nm)n.authorName=nm.slice(0,120);
+   if(o.id){n.editedBy=FB().user.uid;n.editedAt=f.serverTimestamp();if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;if(o.type)n.type=o.type;if(o.source)n.source=o.source;if(o.discordMessageId)n.discordMessageId=o.discordMessageId;if(o.hidden)n.hidden=o.hidden;await f.setDoc(f.doc(db(),'notifications',o.id),n,{merge:true});nid=o.id;}
+   else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'notifications'),n)).id;}
+   let dtNote='';const dcOn=!!(document.getElementById('nw-dc')||{}).checked;
+   if(dcOn){const ping=pingSel();const roles=Array.isArray(ping)?ping:undefined;const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
+    try{const m=await import('./discord-targets.js?v=282');msg('Сохранено на сайте. Отправка в Discord…');let r;
+     if(pc){r=await m.sendVia('announcement',nid,'b_notices',roles,{card:pc});
+      if(r==='нет прав на отправку.'&&roles){r=await m.sendVia('announcement',nid,'b_notices',undefined,{card:pc});if(r===true)r='отправлено, но без выбранного упоминания (нет прав).'}}
+     else r=await m.sendVia('announcement',nid,dt&&/^c_[a-z0-9]{4,24}$/.test(dt)?dt:'b_notices',roles);
+     dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
+   else dtNote=' В Discord не отправлялось.';
+   const wasEdit=!!o.id;editAn=null;anOpen=false;for(const k of Object.keys(adraft))delete adraft[k];anStatus={ok:!/Discord: /.test(dtNote),t:(wasEdit?'Объявление сохранено.':'Объявление опубликовано на сайте.')+dtNote};b.disabled=false;window.route();return}
   if(id==='pn-save'){const o=editNews||{};let nid='';const n={title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
 if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');if(fl&&fl.files.length){for(let i=1;i<=fl.files.length;i++)n.text+='\n\n[фото:'+i+']';}}
    if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');b.disabled=true;const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
@@ -384,7 +417,7 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    // Упоминания — discordOut.roles: только 4 разрешённые роли (до 5 в форме); бот для новостей принимает только их, чужие отбрасывает.
    let dtNote='';const dcOn=!!(document.getElementById('nw-dc')||{}).checked;
    if(dcOn){const ping=pingSel();const roles=Array.isArray(ping)?ping:undefined;const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-    try{const m=await import('./discord-targets.js?v=281');msg('Сохранено на сайте. Отправка в Discord…');let r;
+    try{const m=await import('./discord-targets.js?v=282');msg('Сохранено на сайте. Отправка в Discord…');let r;
      if(pc){r=await m.sendVia('news',nid,'b_news',roles,{card:pc});
       // правила до v279 не дают пресс-службе поле roles — тогда отправляем как раньше (упоминание по умолчанию)
       if(r==='нет прав на отправку.'&&roles){r=await m.sendVia('news',nid,'b_news',undefined,{card:pc});if(r===true)r='отправлено, но без выбранного упоминания (нет прав).'}}
