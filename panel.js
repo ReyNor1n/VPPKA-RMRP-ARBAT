@@ -25,19 +25,23 @@ function pressCard(){const did=String(((window.VPPKA_AUTH||{}).profile||{}).disc
 const newsFull=()=>tier()>=4||chief()||isSuper();
 const newsPress=()=>!newsFull()&&!!pressCard();
 // v279: «Написать новость» — свёрнутая плашка вверху вкладки «Новости» (только тем, кто может публиковать); по нажатию раскрывается форма.
-// В форме: «Опубликовать в Discord» (по умолчанию да; при правке — «ещё раз», по умолчанию нет) и «Кого упомянуть» — любые роли
-// Discord-сервера партии (до 5). Список ролей держит в content/discordRoles бот (все роли, кроме @everyone и ролей ботов/бустеров);
-// пока его нет — роли из «Настроек сайта». @everyone и @here не упоминаются никогда; бот (outbox) сам проверяет каждое упоминание.
+// В форме: «Опубликовать в Discord» (по умолчанию да; при правке — «ещё раз», по умолчанию нет) и «Кого упомянуть».
+// v281: в списке только четыре роли (по id, порядок фиксирован): Гражданин, Член партии, Новости партии, Новости фракции ЗК.
+// Подписи — из content/discordRoles, иначе запасные имена. @everyone и @here не упоминаются никогда; бот (outbox) сам проверяет каждое упоминание.
 let nwOpen=false,nwStatus=null;const draft={};
 const MAXPING=5;let RL=null,RLp=null;
 const RID=x=>/^\d{15,21}$/.test(String(x||'')),RCOL=c=>/^#[0-9a-f]{6}$/i.test(String(c||''))?String(c):'';
 function cfgRoles(){const c=(window.VPPKA_CFG?window.VPPKA_CFG().discord:null)||{};return {roles:(Array.isArray(c.roles)?c.roles:[]).filter(r=>r&&RID(r.id)).map(r=>({id:String(r.id),name:String(r.label||r.id).slice(0,100),color:''})),def:(c.defRoles||[]).map(String)}}
-function loadRoles(){if(RLp)return RLp;RLp=(async()=>{let L=[];try{const s=await F().getDoc(F().doc(db(),'content','discordRoles'));const d=s.exists()?s.data():{};L=(Array.isArray(d.roles)?d.roles:[]).filter(r=>r&&RID(r.id)&&r.name).map(r=>({id:String(r.id),name:String(r.name).slice(0,100),color:RCOL(r.color)}))}catch(e){}
- if(!L.length)L=cfgRoles().roles;RL=L;const box=document.getElementById('nw-ping');if(box)box.outerHTML=pingBox();return L})();return RLp}
 // v280: новость по умолчанию упоминает «Новости партии» (подписка в канале новостей), по id роли — переименование не ломает.
-// Роли нет в списке сервера — как раньше, роли по умолчанию из «Настроек сайта». Созывы/объявления (admin-an.js) не меняются.
+// Созывы/объявления (admin-an.js) не меняются.
 const NEWS_PING='1570718297790353459';
-function pingSelIds(){const ids=new Set((RL||[]).map(r=>r.id));const def=(!RL||ids.has(NEWS_PING))?[NEWS_PING]:cfgRoles().def;return (Array.isArray(draft.ping)?draft.ping:def).filter(id=>!RL||ids.has(id)).slice(0,MAXPING)}
+const NEWS_ROLES=['1560748959641632858','1559635259635531947','1570718297790353459','1570718457681412217'];
+const NEWS_ROLE_FALLBACK={'1560748959641632858':'Гражданин','1559635259635531947':'Член партии','1570718297790353459':'Новости партии','1570718457681412217':'Новости фракции ЗК'};
+function newsRoleList(raw){const by={};for(const r of raw||[]){if(!r||!RID(r.id))continue;const id=String(r.id);const fb=NEWS_ROLE_FALLBACK[id];const name=String(r.name||r.label||fb||id).slice(0,100);if(!name)continue;by[id]={id,name,color:RCOL(r.color)}}
+ return NEWS_ROLES.map(id=>{const r=by[id];return {id,name:(r&&r.name)||NEWS_ROLE_FALLBACK[id],color:(r&&r.color)||''}})}
+function loadRoles(){if(RLp)return RLp;RLp=(async()=>{let L=[];try{const s=await F().getDoc(F().doc(db(),'content','discordRoles'));const d=s.exists()?s.data():{};L=(Array.isArray(d.roles)?d.roles:[]).filter(r=>r&&RID(r.id)&&r.name).map(r=>({id:String(r.id),name:String(r.name).slice(0,100),color:RCOL(r.color)}))}catch(e){}
+ if(!L.length)L=cfgRoles().roles;RL=newsRoleList(L);const box=document.getElementById('nw-ping');if(box)box.outerHTML=pingBox();return RL})();return RLp}
+function pingSelIds(){const ids=new Set(NEWS_ROLES);const def=[NEWS_PING];return (Array.isArray(draft.ping)?draft.ping:def).filter(id=>ids.has(id)).slice(0,MAXPING)}
 const roleOf=id=>(RL||[]).find(r=>r.id===id)||{id,name:id,color:''};
 const dot=c=>`<i class="nw-dot"${RCOL(c)?` style="background:${RCOL(c)}"`:''}></i>`;
 function selHTML(){const sel=pingSelIds();return sel.length?sel.map(id=>{const r=roleOf(id);return `<span class="nw-tag">${dot(r.color)}<span class="nw-tn">@${esc(r.name)}</span><button type="button" class="nw-rm" data-nwrm="${esc(id)}" aria-label="Убрать ${esc(r.name)}">×</button></span>`}).join('')+'<button type="button" class="nw-clr" data-nwnone="1">Никого</button>':'<span class="amut nw-none">Никого не упоминать</span>'}
@@ -64,7 +68,7 @@ function newsComposer(){const ed=editNews,n=ed||draft,press=newsPress(),dc=ed?!!
  ${ed&&((ed.photos||[]).length||ed.image)?`<div class="nphotos">${(ed.photos||[]).concat(ed.image?[ed.image]:[]).map(u=>`<img ${PHA(u,'t')} alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="2" placeholder="https://youtu.be/…">${esc(Array.isArray(n.videos)?n.videos.join('\n'):(n.videos||''))}</textarea></label>
  <fieldset class="nw-dc"><legend>Discord</legend><label class="nw-sw"><input type="checkbox" id="nw-dc"${dc?' checked':''}><span>${ed?'Отправить в Discord ещё раз':'Опубликовать в Discord'}</span></label>
- <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?'<p class="amut nw-ch1">Канал: 📢 новости (как обычно).</p>':`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=280').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}`}${pingBox()}</div></fieldset>
+ <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?'<p class="amut nw-ch1">Канал: 📢 новости (как обычно).</p>':`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=281').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}`}${pingBox()}</div></fieldset>
  <p class="aerr" id="pmsg"></p><div class="nw-act"><button type="button" class="btn" id="pn-save">${ed?'Сохранить':'Опубликовать'}</button><button type="button" class="btn o" id="nw-cancel">Отмена</button></div></div></div>`}
 function newsPanel(){const me=(FB().user||{}).uid,press=newsPress();const list=(D().news||[]).filter(x=>!press||x.author===me).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
  return D().news?head(press?'Мои новости':'Опубликованные новости')+`<table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')}</table></div>`:'';}
@@ -377,10 +381,10 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    const pc=newsPress()?pressCard():'';if(pc)n.card=pc;else if(o.card)n.card=o.card;if(o.pinned!=null&&pc)n.pinned=o.pinned;
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
    // v279: Discord — только если стоит галочка «Опубликовать в Discord». Своя строка из «Каналы Discord» или канал новостей «как обычно» (бот, b_news).
-   // Упоминания — discordOut.roles: id ролей сервера (до 5); бот пропускает только роли из content/discordRoles и «Настроек сайта».
+   // Упоминания — discordOut.roles: только 4 разрешённые роли (до 5 в форме); бот для новостей принимает только их, чужие отбрасывает.
    let dtNote='';const dcOn=!!(document.getElementById('nw-dc')||{}).checked;
    if(dcOn){const ping=pingSel();const roles=Array.isArray(ping)?ping:undefined;const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-    try{const m=await import('./discord-targets.js?v=280');msg('Сохранено на сайте. Отправка в Discord…');let r;
+    try{const m=await import('./discord-targets.js?v=281');msg('Сохранено на сайте. Отправка в Discord…');let r;
      if(pc){r=await m.sendVia('news',nid,'b_news',roles,{card:pc});
       // правила до v279 не дают пресс-службе поле roles — тогда отправляем как раньше (упоминание по умолчанию)
       if(r==='нет прав на отправку.'&&roles){r=await m.sendVia('news',nid,'b_news',undefined,{card:pc});if(r===true)r='отправлено, но без выбранного упоминания (нет прав).'}}
