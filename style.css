@@ -1380,6 +1380,15 @@ body.aw-lock{overflow:hidden}
 .nw-body{padding:4px 16px 16px;border-top:1px solid var(--ln)}.nw-body[hidden]{display:none}
 .nw-body .fl{display:block;margin-top:12px}
 .nw-prev{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+/* v283: фото прямо в тексте новости/объявления */
+.nw-txw>label{display:block}.nw-tb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0}.nw-tbh{font-size:12px;line-height:1.35;flex:1 1 220px}
+.nw-txw textarea{display:block;width:100%;box-sizing:border-box;min-height:150px}.nw-txw textarea.nw-drop{outline:2px dashed var(--red);outline-offset:2px}
+.nw-pics{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.nw-pics:empty{display:none}
+.nw-pic{margin:0;width:132px;border:1px solid var(--ln);padding:6px;display:flex;flex-direction:column;gap:4px}.nw-pic.in{border-color:var(--red)}
+.nw-pic img{width:100%;height:84px;object-fit:cover;display:block}.nw-pic figcaption{font-size:12px;line-height:1.25;display:flex;flex-direction:column}.nw-pic figcaption span{color:var(--mut)}
+.nw-pa{display:flex;gap:4px}.nw-pa .btn{padding:3px 7px;font-size:12px}.nw-pa .btn:first-child{flex:1}
+.nw-pv{margin:12px 0 4px;border:1px solid var(--ln);padding:0 12px}.nw-pv>summary{cursor:pointer;padding:8px 0;font-weight:600}.nw-pvb{padding:0 0 10px;max-height:520px;overflow:auto}.nw-pvb .nphotos.big img{max-height:240px}
+@media(max-width:600px){.nw-pic{width:calc(50% - 5px);box-sizing:border-box}.nw-pvb{max-height:420px}}
 .nw-dc{margin:16px 0 4px;padding:10px 14px 12px;border:1px solid var(--ln);min-width:0}
 .nw-dc legend{padding:0 6px;font:12px var(--fd);color:var(--gold);letter-spacing:.1em;text-transform:uppercase}
 .nw-sw{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600}
