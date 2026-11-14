@@ -35,19 +35,20 @@ test('v282: во вкладке «Новости» есть подвкладки
   assert.match(app, /href="#announce"/);
 });
 
-test('v282: объявление по умолчанию упоминает «Член партии»; новость — «Новости партии»', async () => {
+test('v282: объявление по умолчанию никого не упоминает; новость — «Новости партии»', async () => {
   const news = await pingSel('#news', {});
   const an = await pingSel('#announce', {}, {});
   assert.equal(news.an, false);
   assert.equal(an.an, true);
   assert.deepEqual(news.ids, [NEWS]);
-  assert.deepEqual(an.ids, [MEMBER]);
+  assert.deepEqual(an.ids, []);
   assert.equal(news.def, NEWS);
-  assert.equal(an.def, MEMBER);
+  assert.equal(an.def, '');
   assert.deepEqual(await pingSel('#announce', {}, {ping: []}).then(r => r.ids), []);
   assert.deepEqual(await pingSel('#announce', {}, {ping: [CITIZEN, FACTION]}).then(r => r.ids), [CITIZEN, FACTION]);
   const panel = await read('panel.js');
-  assert.match(panel, /const AN_PING='1559635259635531947'/);
+  assert.match(panel, /Никого не упоминать/);
+  assert.doesNotMatch(panel, /const AN_PING=/);
 });
 
 test('v282: форма объявления — те же 4 роли, «Никого», без @everyone; канал обьявлений', async () => {

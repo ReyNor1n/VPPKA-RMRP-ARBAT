@@ -28,15 +28,16 @@ const newsPress=()=>!newsFull()&&!!pressCard();
 // В форме: «Опубликовать в Discord» (по умолчанию да; при правке — «ещё раз», по умолчанию нет) и «Кого упомянуть».
 // v281: в списке только четыре роли (по id, порядок фиксирован): Гражданин, Член партии, Новости партии, Новости фракции ЗК.
 // Подписи — из content/discordRoles, иначе запасные имена. @everyone и @here не упоминаются никогда; бот (outbox) сам проверяет каждое упоминание.
-let nwOpen=false,nwStatus=null;const draft={};let anOpen=false,anStatus=null,editAn=null;const adraft={};
+let nwOpen=false,nwStatus=null,nwSaving=false;const draft={};let anOpen=false,anStatus=null,editAn=null;const adraft={};
+// v282: пока идёт публикация новости/объявления, живые снимки не перерисовывают форму (кнопка снова активна, фото пропадают, ошибка стирается).
+const nwSave=on=>{nwSaving=on;window.VPPKA_SAVING=on;if(!on&&window.VPPKA_LIVEFLUSH)setTimeout(window.VPPKA_LIVEFLUSH,0)};
 const MAXPING=5;let RL=null,RLp=null;
 const RID=x=>/^\d{15,21}$/.test(String(x||'')),RCOL=c=>/^#[0-9a-f]{6}$/i.test(String(c||''))?String(c):'';
 function cfgRoles(){const c=(window.VPPKA_CFG?window.VPPKA_CFG().discord:null)||{};return {roles:(Array.isArray(c.roles)?c.roles:[]).filter(r=>r&&RID(r.id)).map(r=>({id:String(r.id),name:String(r.label||r.id).slice(0,100),color:''})),def:(c.defRoles||[]).map(String)}}
 // v280: новость по умолчанию упоминает «Новости партии» (подписка в канале новостей), по id роли — переименование не ломает.
 // Созывы/объявления (admin-an.js) не меняются.
 const NEWS_PING='1570718297790353459';
-const AN_PING='1559635259635531947';  // v282: объявление по умолчанию — «Член партии»
-
+// v282: объявление без предвыбора роли — автор отмечает сам (пусто = «Никого»).
 const NEWS_ROLES=['1560748959641632858','1559635259635531947','1570718297790353459','1570718457681412217'];
 const NEWS_ROLE_FALLBACK={'1560748959641632858':'Гражданин','1559635259635531947':'Член партии','1570718297790353459':'Новости партии','1570718457681412217':'Новости фракции ЗК'};
 function newsRoleList(raw){const by={};for(const r of raw||[]){if(!r||!RID(r.id))continue;const id=String(r.id);const fb=NEWS_ROLE_FALLBACK[id];const name=String(r.name||r.label||fb||id).slice(0,100);if(!name)continue;by[id]={id,name,color:RCOL(r.color)}}
@@ -47,8 +48,8 @@ function isAn(){try{return String(location.hash||'').split('/')[0]==='#announce'
 function Dft(){return isAn()?adraft:draft}
 const AN_OK=()=>newsFull()||!!pressCard();
 function newsTabs(cur){return `<nav class="subtabs" aria-label="Новости и объявления"><a href="#news"${cur==='news'?' class="on" aria-current="page"':''}>Новости</a><a href="#announce"${cur==='announce'?' class="on" aria-current="page"':''}>Объявления</a></nav>`}
-function pingDef(){return isAn()?AN_PING:NEWS_PING}
-function pingSelIds(){const ids=new Set(NEWS_ROLES),d=Dft();const def=[pingDef()];return (Array.isArray(d.ping)?d.ping:def).filter(id=>ids.has(id)).slice(0,MAXPING)}
+function pingDef(){return isAn()?'':NEWS_PING}
+function pingSelIds(){const ids=new Set(NEWS_ROLES),d=Dft();const def=isAn()?[]:[NEWS_PING];return (Array.isArray(d.ping)?d.ping:def).filter(id=>ids.has(id)).slice(0,MAXPING)}
 const roleOf=id=>(RL||[]).find(r=>r.id===id)||{id,name:id,color:''};
 const dot=c=>`<i class="nw-dot"${RCOL(c)?` style="background:${RCOL(c)}"`:''}></i>`;
 function selHTML(){const sel=pingSelIds();return sel.length?sel.map(id=>{const r=roleOf(id);return `<span class="nw-tag">${dot(r.color)}<span class="nw-tn">@${esc(r.name)}</span><button type="button" class="nw-rm" data-nwrm="${esc(id)}" aria-label="Убрать ${esc(r.name)}">×</button></span>`}).join('')+'<button type="button" class="nw-clr" data-nwnone="1">Никого</button>':'<span class="amut nw-none">Никого не упоминать</span>'}
@@ -76,7 +77,7 @@ function newsComposer(kind){const an=kind==='announce'||(kind?false:isAn());cons
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="2" placeholder="https://youtu.be/…">${esc(Array.isArray(n.videos)?n.videos.join('\n'):(n.videos||''))}</textarea></label>
  <fieldset class="nw-dc"><legend>Discord</legend><label class="nw-sw"><input type="checkbox" id="nw-dc"${dc?' checked':''}><span>${ed?'Отправить в Discord ещё раз':'Опубликовать в Discord'}</span></label>
  <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?`<p class="amut nw-ch1">Канал: ${an?'📃 обьявления':'📢 новости'} (как обычно).</p>`:`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=282').then(m=>m.fillTarget('pn-dt','pn-dtsel',an?'notices':'news')).catch(()=>{}),0),'')}`}${pingBox()}</div></fieldset>
- <p class="aerr" id="pmsg"></p><div class="nw-act"><button type="button" class="btn" id="pn-save">${ed?'Сохранить':'Опубликовать'}</button><button type="button" class="btn o" id="nw-cancel">Отмена</button></div></div></div>`}
+ <p class="aerr" id="pmsg"></p><div class="nw-act"><button type="button" class="btn" id="pn-save"${nwSaving?' disabled':''}>${nwSaving?'Публикация…':ed?'Сохранить':'Опубликовать'}</button><button type="button" class="btn o" id="nw-cancel">Отмена</button></div></div></div>`}
 function newsPanel(){const me=(FB().user||{}).uid,press=newsPress();const list=(D().news||[]).filter(x=>!press||x.author===me).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
  return D().news?head(press?'Мои новости':'Опубликованные новости')+`<table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')}</table></div>`:'';}
 function announcePanel(){const me=(FB().user||{}).uid,press=newsPress();if(window.VPPKA_HN_START)window.VPPKA_HN_START();const list=((window.VPPKA_NOTICES&&window.VPPKA_NOTICES())||[]).filter(x=>x&&x.type==='other'&&!x.hidden&&(!press||x.author===me)).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
@@ -386,7 +387,7 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest('button')
   if(d.nd&&confirm('Удалить новость?')){await f.deleteDoc(f.doc(db(),'news',d.nd));await done('Новость удалена.');}
   if(id==='pn-save'&&isAn()){const o=editAn||{};let nid='';const n={type:'other',title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
    if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');if(fl&&fl.files.length){for(let i=1;i<=fl.files.length;i++)n.text+='\n\n[фото:'+i+']';}}
-   if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');b.disabled=true;const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
+   if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');if(nwSaving)return;b.disabled=true;nwSave(true);b.textContent='Публикация…';msg('Публикация… загружаем фото и сохраняем объявление.');try{const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
    if(ph.length+fl.length>4){b.disabled=false;return msg('Не больше 4 фото в объявлении.');}for(const f of fl)ph.push(await window.VPPKA_PH.up(await smallJpeg(f)));
    const badp=ph.find(u=>window.VPPKA_SAFE&&!window.VPPKA_SAFE.media(u));if(badp){b.disabled=false;return msg('У одного из текущих фото недопустимая ссылка (разрешены только https://). Снимите галочку «оставить текущие фото» и загрузите фото заново.');}const own=u=>/^(data:|ph:)/.test(String(u));const legacy=ph.filter(u=>!own(u));ph=ph.filter(own);if(legacy[0])n.image=legacy[0];if(ph.length)n.photos=ph;
    const vids=v('pn-v').split(/\s+/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=window.VPPKA_YT&&window.VPPKA_YT.parse(x);return p?window.VPPKA_YT.canon(p):x});const nhs=vids.find(x=>!/^https:\/\//i.test(x));if(nhs){b.disabled=false;return msg('Ссылка на видео должна начинаться с https:// — другие (http:, javascript:, data: и т. п.) не допускаются: '+nhs.slice(0,80));}const bad=vids.filter(x=>!VOK(x)||x.length>300);if(bad.length){b.disabled=false;return msg('Неподдерживаемая ссылка на видео: '+bad[0].slice(0,80)+'. Подходят YouTube, VK Видео, Rutube или прямая https-ссылка на .mp4/.webm.');}if(vids.length>5){b.disabled=false;return msg('Не больше 5 видео.');}if(vids.length)n.videos=vids;
@@ -403,10 +404,10 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest('button')
      else r=await m.sendVia('announcement',nid,dt&&/^c_[a-z0-9]{4,24}$/.test(dt)?dt:'b_notices',roles);
      dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    else dtNote=' В Discord не отправлялось.';
-   const wasEdit=!!o.id;editAn=null;anOpen=false;for(const k of Object.keys(adraft))delete adraft[k];anStatus={ok:!/Discord: /.test(dtNote),t:(wasEdit?'Объявление сохранено.':'Объявление опубликовано на сайте.')+dtNote};b.disabled=false;window.route();return}
+   const wasEdit=!!o.id;editAn=null;anOpen=false;for(const k of Object.keys(adraft))delete adraft[k];anStatus={ok:!/Discord: /.test(dtNote),t:(wasEdit?'Объявление сохранено.':'Объявление опубликовано на сайте.')+dtNote};nwSave(false);b.disabled=false;if(window.VPPKA_RELOAD)await window.VPPKA_RELOAD();window.route();return}catch(e){console.error(e);anStatus={ok:false,t:'Объявление не опубликовано: '+(e.code==='permission-denied'?'нет прав (правила Firestore отклонили действие).':e.code==='unavailable'?'нет связи с сервером.':(e.code||e.message||e))+' Текст сохранён — проверьте и нажмите «Опубликовать» ещё раз.'};nwSave(false);window.route();return}finally{if(nwSaving){nwSave(false);const nb=document.getElementById('pn-save');if(nb){nb.disabled=false;nb.textContent=editAn?'Сохранить':'Опубликовать'}}}}
   if(id==='pn-save'){const o=editNews||{};let nid='';const n={title:v('pn-t').trim(),text:v('pn-x').trim(),date:v('pn-d'),updatedAt:f.serverTimestamp()};
 if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');if(fl&&fl.files.length){for(let i=1;i<=fl.files.length;i++)n.text+='\n\n[фото:'+i+']';}}
-   if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');b.disabled=true;const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
+   if(!n.title||!n.text||!n.date)return msg('Заполните заголовок, текст и дату.');if(nwSaving)return;b.disabled=true;nwSave(true);b.textContent='Публикация…';msg('Публикация… загружаем фото и сохраняем новость.');try{const fl=[...(document.getElementById('pn-f').files||[])];const keep=document.getElementById('pn-keep');let ph=keep&&keep.checked?(o.photos||[]).concat(o.image?[o.image]:[]):[];
    if(ph.length+fl.length>4){b.disabled=false;return msg('Не больше 4 фото в новости.');}for(const f of fl)ph.push(await window.VPPKA_PH.up(await smallJpeg(f)));
    const badp=ph.find(u=>window.VPPKA_SAFE&&!window.VPPKA_SAFE.media(u));if(badp){b.disabled=false;return msg('У одного из текущих фото недопустимая ссылка (разрешены только https://). Снимите галочку «оставить текущие фото» и загрузите фото заново.');}const own=u=>/^(data:|ph:)/.test(String(u));const legacy=ph.filter(u=>!own(u));ph=ph.filter(own);if(legacy[0])n.image=legacy[0];if(ph.length)n.photos=ph;
    const vids=v('pn-v').split(/\s+/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=window.VPPKA_YT&&window.VPPKA_YT.parse(x);return p?window.VPPKA_YT.canon(p):x});const nhs=vids.find(x=>!/^https:\/\//i.test(x));if(nhs){b.disabled=false;return msg('Ссылка на видео должна начинаться с https:// — другие (http:, javascript:, data: и т. п.) не допускаются: '+nhs.slice(0,80));}const bad=vids.filter(x=>!VOK(x)||x.length>300);if(bad.length){b.disabled=false;return msg('Неподдерживаемая ссылка на видео: '+bad[0].slice(0,80)+'. Подходят YouTube, VK Видео, Rutube или прямая https-ссылка на .mp4/.webm.');}if(vids.length>5){b.disabled=false;return msg('Не больше 5 видео.');}if(vids.length)n.videos=vids;
@@ -424,7 +425,7 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
      else r=await m.sendVia('news',nid,dt&&/^c_[a-z0-9]{4,24}$/.test(dt)?dt:'b_news',roles);
      dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
    else dtNote=' В Discord не отправлялось.';
-   const wasEdit=!!o.id;editNews=null;nwOpen=false;for(const k of Object.keys(draft))delete draft[k];nwStatus={ok:!/Discord: /.test(dtNote),t:(wasEdit?'Новость сохранена.':'Новость опубликована на сайте.')+dtNote};b.disabled=false;await window.VPPKA_RELOAD();window.route();return}
+   const wasEdit=!!o.id;editNews=null;nwOpen=false;for(const k of Object.keys(draft))delete draft[k];nwStatus={ok:!/Discord: /.test(dtNote),t:(wasEdit?'Новость сохранена.':'Новость опубликована на сайте.')+dtNote};nwSave(false);b.disabled=false;await window.VPPKA_RELOAD();window.route();return}catch(e){console.error(e);nwStatus={ok:false,t:'Новость не опубликована: '+(e.code==='permission-denied'?'нет прав (правила Firestore отклонили действие).':e.code==='unavailable'?'нет связи с сервером.':(e.code||e.message||e))+' Текст сохранён — проверьте и нажмите «Опубликовать» ещё раз.'};nwSave(false);window.route();return}finally{if(nwSaving){nwSave(false);const nb=document.getElementById('pn-save');if(nb){nb.disabled=false;nb.textContent=editNews?'Сохранить':'Опубликовать'}}}}
   if(id==='pm-cancel'){editMem=null;window.route();}
   if(d.me){editMem=(D().members||[]).find(x=>x.id===d.me);window.route();scrollTo(0,document.querySelector('.kpanel').offsetTop);}
   if(d.mx){const m=(D().members||[]).find(x=>x.id===d.mx);if(!m)return;if(!isSuper()&&techLocked(m))return msg('Технический отдел и места владельца меняет только владелец сайта.');

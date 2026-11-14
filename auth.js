@@ -224,12 +224,13 @@ auth=A.getAuth(app);try{db=F.initializeFirestore(app,{ignoreUndefinedProperties:
  // публичный статик карточек — pubStatik/{memberId}.s (читают все, пишут бот и владелец). Не смешиваем с members:
  // карточки сохраняются целиком, и лишнее поле statik правила members не примут.
  let liveS={};window.VPPKA_STATIK=id=>liveS[id]||'';
- const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
+ const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')||window.VPPKA_SAVING};
  const liveApply=()=>{if(!liveN&&!liveM)return;if(busy()){livePend=true;return}livePend=false;const D={...(window.VPPKA_DATA||{})};
   if(liveN)D.news=liveN.empty?[]:liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM)D.members=liveM.empty?[]:memDocs().filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
   window.VPPKA_DATA=D;window.VPPKA_FRESH='live';const y=scrollY;route();scrollTo(0,y);
   liveNew.forEach(id=>document.querySelectorAll('a[href="#news/'+id+'"]').forEach(a=>{const it=a.closest('.it,.card,div');it&&it.classList.add('fresh')}));liveNew.clear();};
  document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
+  window.VPPKA_LIVEFLUSH=()=>{if(livePend)liveApply()};
  // v258: одна подписка на news на весь сайт — колокольчик (notif.js) берёт её же, а не открывает вторую (меньше чтений)
  const NF=window.VPPKA_NEWSFEED={s:null,cbs:new Set(),on(cb){this.cbs.add(cb);if(this.s)cb(this.s);return()=>this.cbs.delete(cb)}};
  const snapOk=s=>!!s&&!(navigator.onLine&&s.metadata&&s.metadata.fromCache&&s.empty);
