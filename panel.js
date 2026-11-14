@@ -25,16 +25,29 @@ function pressCard(){const did=String(((window.VPPKA_AUTH||{}).profile||{}).disc
 const newsFull=()=>tier()>=4||chief()||isSuper();
 const newsPress=()=>!newsFull()&&!!pressCard();
 // v279: «Написать новость» — свёрнутая плашка вверху вкладки «Новости» (только тем, кто может публиковать); по нажатию раскрывается форма.
-// В форме: «Опубликовать в Discord» (по умолчанию да; при правке — «ещё раз», по умолчанию нет) и «Кого упомянуть»:
-// Никого / @everyone / @here / роли из «Настроек сайта» (content/settings.discord.roles). Бот (outbox) сам проверяет каждое упоминание.
+// В форме: «Опубликовать в Discord» (по умолчанию да; при правке — «ещё раз», по умолчанию нет) и «Кого упомянуть» — любые роли
+// Discord-сервера партии (до 5). Список ролей держит в content/discordRoles бот (все роли, кроме @everyone и ролей ботов/бустеров);
+// пока его нет — роли из «Настроек сайта». @everyone и @here не упоминаются никогда; бот (outbox) сам проверяет каждое упоминание.
 let nwOpen=false,nwStatus=null;const draft={};
-const MAXPING=5;
-function pingRoles(){const c=(window.VPPKA_CFG?window.VPPKA_CFG().discord:null)||{};const roles=(Array.isArray(c.roles)?c.roles:[]).filter(r=>r&&/^\d{15,21}$/.test(String(r.id||''))).slice(0,12);return {roles,def:(c.defRoles||[]).map(String).filter(id=>roles.some(r=>String(r.id)===id))}}
-function pingBox(press){const {roles,def}=pingRoles();const sel=new Set(Array.isArray(draft.ping)?draft.ping:def);
- const chip=(val,label,title)=>`<label class="nw-chip"${title?` title="${esc(title)}"`:''}><input type="checkbox" data-nwping="${esc(val)}"${val==='none'?(sel.size?'':' checked'):(sel.has(val)?' checked':'')}><span>${esc(label)}</span></label>`;
- return `<div class="nw-ping"><span class="nw-lbl">Кого упомянуть</span><div class="nw-chips">${chip('none','Никого')}${press?'':chip('everyone','@everyone','Все участники сервера')+chip('here','@here','Только те, кто сейчас в сети')}${roles.map(r=>chip(String(r.id),'@'+String(r.label||r.id).slice(0,40))).join('')}</div><small class="amut nw-hint">Можно выбрать несколько (до ${MAXPING}). Список ролей задаёт владелец в «Настройках сайта».</small></div>`}
-function pingSel(){const c=[...document.querySelectorAll('[data-nwping]')];if(!c.length)return null;const on=c.filter(x=>x.checked).map(x=>x.dataset.nwping);if(!on.length||on.includes('none'))return [];
- return ['everyone','here'].filter(x=>on.includes(x)).concat(on.filter(x=>/^\d{15,21}$/.test(x))).slice(0,MAXPING)}
+const MAXPING=5;let RL=null,RLp=null;
+const RID=x=>/^\d{15,21}$/.test(String(x||'')),RCOL=c=>/^#[0-9a-f]{6}$/i.test(String(c||''))?String(c):'';
+function cfgRoles(){const c=(window.VPPKA_CFG?window.VPPKA_CFG().discord:null)||{};return {roles:(Array.isArray(c.roles)?c.roles:[]).filter(r=>r&&RID(r.id)).map(r=>({id:String(r.id),name:String(r.label||r.id).slice(0,100),color:''})),def:(c.defRoles||[]).map(String)}}
+function loadRoles(){if(RLp)return RLp;RLp=(async()=>{let L=[];try{const s=await F().getDoc(F().doc(db(),'content','discordRoles'));const d=s.exists()?s.data():{};L=(Array.isArray(d.roles)?d.roles:[]).filter(r=>r&&RID(r.id)&&r.name).map(r=>({id:String(r.id),name:String(r.name).slice(0,100),color:RCOL(r.color)}))}catch(e){}
+ if(!L.length)L=cfgRoles().roles;RL=L;const box=document.getElementById('nw-ping');if(box)box.outerHTML=pingBox();return L})();return RLp}
+function pingSelIds(){const ids=new Set((RL||[]).map(r=>r.id));const def=cfgRoles().def;return (Array.isArray(draft.ping)?draft.ping:def).filter(id=>!RL||ids.has(id)).slice(0,MAXPING)}
+const roleOf=id=>(RL||[]).find(r=>r.id===id)||{id,name:id,color:''};
+const dot=c=>`<i class="nw-dot"${RCOL(c)?` style="background:${RCOL(c)}"`:''}></i>`;
+function selHTML(){const sel=pingSelIds();return sel.length?sel.map(id=>{const r=roleOf(id);return `<span class="nw-tag">${dot(r.color)}<span class="nw-tn">@${esc(r.name)}</span><button type="button" class="nw-rm" data-nwrm="${esc(id)}" aria-label="Убрать ${esc(r.name)}">×</button></span>`}).join('')+'<button type="button" class="nw-clr" data-nwnone="1">Никого</button>':'<span class="amut nw-none">Никого не упоминать</span>'}
+function pingBox(){if(RL===null){setTimeout(loadRoles,0);return '<div class="nw-ping" id="nw-ping"><span class="nw-lbl">Кого упомянуть</span><p class="amut nw-ld">Загрузка ролей…</p></div>'}
+ const sel=new Set(pingSelIds()),full=sel.size>=MAXPING;
+ return `<div class="nw-ping" id="nw-ping"><div class="nw-lbl">Кого упомянуть <span class="nw-cnt" id="nw-cnt">${sel.size}/${MAXPING}</span></div>
+<div class="nw-sel" id="nw-sel">${selHTML()}</div>
+${RL.length?`<input type="search" class="nw-q" id="nw-rq" placeholder="Найти роль (${RL.length})…" autocomplete="off" aria-label="Найти роль">
+<ul class="nw-rl" id="nw-rl">${RL.map(r=>`<li data-nwname="${esc(r.name.toLowerCase())}"><label class="nw-ro${sel.has(r.id)?' on':''}"><input type="checkbox" data-nwrole="${esc(r.id)}"${sel.has(r.id)?' checked':full?' disabled':''}>${dot(r.color)}<span>@${esc(r.name)}</span></label></li>`).join('')}<li class="nw-nf" hidden>Ничего не найдено</li></ul>`:'<p class="amut">Список ролей пока пуст.</p>'}
+<small class="amut nw-hint">До ${MAXPING} ролей. @everyone и @here не упоминаются.</small></div>`}
+function pingSync(){const sel=new Set(pingSelIds()),full=sel.size>=MAXPING;const sh=document.getElementById('nw-sel');if(sh)sh.innerHTML=selHTML();const c=document.getElementById('nw-cnt');if(c)c.textContent=sel.size+'/'+MAXPING;
+ document.querySelectorAll('[data-nwrole]').forEach(x=>{const on=sel.has(x.dataset.nwrole);x.checked=on;x.disabled=!on&&full;x.parentElement.classList.toggle('on',on)})}
+function pingSel(){if(!document.getElementById('nw-ping')||RL===null)return null;return pingSelIds()}
 function newsComposer(){const ed=editNews,n=ed||draft,press=newsPress(),dc=ed?!!draft.dcEdit:draft.dc!==false;
  const st=nwStatus?`<p class="${nwStatus.ok?'af-ok':'aerr'} nw-st" role="status">${esc(nwStatus.t)}</p>`:'';
  return `<div class="nw${nwOpen?' open':''}" id="nw"><button type="button" class="nw-bar" id="nw-toggle" aria-expanded="${nwOpen}" aria-controls="nw-body"><span class="nw-ic" aria-hidden="true">✍️</span><span class="nw-t">${ed?'Редактирование новости':'Написать новость'}</span><span class="nw-ch" aria-hidden="true">▾</span></button>${st}
@@ -48,7 +61,7 @@ function newsComposer(){const ed=editNews,n=ed||draft,press=newsPress(),dc=ed?!!
  ${ed&&((ed.photos||[]).length||ed.image)?`<div class="nphotos">${(ed.photos||[]).concat(ed.image?[ed.image]:[]).map(u=>`<img ${PHA(u,'t')} alt="">`).join('')}</div><label class="fl kp-chk"><input id="pn-keep" type="checkbox" checked> оставить текущие фото</label>`:''}
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="2" placeholder="https://youtu.be/…">${esc(Array.isArray(n.videos)?n.videos.join('\n'):(n.videos||''))}</textarea></label>
  <fieldset class="nw-dc"><legend>Discord</legend><label class="nw-sw"><input type="checkbox" id="nw-dc"${dc?' checked':''}><span>${ed?'Отправить в Discord ещё раз':'Опубликовать в Discord'}</span></label>
- <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?'<p class="amut nw-ch1">Канал: 📢 новости (как обычно).</p>':`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=279').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}`}${pingBox(press)}</div></fieldset>
+ <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?'<p class="amut nw-ch1">Канал: 📢 новости (как обычно).</p>':`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=279').then(m=>m.fillTarget('pn-dt','pn-dtsel','news')).catch(()=>{}),0),'')}`}${pingBox()}</div></fieldset>
  <p class="aerr" id="pmsg"></p><div class="nw-act"><button type="button" class="btn" id="pn-save">${ed?'Сохранить':'Опубликовать'}</button><button type="button" class="btn o" id="nw-cancel">Отмена</button></div></div></div>`}
 function newsPanel(){const me=(FB().user||{}).uid,press=newsPress();const list=(D().news||[]).filter(x=>!press||x.author===me).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
  return D().news?head(press?'Мои новости':'Опубликованные новости')+`<table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')}</table></div>`:'';}
@@ -339,16 +352,14 @@ export function install(){if(installed)return;installed=true;const P=window.P,op
  document.addEventListener('input',ev=>{const t=ev.target;if(editNews||!t||!t.id)return;const k={'pn-t':'title','pn-d':'date','pn-x':'text','pn-v':'videos'}[t.id];if(k)draft[k]=t.value});
  document.addEventListener('change',ev=>{const t=ev.target;if(!t)return;
   if(t.id==='nw-dc'){const bx=document.getElementById('nw-dcb');if(bx)bx.hidden=!t.checked;if(editNews)draft.dcEdit=t.checked;else draft.dc=t.checked}
-  if(t.dataset&&t.dataset.nwping){const all=[...document.querySelectorAll('[data-nwping]')],v=t.dataset.nwping;
-   if(v==='none'&&t.checked)all.forEach(x=>{if(x!==t)x.checked=false});
-   else if(t.checked){all.forEach(x=>{const w=x.dataset.nwping;if(w==='none'||(v==='everyone'&&w==='here')||(v==='here'&&w==='everyone'))x.checked=false});
-    if(all.filter(x=>x.checked).length>MAXPING){t.checked=false;msg('Не больше '+MAXPING+' упоминаний.')}}
-   if(!all.some(x=>x.checked)){const n0=all.find(x=>x.dataset.nwping==='none');if(n0)n0.checked=true}
-   draft.ping=pingSel()}});
+  if(t.dataset&&t.dataset.nwrole){const cur=pingSelIds().filter(x=>x!==t.dataset.nwrole);if(t.checked){if(cur.length>=MAXPING){t.checked=false;return msg('Не больше '+MAXPING+' ролей.')}cur.push(t.dataset.nwrole)}draft.ping=cur;pingSync()}});
+ document.addEventListener('input',ev=>{const t=ev.target;if(!t||t.id!=='nw-rq')return;const q=t.value.trim().toLowerCase();let n=0;document.querySelectorAll('#nw-rl li[data-nwname]').forEach(li=>{const ok=!q||li.dataset.nwname.includes(q.replace(/^@/,''));li.hidden=!ok;n+=ok});const nf=document.querySelector('#nw-rl .nw-nf');if(nf)nf.hidden=!!n});
 document.addEventListener('change',async ev=>{if(ev.target.id==='pn-f'){const prev=document.getElementById('pn-preview');if(!prev)return;prev.innerHTML='';const files=[...ev.target.files].slice(0,4);for(const f of files){try{const u=await smallJpeg(f);const img=document.createElement('img');img.src=u;img.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #333';prev.appendChild(img);}catch(e){}}if(files.length){const ta=document.getElementById('pn-x');if(ta&&!/\[фото:\d+\]/i.test(ta.value)){for(let i=1;i<=files.length;i++)ta.value+='\n\n[фото:'+i+']';}}}});
 document.addEventListener('click',async ev=>{const b=ev.target.closest('button');if(!b)return;const d=b.dataset,id=b.id,f=F();
   const done=async t=>{await window.VPPKA_RELOAD();msg(t)};
   try{
+  if(d.nwrm){draft.ping=pingSelIds().filter(x=>x!==d.nwrm);pingSync();return}
+  if(d.nwnone){draft.ping=[];pingSync();return}
   if(id==='nw-toggle'){nwOpen=!nwOpen;nwStatus=null;const w=document.getElementById('nw'),bd=document.getElementById('nw-body'),st=w&&w.querySelector('.nw-st');if(w)w.classList.toggle('open',nwOpen);b.setAttribute('aria-expanded',String(nwOpen));if(bd)bd.hidden=!nwOpen;if(st)st.remove();if(nwOpen){const t=document.getElementById('pn-t');if(t)t.focus({preventScroll:true})}return}
   if(id==='nw-cancel'||id==='pn-cancel'){const wasEdit=!!editNews;editNews=null;nwOpen=false;nwStatus=null;delete draft.dcEdit;if(!wasEdit)for(const k of Object.keys(draft))delete draft[k];window.route();return}
   if(d.ne){editNews=(D().news||[]).find(x=>x.id===d.ne);nwOpen=!!editNews;nwStatus=null;delete draft.dcEdit;window.route();const w=document.getElementById('nw');if(w)w.scrollIntoView({behavior:'smooth',block:'start'});return}
@@ -363,12 +374,12 @@ if(!/\[фото:\d+\]/i.test(n.text)){const fl=document.getElementById('pn-f');i
    const pc=newsPress()?pressCard():'';if(pc)n.card=pc;else if(o.card)n.card=o.card;if(o.pinned!=null&&pc)n.pinned=o.pinned;
    if(o.id){if(o.align)n.align=o.align;if(o.author)n.author=o.author;if(o.createdAt)n.createdAt=o.createdAt;await f.setDoc(f.doc(db(),'news',o.id),(o.likeCount?{...n,likeCount:o.likeCount}:n));nid=o.id;}else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'news'),n)).id;}
    // v279: Discord — только если стоит галочка «Опубликовать в Discord». Своя строка из «Каналы Discord» или канал новостей «как обычно» (бот, b_news).
-   // Упоминания уходят в discordOut.roles: 'everyone' / 'here' / id ролей; бот пропускает только их (роли — из «Настроек сайта»).
+   // Упоминания — discordOut.roles: id ролей сервера (до 5); бот пропускает только роли из content/discordRoles и «Настроек сайта».
    let dtNote='';const dcOn=!!(document.getElementById('nw-dc')||{}).checked;
    if(dcOn){const ping=pingSel();const roles=Array.isArray(ping)?ping:undefined;const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
     try{const m=await import('./discord-targets.js?v=279');msg('Сохранено на сайте. Отправка в Discord…');let r;
      if(pc){r=await m.sendVia('news',nid,'b_news',roles,{card:pc});
-      // правила v272 не дают пресс-службе поле roles — отправляем как раньше (упоминание по умолчанию)
+      // правила до v279 не дают пресс-службе поле roles — тогда отправляем как раньше (упоминание по умолчанию)
       if(r==='нет прав на отправку.'&&roles){r=await m.sendVia('news',nid,'b_news',undefined,{card:pc});if(r===true)r='отправлено, но без выбранного упоминания (нет прав).'}}
      else r=await m.sendVia('news',nid,dt&&/^c_[a-z0-9]{4,24}$/.test(dt)?dt:'b_news',roles);
      dtNote=r===true?' Отправлено в Discord.':' Discord: '+r}catch(e){dtNote=' Discord: '+(e.message||e)}}
