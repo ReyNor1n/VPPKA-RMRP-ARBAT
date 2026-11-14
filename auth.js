@@ -1,4 +1,4 @@
-import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=281';
+import { firebaseConfig, appCheckSiteKey, discordOAuth } from './firebase-config.js?v=282';
 const V='10.12.2', B=`https://www.gstatic.com/firebasejs/${V}/`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ready=!Object.values(firebaseConfig).some(v=>String(v).includes('PASTE_'));
@@ -202,7 +202,7 @@ document.addEventListener('click',ev=>{if(ev.target.id!=='oa-re')return;const k=
  // App Check (reCAPTCHA Enterprise): сразу после initializeApp и до getAuth/getFirestore, чтобы запросы несли токен.
 // На localhost и 127.0.0.1 выключен — ключ разрешён только для vppka-arbat-rmrp.ru.
 const acOn=!!appCheckSiteKey&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
- const [{initializeApp},A_,F_,AU,AC]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js'),import('./audit.js?v=281').catch(e=>{console.warn('журнал',e);return null}),acOn?import(B+'firebase-app-check.js').catch(e=>{console.warn('App Check',e);return null}):null]);
+ const [{initializeApp},A_,F_,AU,AC]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js'),import('./audit.js?v=282').catch(e=>{console.warn('журнал',e);return null}),acOn?import(B+'firebase-app-check.js').catch(e=>{console.warn('App Check',e);return null}):null]);
  A=A_;F=AU&&AU.wrapF?AU.wrapF(F_,()=>({user,profile,power,db})):F_;const app=initializeApp(firebaseConfig); /* v276: F обёрнут — журнал изменений (audit.js) после успешных записей */
 if(AC){try{window.VPPKA_APPCHECK=AC.initializeAppCheck(app,{provider:new AC.ReCaptchaEnterpriseProvider(appCheckSiteKey),isTokenAutoRefreshEnabled:true})}catch(e){console.warn('App Check',e)}}
 auth=A.getAuth(app);try{db=F.initializeFirestore(app,{ignoreUndefinedProperties:true})}catch(e){db=F.getFirestore(app)} // v273: undefined в записи не роняет updateDoc/setDoc
@@ -224,12 +224,13 @@ auth=A.getAuth(app);try{db=F.initializeFirestore(app,{ignoreUndefinedProperties:
  // публичный статик карточек — pubStatik/{memberId}.s (читают все, пишут бот и владелец). Не смешиваем с members:
  // карточки сохраняются целиком, и лишнее поле statik правила members не примут.
  let liveS={};window.VPPKA_STATIK=id=>liveS[id]||'';
- const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')};
+ const busy=()=>{const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.querySelector('.asg-ov,.modal:not([hidden])')||window.VPPKA_SAVING};
  const liveApply=()=>{if(!liveN&&!liveM)return;if(busy()){livePend=true;return}livePend=false;const D={...(window.VPPKA_DATA||{})};
   if(liveN)D.news=liveN.empty?[]:liveN.docs.map(d=>fixD({...d.data(),id:d.id}));if(liveM)D.members=liveM.empty?[]:memDocs().filter(x=>window.VPPKA_SHOWMEM(x)).sort((a,b)=>(b.rank-a.rank)||((a.order??99)-(b.order??99)));
   window.VPPKA_DATA=D;window.VPPKA_FRESH='live';const y=scrollY;route();scrollTo(0,y);
   liveNew.forEach(id=>document.querySelectorAll('a[href="#news/'+id+'"]').forEach(a=>{const it=a.closest('.it,.card,div');it&&it.classList.add('fresh')}));liveNew.clear();};
  document.addEventListener('focusout',()=>setTimeout(()=>{if(livePend)liveApply()},300));
+  window.VPPKA_LIVEFLUSH=()=>{if(livePend)liveApply()};
  // v258: одна подписка на news на весь сайт — колокольчик (notif.js) берёт её же, а не открывает вторую (меньше чтений)
  const NF=window.VPPKA_NEWSFEED={s:null,cbs:new Set(),on(cb){this.cbs.add(cb);if(this.s)cb(this.s);return()=>this.cbs.delete(cb)}};
  const snapOk=s=>!!s&&!(navigator.onLine&&s.metadata&&s.metadata.fromCache&&s.empty);
@@ -302,7 +303,7 @@ auth=A.getAuth(app);try{db=F.initializeFirestore(app,{ignoreUndefinedProperties:
  }
 
  async function loadContent(){try{for(let i=0;i<25&&!(window.VPPKA_C&&window.VPPKA_C());i++)await new Promise(r=>setTimeout(r,200));const ids=['site','home','about','program','charter','legal','contacts','leadership','settings'],part={};await Promise.all(ids.map(async id=>{try{const s=await F.getDoc(F.doc(db,'content',id));if(s.exists())part[id]=s.data()}catch(e){}}));window.VPPKA_TPL_READY=true;if(Object.keys(part).length)window.VPPKA_APPLY_CONTENT&&window.VPPKA_APPLY_CONTENT(part);else if((location.hash.slice(1)||'').split('/')[0]==='member')window.route&&window.route()}finally{if(!window.VPPKA_TPL_READY){window.VPPKA_TPL_READY=true;if((location.hash.slice(1)||'').split('/')[0]==='member')window.route&&window.route()}}}
- await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=281').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=281').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=281').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=281').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=281').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=281').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=281').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=281').then(m=>m.install()).catch(e=>console.error('admin',e));
+ await loadData();route();loadContent().catch(e=>console.warn('content',e));window.VPPKA_LDRLOAD&&window.VPPKA_LDRLOAD();import('./panel.js?v=282').then(m=>m.install()).catch(e=>console.error('panel',e));import('./notif.js?v=282').then(m=>m.install()).catch(e=>console.error('notif',e));import('./rh.js?v=282').then(m=>m.install()).catch(e=>console.error('rh',e));import('./votes.js?v=282').then(m=>m.install()).catch(e=>console.error('votes',e));import('./events.js?v=282').then(m=>m.install()).catch(e=>console.error('events',e));import('./music.js?v=282').then(m=>m.install()).catch(e=>console.error('music',e));import('./chat.js?v=282').then(m=>m.install()).catch(e=>console.error('chat',e));import('./admin.js?v=282').then(m=>m.install()).catch(e=>console.error('admin',e));
 // аккаунт без профиля users/{uid} (регистрация оборвалась) — дозаполнить ФИО, создать профиль без кода
 let regBusy=false,noProfile=false,oaRan=false;
 // authReady — первый ответ onAuthStateChanged получен (профиль загружен); lkOk — привязка Discord: null = ещё не проверена
