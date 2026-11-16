@@ -1,0 +1,40 @@
+--- /tmp/v285-rules/live.rules	2026-11-16 17:57:16.250324130 +0300
++++ /workspace/v285-identity-wt/tools/firestore-v285.rules	2026-11-16 17:33:41.699177451 +0300
+@@ -161,10 +161,23 @@
+       match /priv/{d} {
+         allow read: if signedIn() && (request.auth.uid == uid || isOwner() || partyMember());
+         // v258: пишет только аккаунт с подтверждённым Discord (linked: и при регистрации, до профиля)
++        function histList(xs, re) {
++          return xs is list && xs.size() <= 5
++            && (xs.size() < 1 || (xs[0] is string && xs[0].matches(re)))
++            && (xs.size() < 2 || (xs[1] is string && xs[1].matches(re)))
++            && (xs.size() < 3 || (xs[2] is string && xs[2].matches(re)))
++            && (xs.size() < 4 || (xs[3] is string && xs[3].matches(re)))
++            && (xs.size() < 5 || (xs[4] is string && xs[4].matches(re)))
++            && (xs.size() == 0 || xs.size() == xs.toSet().size() || true);
++        }
++        // v285: статик и ФИО можно менять; прошлые значения хранятся в passportHist / nameHist.
++        // Членство от этих полей не зависит (partyMember — по uid заявки или mem/{uid}).
+         allow write: if linked() && request.auth.uid == uid && d == 'p'
+-          && request.resource.data.keys().hasOnly(['birth','passport'])
++          && request.resource.data.keys().hasOnly(['birth','passport','passportHist','nameHist'])
+           && (!('birth' in request.resource.data) || (request.resource.data.birth is string && request.resource.data.birth.matches('^[0-9]{2}[.][0-9]{2}[.][0-9]{4}$')))
+           && (!('passport' in request.resource.data) || (request.resource.data.passport is string && request.resource.data.passport.matches('^[0-9]{3}-[0-9]{3}$')))
++          && (!('passportHist' in request.resource.data) || histList(request.resource.data.passportHist, '^[0-9]{3}-[0-9]{3}$'))
++          && (!('nameHist' in request.resource.data) || histList(request.resource.data.nameHist, '^.{1,100}$'))
+           // v206: статик обязателен — однажды указанный нельзя стереть (сменить на другой в формате 000-000 можно)
+           && (resource == null || !('passport' in resource.data) || 'passport' in request.resource.data);
+       }
+@@ -384,6 +397,12 @@
+       allow read: if myTier() >= 3 || (signedIn() && resource.data.get('uid', '') == request.auth.uid);
+       // заявитель может удалить свою отклонённую или архивную (карточку удалили / уволен) заявку, чтобы подать новую
+       allow delete: if signedIn() && id == request.auth.uid && resource.data.status in ['rejected','expelled'];
++      // v285: принятая заявка без карточки p_{uid} и без отметки mem/{uid} не блокирует повторную подачу
++      // (как find_dup в боте). Если карточка или mem на месте — удалить нельзя, членство сохраняется.
++      allow delete: if signedIn() && id == request.auth.uid
++        && resource.data.status in ['accepted','member']
++        && !exists(/databases/$(database)/documents/members/$('p_' + request.auth.uid))
++        && !exists(/databases/$(database)/documents/mem/$(request.auth.uid));
+       function aChanged() { return request.resource.data.diff(resource.data).affectedKeys(); }
+       // ступень заявителя: по ключу его аккаунта (нет аккаунта/ключа → 0)
+       function targetTier() { return resource.data.get('uid', '') == '' ? 0 : userTier(resource.data.uid); }
