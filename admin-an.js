@@ -1,7 +1,7 @@
 // v262: раздел #admin → «Объявления». Объявления и созывы (notifications type other|convocation) — те же, что в окне на главной:
 // создать, изменить, удалить, закрепить, скрыть с главной; дата, время (МСК), место; по желанию — в Discord (бот, discordOut) с выбранными ролями.
 // @everyone не упоминается никогда: бот берёт только роли из «Настроек сайта» → Discord.
-import {loadTargets,targetSelect,sendVia} from './discord-targets.js?v=262';
+import {loadTargets,targetSelect,sendVia} from './discord-targets.js?v=284';
 const FB=()=>window.VPPKA_FB,F=()=>FB().F,db=()=>FB().db;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const S={rows:null,edit:null,msg:'',ok:false,busy:false,T:null};
@@ -9,7 +9,7 @@ const AN=()=>window.VPPKA_AN;const CFG=()=>(window.VPPKA_CFG?window.VPPKA_CFG():
 const ms=v=>v&&typeof v.toMillis==='function'?v.toMillis():(typeof v==='number'?v:0);
 const say=(t,ok)=>{S.msg=t||'';S.ok=!!ok};
 const err=e=>e&&e.code==='permission-denied'?'Нет прав (нужна ступень 4+ и опубликованные firestore.rules).':(e&&(e.message||e.code))||String(e);
-export async function anLoad(refresh){S.rows=null;S.edit=null;refresh();try{if(!AN())await import('./panel.js?v=262');const f=F();
+export async function anLoad(refresh){S.rows=null;S.edit=null;refresh();try{if(!AN())await import('./panel.js?v=284');const f=F();
  const s=await f.getDocs(f.query(f.collection(db(),'notifications'),f.where('type','in',['convocation','other'])));
  S.rows=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>(!!b.pinned-!!a.pinned)||ms(b.createdAt)-ms(a.createdAt));S.T=await loadTargets()}catch(e){S.rows=[];say(err(e))}refresh()}
 function status(x){const now=Date.now(),a=x.at||0;if(x.cancelled)return ['Отменён','off'];if(x.hidden)return ['Скрыто','off'];

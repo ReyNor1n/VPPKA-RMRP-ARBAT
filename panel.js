@@ -100,18 +100,24 @@ function newsComposer(kind){const an=kind==='announce'||(kind?false:isAn());cons
  <div class="fl nw-txw"><label for="pn-x">Текст *</label>
  <div class="nw-tb"><button type="button" class="btn sm o" id="nw-ins"${pics().length>=MAXPH?' disabled':''}>📷 Вставить фото</button><span class="amut nw-tbh">Фото встанет отдельным абзацем там, где курсор. Можно вставить из буфера (Ctrl+V) или перетащить файл в текст. Фото: <b id="nw-pcnt">${pics().length}/${MAXPH}</b></span></div>
  <textarea id="pn-x" rows="8" maxlength="20000" placeholder="Абзацы разделяйте пустой строкой.">${esc(n.text)}</textarea>
- <input id="nw-file" type="file" accept="image/*" multiple hidden style="display:none"></div>
+ <input id="nw-file" type="file" accept="image/*" multiple hidden></div>
  <div class="nw-pics" id="nw-pics">${picsHTML(n.text)}</div>
  <small class="amut nw-phh">Строка [фото:2] — место второго фото, её можно перенести в другой абзац. Фото без такой строки покажутся в конце${an?' объявления':' новости'}. До ${MAXPH} фото, уменьшаются автоматически. **жирный**, ## подзаголовок.</small>
  <details class="nw-pv" id="nw-pv" open><summary>Предпросмотр</summary><div class="nw-pvb" id="nw-pvb">${pvHTML(n.text,n.title)}</div></details>
  <label class="fl">Видео — ссылки, по одной в строке (YouTube, VK Видео, Rutube или прямой .mp4)<textarea id="pn-v" rows="2" placeholder="https://youtu.be/…">${esc(Array.isArray(n.videos)?n.videos.join('\n'):(n.videos||''))}</textarea></label>
  <fieldset class="nw-dc"><legend>Discord</legend><label class="nw-sw"><input type="checkbox" id="nw-dc"${dc?' checked':''}><span>${ed?'Отправить в Discord ещё раз':'Опубликовать в Discord'}</span></label>
- <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?`<p class="amut nw-ch1">Канал: ${an?'📃 обьявления':'📢 новости'} (как обычно).</p>`:`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=283').then(m=>m.fillTarget('pn-dt','pn-dtsel',an?'notices':'news')).catch(()=>{}),0),'')}`}${pingBox()}</div></fieldset>
+ <div class="nw-dcb" id="nw-dcb"${dc?'':' hidden'}>${press?`<p class="amut nw-ch1">Канал: ${an?'📃 обьявления':'📢 новости'} (как обычно).</p>`:`<div id="pn-dt"></div>${(setTimeout(()=>import('./discord-targets.js?v=284').then(m=>m.fillTarget('pn-dt','pn-dtsel',an?'notices':'news')).catch(()=>{}),0),'')}`}${pingBox()}</div></fieldset>
  <p class="aerr" id="pmsg"></p><div class="nw-act"><button type="button" class="btn" id="pn-save"${nwSaving?' disabled':''}>${nwSaving?'Публикация…':ed?'Сохранить':'Опубликовать'}</button><button type="button" class="btn o" id="nw-cancel">Отмена</button></div></div></div>`}
-function newsPanel(){const me=(FB().user||{}).uid,press=newsPress();const list=(D().news||[]).filter(x=>!press||x.author===me).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
- return D().news?head(press?'Мои новости':'Опубликованные новости')+`<table class="tbl">${list.map(x=>`<tr><td>${esc(window.VPPKA_FD(x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ne="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-nd="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')}</table></div>`:'';}
-function announcePanel(){const me=(FB().user||{}).uid,press=newsPress();if(window.VPPKA_HN_START)window.VPPKA_HN_START();const list=((window.VPPKA_NOTICES&&window.VPPKA_NOTICES())||[]).filter(x=>x&&x.type==='other'&&!x.hidden&&(!press||x.author===me)).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
- return list.length||press||newsFull()?head(press?'Мои объявления':'Опубликованные объявления')+`<table class="tbl">${list.map(x=>`<tr><td>${esc((window.VPPKA_FD||(d=>d))(x.date||''))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-ae="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-ad="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')||'<tr><td colspan="3" class="amut">Пока нет объявлений.</td></tr>'}</table></div>`:''}
+function listPanel(an){const me=(FB().user||{}).uid,press=newsPress();if(an&&window.VPPKA_HN_START)window.VPPKA_HN_START();
+ const src=an?((window.VPPKA_NOTICES&&window.VPPKA_NOTICES())||[]):(D().news||[]);
+ const list=src.filter(x=>x&&(!an||(x.type==='other'&&!x.hidden))&&(!press||x.author===me)).slice().sort((a,b)=>String((an?b.date||'':b.date)).localeCompare(String((an?a.date||'':a.date))));
+ const fd=an?(window.VPPKA_FD||(d=>d)):window.VPPKA_FD;
+ const rows=list.map(x=>`<tr><td>${esc(fd(an?x.date||'':x.date))}</td><td>${esc(x.title)}</td><td class="kp-a"><button class="btn sm o" data-${an?'ae':'ne'}="${esc(x.id)}">Изменить</button>${press?'':` <button class="btn sm o kp-del" data-${an?'ad':'nd'}="${esc(x.id)}">Удалить</button>`}</td></tr>`).join('')||(an?'<tr><td colspan="3" class="amut">Пока нет объявлений.</td></tr>':'');
+ const title=press?(an?'Мои объявления':'Мои новости'):(an?'Опубликованные объявления':'Опубликованные новости');
+ const html=head(title)+`<table class="tbl">${rows}</table></div>`;
+ return an?(list.length||press||newsFull()?html:''):(D().news?html:'')}
+function newsPanel(){return listPanel(false)}
+function announcePanel(){return listPanel(true)}
 
 
 function memPanel(){const T=tier(),R=maxR()+1,ms=D().members||[],low=ms.filter(m=>((T>=4&&mt(m)<T&&(m.rank??0)<R)||isCh(m)||chief())&&(isSuper()||!techLocked(m))&&!admBlocked(m)),m=editMem||{rank:10};
@@ -433,7 +439,7 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest('button')
    else{n.author=FB().user.uid;n.createdAt=f.serverTimestamp();nid=(await f.addDoc(f.collection(db(),'notifications'),n)).id;}
    let dtNote='';const dcOn=!!(document.getElementById('nw-dc')||{}).checked;
    if(dcOn){const ping=pingSel();const roles=Array.isArray(ping)?ping:undefined;const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-    try{const m=await import('./discord-targets.js?v=283');msg('Сохранено на сайте. Отправка в Discord…');let r;
+    try{const m=await import('./discord-targets.js?v=284');msg('Сохранено на сайте. Отправка в Discord…');let r;
      if(pc){r=await m.sendVia('announcement',nid,'b_notices',roles,{card:pc});
       if(r==='нет прав на отправку.'&&roles){r=await m.sendVia('announcement',nid,'b_notices',undefined,{card:pc});if(r===true)r='отправлено, но без выбранного упоминания (нет прав).'}}
      else r=await m.sendVia('announcement',nid,dt&&/^c_[a-z0-9]{4,24}$/.test(dt)?dt:'b_notices',roles);
@@ -450,7 +456,7 @@ document.addEventListener('click',async ev=>{const b=ev.target.closest('button')
    // Упоминания — discordOut.roles: только 4 разрешённые роли (до 5 в форме); бот для новостей принимает только их, чужие отбрасывает.
    let dtNote='';const dcOn=!!(document.getElementById('nw-dc')||{}).checked;
    if(dcOn){const ping=pingSel();const roles=Array.isArray(ping)?ping:undefined;const dt=document.getElementById('pn-dtsel')&&document.getElementById('pn-dtsel').value;
-    try{const m=await import('./discord-targets.js?v=283');msg('Сохранено на сайте. Отправка в Discord…');let r;
+    try{const m=await import('./discord-targets.js?v=284');msg('Сохранено на сайте. Отправка в Discord…');let r;
      if(pc){r=await m.sendVia('news',nid,'b_news',roles,{card:pc});
       // правила до v279 не дают пресс-службе поле roles — тогда отправляем как раньше (упоминание по умолчанию)
       if(r==='нет прав на отправку.'&&roles){r=await m.sendVia('news',nid,'b_news',undefined,{card:pc});if(r===true)r='отправлено, но без выбранного упоминания (нет прав).'}}
