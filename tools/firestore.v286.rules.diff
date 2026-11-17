@@ -1,0 +1,32 @@
+--- firestore.live-419d17b8.rules	2026-11-18 01:49:03.840746795 +0300
++++ firestore.v286.rules	2026-11-18 01:50:28.456179260 +0300
+@@ -135,10 +135,11 @@
+           && request.auth.token.email == d.discordId + '@vppka.local';
+       }
+       allow read: if signedIn() && (request.auth.uid == uid || isOwner() || canMembers() || myTier() >= 5);
+-      // ФИО персонажа (v207): 2–4 слова, буквы (кириллица/латиница) и дефис, до 100 символов
++      // ФИО персонажа (v286): 3–4 слова (Фамилия Имя Отчество), буквы (кириллица/латиница) и дефис, до 100 символов.
++      // Было (v207): 2–4 слова. Старые профили из двух слов не трогаем: правило проверяет ФИО только при создании и при смене.
+       function validFio(d) {
+         return d.get('fio', '') is string && d.get('fio', '').size() <= 100
+-          && d.get('fio', '').matches('^[А-ЯЁа-яёA-Za-z]+(-[А-ЯЁа-яёA-Za-z]+)*( [А-ЯЁа-яёA-Za-z]+(-[А-ЯЁа-яёA-Za-z]+)*){1,3}$');
++          && d.get('fio', '').matches('^[А-ЯЁа-яёA-Za-z]+(-[А-ЯЁа-яёA-Za-z]+)*( [А-ЯЁа-яёA-Za-z]+(-[А-ЯЁа-яёA-Za-z]+)*){2,3}$');
+       }
+       // новый аккаунт (v207): регистрация без кода из Discord. Профиль создаёт только сам пользователь (uid),
+       // Discord ID = логин аккаунта (validUser: email == discordId@vppka.local, а email в Firebase Auth уникален),
+@@ -154,6 +155,7 @@
+       allow update: if signedIn() && request.auth.uid == uid
+         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','keyHash','rank','roleName','photo','avatar','fio','birth','passport','about'])
+         && validUser(request.resource.data)
++        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['fio']) || validFio(request.resource.data))
+         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['keyHash','rank','roleName'])
+             || validKey(request.resource.data));
+       allow delete: if signedIn() && request.auth.uid == uid;
+@@ -373,6 +375,7 @@
+           && a.keys().hasOnly(['fio','passport','discord','source','reason','bio'])
+           && a.keys().hasAll(['fio','passport','discord','source','reason','bio'])
+           && reqStr(a, 'fio', 2000) && reqStr(a, 'passport', 2000) && reqStr(a, 'discord', 2000)
++          && a.fio.size() <= 100 && a.fio.matches('^[А-ЯЁа-яёA-Za-z]+(-[А-ЯЁа-яёA-Za-z]+)*( [А-ЯЁа-яёA-Za-z]+(-[А-ЯЁа-яёA-Za-z]+)*){2,3}$')
+           && reqStr(a, 'source', 2000) && reqStr(a, 'reason', 2000) && optStr(a, 'bio', 4000);
+       }
+       // заявка с сайта: только вошедший, одна заявка на аккаунт (id документа = uid)
