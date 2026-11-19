@@ -1408,3 +1408,9 @@ body.aw-lock{overflow:hidden}
 .nw-nf{padding:10px;color:var(--mut);font-size:13px}
 @media(max-width:600px){.nw-rl{max-height:260px;grid-template-columns:1fr}.nw-ro{padding:10px}}
 @media(max-width:600px){.nw-bar{padding:10px 12px;font-size:14px}.nw-body{padding:2px 12px 14px}.nw-dc{padding:8px 10px 10px}.nw-act .btn{flex:1 1 140px;text-align:center}}
+
+/* v287: требования к аватару — читаемым текстом, не мелкой серой подсказкой */
+.phc-rules{margin:10px 0 0;padding:10px 12px;border-left:3px solid var(--gold);background:rgba(176,137,72,.08);border-radius:6px;color:var(--tx);font-size:13px;line-height:1.45}
+.phc-rules b{color:var(--cy)}
+.phc-rules ol{margin:4px 0 0;padding-left:20px}
+.phc-rules li{margin:2px 0}

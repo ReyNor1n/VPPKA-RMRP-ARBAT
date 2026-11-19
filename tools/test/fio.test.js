@@ -44,9 +44,9 @@ test('правила v286: ФИО в заявке и в профиле — 3–4
   assert.match(r, /affectedKeys\(\)\.hasAny\(\['fio'\]\) \|\| validFio\(request\.resource\.data\)/);
 });
 
-test('версия 286, кэш vppka-v258', async () => {
+test('версия ≥286, кэш ≥vppka-v258 и совпадает с sw.js', async () => {
   const v = JSON.parse(await read('version.json'));
-  assert.equal(v.v, '286');
-  assert.equal(v.cache, 'vppka-v258');
-  assert.match(await read('sw.js'), /const CACHE='vppka-v258'/);
+  assert.ok(+v.v >= 286);
+  assert.ok(+v.cache.replace('vppka-v', '') >= 258);
+  assert.match(await read('sw.js'), new RegExp("const CACHE='" + v.cache + "'"));
 });
